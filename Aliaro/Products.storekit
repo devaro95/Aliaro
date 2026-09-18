@@ -1,0 +1,81 @@
+{
+  "identifier": "BED95D05-417B-4C5F-99E5-1BDB198AA478",
+  "nonRenewingSubscriptions": [],
+  "products": [],
+  "settings": {
+    "_applicationInternalID": "0",
+    "_developerTeamID": "0",
+    "_failTransactionsEnabled": false,
+    "_lastSynchronizedDate": 0,
+    "_locale": "en_US",
+    "_storefront": "USA",
+    "_storeKitErrors": []
+  },
+  "subscriptionGroups": [
+    {
+      "id": "748EB283-3E53-4166-9AF3-13BFA51192F2",
+      "localizations": [],
+      "name": "Aliaro Premium",
+      "subscriptions": [
+        {
+          "adHocOffers": [],
+          "codeOffers": [],
+          "displayPrice": "1.99",
+          "familyShareable": false,
+          "groupNumber": 1,
+          "internalID": "E3738B6A-F232-4A06-97F9-8BB02EA17C93",
+          "introductoryOffer": {
+            "displayPrice": "0",
+            "internalID": "CD2532D4",
+            "numberOfPeriods": 1,
+            "paymentMode": "free",
+            "subscriptionPeriod": "P1M"
+          },
+          "localizations": [
+            {
+              "description": "Unlocks every Aliaro Premium feature.",
+              "displayName": "Aliaro Premium (Monthly)",
+              "locale": "en_US"
+            }
+          ],
+          "productID": "com.devaro.aliaro.premium.monthly",
+          "recurringSubscriptionPeriod": "P1M",
+          "referenceName": "Premium Monthly",
+          "subscriptionGroupID": "748EB283-3E53-4166-9AF3-13BFA51192F2",
+          "type": "RecurringSubscription"
+        },
+        {
+          "adHocOffers": [],
+          "codeOffers": [],
+          "displayPrice": "11.99",
+          "familyShareable": false,
+          "groupNumber": 1,
+          "internalID": "0CB96604-0F59-4176-95A5-B5B9195AF957",
+          "introductoryOffer": {
+            "displayPrice": "0",
+            "internalID": "809D8CE4",
+            "numberOfPeriods": 1,
+            "paymentMode": "free",
+            "subscriptionPeriod": "P3M"
+          },
+          "localizations": [
+            {
+              "description": "Unlocks every Aliaro Premium feature. Best value.",
+              "displayName": "Aliaro Premium (Yearly)",
+              "locale": "en_US"
+            }
+          ],
+          "productID": "com.devaro.aliaro.premium.yearly",
+          "recurringSubscriptionPeriod": "P1Y",
+          "referenceName": "Premium Yearly",
+          "subscriptionGroupID": "748EB283-3E53-4166-9AF3-13BFA51192F2",
+          "type": "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "version": {
+    "major": 3,
+    "minor": 0
+  }
+}

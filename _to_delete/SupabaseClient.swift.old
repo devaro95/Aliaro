@@ -1,0 +1,96 @@
+import Foundation
+
+/// Cliente REST minimalista para Supabase (PostgREST + Edge Functions) vía
+/// URLSession, sin dependencias externas.
+enum SupabaseClient {
+    struct APIError: LocalizedError {
+        let message: String
+        var errorDescription: String? { message }
+    }
+
+    // Postgres devuelve timestamptz con fracción de segundo (".123456"), que el
+    // formateador ISO8601 por defecto no acepta; se intentan ambos formatos.
+    private static let isoWithFractional: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter
+    }()
+
+    private static let isoPlain: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime]
+        return formatter
+    }()
+
+    private static let decoder: JSONDecoder = {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .custom { valueDecoder in
+            let container = try valueDecoder.singleValueContainer()
+            let dateString = try container.decode(String.self)
+            if let date = isoWithFractional.date(from: dateString) { return date }
+            if let date = isoPlain.date(from: dateString) { return date }
+            throw DecodingError.dataCorruptedError(in: container, debugDescription: "Fecha no reconocida: \(dateString)")
+        }
+        return decoder
+    }()
+
+    private static let encoder: JSONEncoder = {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        return encoder
+    }()
+
+    private static func authorizedRequest(url: URL, method: String) -> URLRequest {
+        var request = URLRequest(url: url)
+        request.httpMethod = method
+        request.setValue(SupabaseConfig.anonKey, forHTTPHeaderField: "apikey")
+        request.setValue("Bearer \(SupabaseConfig.anonKey)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        return request
+    }
+
+    /// Invoca una Supabase Edge Function (POST) y decodifica su respuesta JSON.
+    static func invoke<Body: Encodable, Response: Decodable>(
+        function: String,
+        body: Body
+    ) async throws -> Response {
+        let url = SupabaseConfig.url.appendingPathComponent("functions/v1/\(function)")
+        var request = authorizedRequest(url: url, method: "POST")
+        request.httpBody = try encoder.encode(body)
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try checkResponse(response, data: data)
+        return try decoder.decode(Response.self, from: data)
+    }
+
+    /// SELECT sobre una tabla vía PostgREST (solo lectura; las escrituras
+    /// pasan por Edge Functions). `query` son parámetros PostgREST, ej.
+    /// ["family_id": "eq.<uuid>", "order": "joined_at.asc"].
+    static func select<Response: Decodable>(
+        table: String,
+        query: [String: String] = [:]
+    ) async throws -> Response {
+        var components = URLComponents(
+            url: SupabaseConfig.url.appendingPathComponent("rest/v1/\(table)"),
+            resolvingAgainstBaseURL: false
+        )!
+        components.queryItems = query.map { URLQueryItem(name: $0.key, value: $0.value) }
+        let request = authorizedRequest(url: components.url!, method: "GET")
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try checkResponse(response, data: data)
+        return try decoder.decode(Response.self, from: data)
+    }
+
+    private static func checkResponse(_ response: URLResponse, data: Data) throws {
+        guard let http = response as? HTTPURLResponse else { return }
+        guard (200..<300).contains(http.statusCode) else {
+            if let payload = try? JSONDecoder().decode([String: String].self, from: data),
+               let message = payload["error"] {
+                throw APIError(message: message)
+            }
+            let body = String(data: data, encoding: .utf8) ?? ""
+            throw APIError(message: "Error \(http.statusCode): \(body)")
+        }
+    }
+}

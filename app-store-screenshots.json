@@ -1,0 +1,364 @@
+{
+  "schemaVersion": 2,
+  "appName": "Aliaro",
+  "themeId": "clean-light",
+  "connectedCanvas": true,
+  "locales": [
+    "es",
+    "en"
+  ],
+  "locale": "en",
+  "device": "iphone",
+  "orientation": "portrait",
+  "appIcon": "/app-icon.png",
+  "slidesByDevice": {
+    "iphone": [
+      {
+        "id": "aliaro-01",
+        "layout": "hero",
+        "label": {
+          "es": "GRUPO FAMILIAR",
+          "en": "FAMILY GROUP"
+        },
+        "headline": {
+          "es": "Una familia,\nun solo espacio.",
+          "en": "One family.\nOne place."
+        },
+        "screenshot": "/screenshots/apple/iphone/{locale}/01.png",
+        "inverted": false,
+        "transforms": {
+          "device": {
+            "x": 153.18224783861672,
+            "y": 745.68,
+            "width": 1013.6355043227666,
+            "height": 2064.96,
+            "rotation": 0,
+            "zIndex": 3
+          }
+        }
+      },
+      {
+        "id": "aliaro-02",
+        "layout": "device-bottom",
+        "label": {
+          "es": "MENÚ SEMANAL",
+          "en": "WEEKLY MENU"
+        },
+        "headline": {
+          "es": "Qué cenar,\nresuelto.",
+          "en": "Dinner,\ndecided."
+        },
+        "screenshot": "/screenshots/apple/iphone/{locale}/02.png",
+        "inverted": true
+      },
+      {
+        "id": "aliaro-03",
+        "layout": "device-top",
+        "label": {
+          "es": "LISTA DE LA COMPRA",
+          "en": "SHOPPING LIST"
+        },
+        "headline": {
+          "es": "La compra,\nsin olvidos.",
+          "en": "Grocery runs,\nnever missed."
+        },
+        "screenshot": "/screenshots/apple/iphone/{locale}/03.png",
+        "inverted": false
+      },
+      {
+        "id": "aliaro-04",
+        "layout": "device-bottom",
+        "label": {
+          "es": "TAREAS DE CASA",
+          "en": "HOUSEHOLD TASKS"
+        },
+        "headline": {
+          "es": "Reparte las tareas\nde casa.",
+          "en": "Share the chores\nat home."
+        },
+        "screenshot": "/screenshots/apple/iphone/{locale}/04.png",
+        "inverted": true
+      },
+      {
+        "id": "aliaro-05",
+        "layout": "device-top",
+        "label": {
+          "es": "CALENDARIO",
+          "en": "CALENDAR"
+        },
+        "headline": {
+          "es": "Un calendario,\npara toda la familia.",
+          "en": "One calendar,\nfor the whole family."
+        },
+        "screenshot": "/screenshots/apple/iphone/{locale}/05.png",
+        "inverted": false
+      },
+      {
+        "id": "aliaro-06",
+        "layout": "device-bottom",
+        "label": {
+          "es": "RECORDATORIOS",
+          "en": "REMINDERS"
+        },
+        "headline": {
+          "es": "Nada se te\nolvida.",
+          "en": "Nothing slips\nyour mind."
+        },
+        "screenshot": "/screenshots/apple/iphone/{locale}/06.png",
+        "inverted": true
+      },
+      {
+        "id": "aliaro-07",
+        "layout": "device-top",
+        "label": {
+          "es": "CONTROL DE GASTOS",
+          "en": "SHARED EXPENSES"
+        },
+        "headline": {
+          "es": "Gastos compartidos,\nsin líos.",
+          "en": "Shared expenses,\nno drama."
+        },
+        "screenshot": "/screenshots/apple/iphone/{locale}/07.png",
+        "inverted": false
+      },
+      {
+        "id": "aliaro-08",
+        "layout": "device-bottom",
+        "label": {
+          "es": "ESTADÍSTICAS",
+          "en": "STATISTICS"
+        },
+        "headline": {
+          "es": "Tus gastos,\nde un vistazo.",
+          "en": "Your spending,\nat a glance."
+        },
+        "screenshot": "/screenshots/apple/iphone/{locale}/08.png",
+        "inverted": true
+      },
+      {
+        "id": "aliaro-09",
+        "layout": "device-top",
+        "label": {
+          "es": "PERSONALIZA",
+          "en": "CUSTOMIZE"
+        },
+        "headline": {
+          "es": "A tu manera,\npara todos.",
+          "en": "Your way,\nfor everyone."
+        },
+        "screenshot": "/screenshots/apple/iphone/{locale}/09.png",
+        "inverted": false
+      }
+    ],
+    "android": [
+      {
+        "id": "s_mppgoot8_5",
+        "layout": "hero",
+        "label": {
+          "en": "MEET YOUR APP"
+        },
+        "headline": {
+          "en": "Sell one\nidea per slide."
+        },
+        "screenshot": "",
+        "transforms": {
+          "device": {
+            "x": 221.0133038940457,
+            "y": 677.042167580437,
+            "width": 678.5844380403457,
+            "height": 1470.266282420749,
+            "rotation": 0,
+            "zIndex": 3
+          }
+        }
+      },
+      {
+        "id": "s_mppgoot8_6",
+        "layout": "device-bottom",
+        "label": {
+          "en": "FEATURE 01"
+        },
+        "headline": {
+          "en": "Your headline\nlives here."
+        },
+        "screenshot": "",
+        "transforms": {
+          "device": {
+            "x": 191.68310412906385,
+            "y": 659.512330975256,
+            "width": 678.5844380403457,
+            "height": 1470.266282420749,
+            "rotation": 0,
+            "zIndex": 3
+          }
+        }
+      },
+      {
+        "id": "s_mppgoot8_7",
+        "layout": "two-devices",
+        "label": {
+          "en": "FEATURE 02"
+        },
+        "headline": {
+          "en": "Show two\nscreens at once."
+        },
+        "screenshot": "",
+        "screenshotSecondary": "",
+        "transforms": {
+          "deviceSecondary": {
+            "x": 280.3938895417132,
+            "y": 525.2025777437636,
+            "width": 678.5844380403457,
+            "height": 1470.266282420749,
+            "rotation": 0,
+            "zIndex": 2
+          },
+          "device": {
+            "x": 143.75673196815296,
+            "y": 569.6411918847805,
+            "width": 610.7259942363112,
+            "height": 1323.239654178674,
+            "rotation": 0,
+            "zIndex": 3
+          }
+        }
+      },
+      {
+        "id": "s_mppgoot8_8",
+        "layout": "device-top",
+        "label": {
+          "en": "FEATURE 03"
+        },
+        "headline": {
+          "en": "Flip the contrast\nfor visual rhythm."
+        },
+        "screenshot": "",
+        "inverted": true
+      },
+      {
+        "id": "s_mppgoot8_9",
+        "layout": "no-device",
+        "label": {
+          "en": "MORE"
+        },
+        "headline": {
+          "en": "And so\nmuch more."
+        },
+        "screenshot": ""
+      }
+    ],
+    "ipad": [
+      {
+        "id": "s_mppgoot8_a",
+        "layout": "hero",
+        "label": {
+          "en": "MEET YOUR APP"
+        },
+        "headline": {
+          "en": "Made for\nthe big screen."
+        },
+        "screenshot": "",
+        "transforms": {
+          "device": {
+            "x": 68.64736263219729,
+            "y": 818.7701245593419,
+            "width": 1525.7087999999999,
+            "height": 1981.4399999999998,
+            "rotation": 0,
+            "zIndex": 3
+          }
+        }
+      },
+      {
+        "id": "s_mppgoot8_b",
+        "layout": "device-bottom",
+        "label": {
+          "en": "FEATURE 01"
+        },
+        "headline": {
+          "en": "Built for\nfocus."
+        },
+        "screenshot": ""
+      },
+      {
+        "id": "s_mppgoot8_c",
+        "layout": "device-top",
+        "label": {
+          "en": "FEATURE 02"
+        },
+        "headline": {
+          "en": "Always within reach."
+        },
+        "screenshot": "",
+        "inverted": true
+      }
+    ],
+    "android-7": [
+      {
+        "id": "s_mppgoot8_d",
+        "layout": "hero",
+        "label": {
+          "en": "MEET YOUR APP"
+        },
+        "headline": {
+          "en": "Pocket-sized\npower."
+        },
+        "screenshot": ""
+      },
+      {
+        "id": "s_mppgoot8_e",
+        "layout": "split-landscape",
+        "label": {
+          "en": "FEATURE 01"
+        },
+        "headline": {
+          "en": "Wide canvas,\nbigger ideas."
+        },
+        "screenshot": ""
+      }
+    ],
+    "android-10": [
+      {
+        "id": "s_mppgoot8_f",
+        "layout": "hero",
+        "label": {
+          "en": "MEET YOUR APP"
+        },
+        "headline": {
+          "en": "Made for\nthe big screen."
+        },
+        "screenshot": ""
+      },
+      {
+        "id": "s_mppgoot8_g",
+        "layout": "split-landscape",
+        "label": {
+          "en": "FEATURE 01"
+        },
+        "headline": {
+          "en": "Wide canvas,\nbigger ideas."
+        },
+        "screenshot": ""
+      }
+    ],
+    "feature-graphic": [
+      {
+        "id": "s_mppgoot8_h",
+        "layout": "feature-graphic",
+        "label": {},
+        "headline": {
+          "en": "Your tagline goes here."
+        },
+        "screenshot": ""
+      }
+    ]
+  },
+  "crossScreenMockupsByDevice": {
+    "iphone": [],
+    "ipad": [],
+    "android": [],
+    "android-7": [],
+    "android-10": [],
+    "feature-graphic": []
+  }
+}
