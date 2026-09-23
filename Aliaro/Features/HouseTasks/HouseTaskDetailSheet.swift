@@ -32,9 +32,15 @@ struct HouseTaskDetailSheet: View {
     }
 
     var body: some View {
+        trackedBody.trackScreen("house_task_detail")
+    }
+
+    @ViewBuilder
+    private var trackedBody: some View {
         NavigationStack {
             VStack(spacing: 16) {
                 ALIPrimaryButton(text: "Mark as done today", accent: ALIColors.houseTasksAccent) {
+                    Track.event("house_task_done_today", ["task_name": task.name, "source": "detail"])
                     let log = HouseTaskLog(
                         taskID: task.id, taskName: task.name,
                         createdByID: familySession.memberID,
@@ -53,6 +59,7 @@ struct HouseTaskDetailSheet: View {
                 ALITextButton(text: "Add with another date…", color: ALIColors.houseTasksAccent) {
                     newLogDate = .now
                     newLogNote = ""
+                    Track.event("house_task_add_past_tap", ["task_name": task.name])
                     showAddLog = true
                 }
 
@@ -86,10 +93,16 @@ struct HouseTaskDetailSheet: View {
                     ToolbarItem(placement: .topBarLeading) {
                         Menu {
                             if canEditTask {
-                                Button("Edit task", systemImage: "pencil") { showEditSheet = true }
+                                Button("Edit task", systemImage: "pencil") {
+                                    Track.event("house_task_edit_tap", ["task_name": task.name])
+                                    showEditSheet = true
+                                }
                             }
                             if canDeleteTask {
-                                Button("Delete task", systemImage: "trash", role: .destructive) { showDeleteTaskConfirm = true }
+                                Button("Delete task", systemImage: "trash", role: .destructive) {
+                                    Track.event("house_task_delete_tap", ["task_name": task.name, "logs": logs.count])
+                                    showDeleteTaskConfirm = true
+                                }
                             }
                         } label: {
                             Image(systemName: "ellipsis.circle")
@@ -102,6 +115,11 @@ struct HouseTaskDetailSheet: View {
             }
             .sheet(isPresented: $showAddLog) {
                 AddLogEntrySheet(date: $newLogDate, note: $newLogNote) {
+                    Track.event("house_task_done_past", [
+                        "task_name": task.name,
+                        "days_ago": Calendar.current.dateComponents([.day], from: newLogDate, to: .now).day ?? 0,
+                        "has_note": !newLogNote.trimmed.isEmpty
+                    ])
                     let log = HouseTaskLog(
                         taskID: task.id, taskName: task.name, completedAt: newLogDate,
                         note: newLogNote.trimmed.isEmpty ? nil : newLogNote.trimmed,
@@ -125,6 +143,7 @@ struct HouseTaskDetailSheet: View {
             ) {
                 if let log = logPendingDelete {
                     let logID = log.id
+                    Track.event("house_task_log_delete", ["task_name": task.name])
                     modelContext.delete(log)
                     dataSync.deleteHouseTaskLog(id: logID)
                     if let familyID = familySession.familyID {
@@ -179,6 +198,11 @@ private struct AddLogEntrySheet: View {
     let onAdd: () -> Void
 
     var body: some View {
+        trackedBody.trackScreen("house_task_log_new")
+    }
+
+    @ViewBuilder
+    private var trackedBody: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {

@@ -140,3 +140,32 @@ struct AliaroWordmark: View {
         }
     }
 }
+
+extension AliaroWordmark {
+    /// The wordmark as an `Image`, to drop inline into running text —
+    /// `Text("Get \(AliaroWordmark.inlineImage(size: 15, colorScheme: scheme)) Premium")`
+    /// — with the same salmon-dot "i" as the real logo. Rendered once per
+    /// size/color scheme and cached; `baselineOffset` it by
+    /// `inlineBaselineOffset(size:)` so it sits on the text's baseline.
+    @MainActor
+    static func inlineImage(size: CGFloat, colorScheme: ColorScheme) -> Image {
+        let key = "\(size)-\(colorScheme == .dark ? "dark" : "light")"
+        if let cached = inlineCache[key] { return Image(uiImage: cached).renderingMode(.original) }
+        let renderer = ImageRenderer(content: AliaroWordmark(size: size).environment(\.colorScheme, colorScheme))
+        renderer.scale = 3
+        let image = renderer.uiImage ?? UIImage()
+        inlineCache[key] = image
+        return Image(uiImage: image).renderingMode(.original)
+    }
+
+    /// The rendered wordmark's frame includes the font's descent below the
+    /// baseline; shifting it down by that much lines its letters up with
+    /// the surrounding text.
+    static func inlineBaselineOffset(size: CGFloat) -> CGFloat {
+        let weighted = UIFont.systemFont(ofSize: size, weight: .black)
+        let descriptor = weighted.fontDescriptor.withDesign(.rounded) ?? weighted.fontDescriptor
+        return UIFont(descriptor: descriptor, size: size).descender
+    }
+
+    @MainActor private static var inlineCache: [String: UIImage] = [:]
+}

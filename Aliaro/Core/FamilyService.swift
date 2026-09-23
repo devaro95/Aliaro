@@ -87,10 +87,14 @@ final class FamilyService: ObservableObject {
     func startCreatingFamily(familyName: String, myName: String, modelContext: ModelContext, dataSync: AppDataSyncCoordinator) {
         isCreatingFamily = true
         createFamilyError = nil
+        Track.event("family_create_start")
         Task {
             do {
                 try await createFamily(familyName: familyName, myName: myName, modelContext: modelContext, dataSync: dataSync)
+                Track.event("family_created")
+                Track.refreshUserProperties(memberCount: 1, role: "creator")
             } catch {
+                Track.event("family_create_error", ["error": String(describing: error)])
                 isCreatingFamily = false
                 createFamilyError = error.localizedDescription
             }
@@ -151,9 +155,13 @@ final class FamilyService: ObservableObject {
         isJoiningFamily = true
         joinFamilyError = nil
         Task {
+            Track.event("family_join_start", ["method": "qr_or_link"])
             do {
                 try await joinFamily(token: token, myName: myName, modelContext: modelContext, dataSync: dataSync)
+                Track.event("family_joined", ["method": "qr_or_link"])
+                Track.refreshUserProperties(role: "member")
             } catch {
+                Track.event("family_join_error", ["method": "qr_or_link", "error": String(describing: error)])
                 isJoiningFamily = false
                 joinFamilyError = error.localizedDescription
             }
@@ -166,9 +174,13 @@ final class FamilyService: ObservableObject {
         isJoiningFamily = true
         joinFamilyError = nil
         Task {
+            Track.event("family_join_start", ["method": "code"])
             do {
                 try await joinFamily(code: code, myName: myName, modelContext: modelContext, dataSync: dataSync)
+                Track.event("family_joined", ["method": "code"])
+                Track.refreshUserProperties(role: "member")
             } catch {
+                Track.event("family_join_error", ["method": "code", "error": String(describing: error)])
                 isJoiningFamily = false
                 joinFamilyError = error.localizedDescription
             }
@@ -247,8 +259,10 @@ final class FamilyService: ObservableObject {
               let familyName = response.familyName,
               let memberId = response.memberId,
               let memberName = response.memberName else {
+            Track.event("family_restore_result", ["found": false])
             return false
         }
+        Track.event("family_restore_result", ["found": true])
         session.setMembership(familyID: familyId, memberID: memberId, familyName: familyName)
         PremiumManager.shared.syncFamilyPremiumStatus()
         upsertLocalMember(
@@ -334,6 +348,7 @@ final class FamilyService: ObservableObject {
             throw NSError(domain: "Aliaro", code: 0, userInfo: [NSLocalizedDescriptionKey: "You don't belong to a family group yet"])
         }
         struct Body: Encodable { let familyId: UUID; let memberId: UUID }
+        Track.event("invite_created")
         return try await invokeEdgeFunction(
             "create-invite",
             options: FunctionInvokeOptions(body: Body(familyId: familyID, memberId: memberID))
@@ -421,6 +436,35 @@ final class FamilyService: ObservableObject {
         }
     }
 
+    // MARK: - RLS self-heal (link this device's auth_user_id)
+
+    /// Called once per launch, right after `AuthSession.ensureSession()`,
+    /// whenever this device already belongs to a family group. Supabase
+    /// RLS now scopes every table read/write to `family_members.auth_user_id
+    /// = auth.uid()`, but that column is only stamped at create/join time
+    /// (`create-family`/`join-family`) — a member row created before the
+    /// login-opcional feature existed has it `null`, or a device that lost
+    /// its Keychain session could drift out of sync with it. This calls
+    /// the `link-member-auth` edge function (service role, so it isn't
+    /// itself blocked by RLS) to (re)stamp the row for THIS device's
+    /// current session id. Idempotent and cheap; best-effort — a failure
+    /// here just means sync stays broken until the next successful call,
+    /// same as any other transient network issue, so it's never surfaced
+    /// as a user-facing error.
+    func linkAuthIfNeeded() async {
+        guard let familyID = session.familyID, let memberID = session.memberID else { return }
+        struct Body: Encodable { let familyId: UUID; let memberId: UUID; let deviceId: String }
+        struct LinkResponse: Decodable { let ok: Bool; let updated: Bool }
+        do {
+            let _: LinkResponse = try await invokeEdgeFunction(
+                "link-member-auth",
+                options: FunctionInvokeOptions(body: Body(familyId: familyID, memberId: memberID, deviceId: session.deviceID))
+            )
+        } catch {
+            print("⚠️ linkAuthIfNeeded failed (will retry next launch): \(error)")
+        }
+    }
+
     // MARK: - Remove a member (creator only)
 
     /// The group's creator removes another member. The removed device
@@ -436,6 +480,7 @@ final class FamilyService: ObservableObject {
             "remove-family-member",
             options: FunctionInvokeOptions(body: Body(familyId: familyID, requesterMemberId: requesterID, targetMemberId: memberID))
         )
+        Track.event("member_removed")
     }
 
     // MARK: - Permissions (creator, or an admin, only — never the creator's own)
@@ -464,6 +509,11 @@ final class FamilyService: ObservableObject {
                 restrictedPermissions: Array(restrictedPermissions), isAdmin: isAdmin
             ))
         )
+        Track.event("member_permissions_saved", [
+            "restricted_count": restrictedPermissions.count,
+            "restricted": restrictedPermissions.sorted().joined(separator: ","),
+            "is_admin": isAdmin
+        ])
     }
 
     // MARK: - We've been removed (detected in real time)
@@ -477,6 +527,8 @@ final class FamilyService: ObservableObject {
         clearAllLocalData(modelContext: modelContext)
         session.clearMembership()
         dataSync.wasRemovedFromFamily = false
+        Track.event("family_removed_by_admin")
+        Track.refreshUserProperties()
     }
 
     // MARK: - Leave the group
@@ -492,6 +544,7 @@ final class FamilyService: ObservableObject {
             "leave-family",
             options: FunctionInvokeOptions(body: Body(familyId: familyID, memberId: memberID))
         )
+        Track.event("family_left")
         await dataSync.stopAll()
         await stopSettingsSync()
         clearAllLocalData(modelContext: modelContext)
@@ -503,6 +556,7 @@ final class FamilyService: ObservableObject {
             FamilyMember.self, Dish.self, MealPlanEntry.self, GroceryItem.self,
             ShoppingList.self, ShoppingListEntry.self, HouseTask.self, HouseTaskLog.self,
             FamilyEvent.self, Reminder.self, Expense.self, ExpenseCategory.self, ActivityLogEntry.self,
+            ExpenseArchive.self,
         ]
         for type in types {
             try? modelContext.delete(model: type)
@@ -543,6 +597,7 @@ final class FamilyService: ObservableObject {
     /// family group. `tabs` is the full set of `AppTab.settingsKey`
     /// values that should be hidden.
     func updateDisabledTabs(_ tabs: Set<String>) async throws {
+        Track.event("family_tabs_changed", ["hidden": tabs.sorted().joined(separator: ","), "hidden_count": tabs.count])
         try await updateFamilySettings(disabledTabs: tabs, startTab: session.startTab)
     }
 
@@ -550,6 +605,7 @@ final class FamilyService: ObservableObject {
     /// the group. `nil` means no preference (falls back to the first
     /// visible tab).
     func updateStartTab(_ tab: String?) async throws {
+        Track.event("family_start_tab_changed", ["tab": tab ?? "default"])
         try await updateFamilySettings(disabledTabs: session.disabledTabs, startTab: tab)
     }
 
@@ -565,6 +621,7 @@ final class FamilyService: ObservableObject {
         )
         session.setDisabledTabs(Set(response.disabledTabs))
         session.setStartTab(response.startTab)
+        Track.refreshUserProperties()
     }
 
     /// Keeps `FamilySession.disabledTabs`/`startTab` live-updated when the

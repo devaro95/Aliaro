@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyLists/1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Merged with the generated Info.plist (GENERATE_INFOPLIST_FILE = YES).
+	     Screens are tracked manually (Track.screen / .trackScreen), so turn off
+	     Firebase's automatic UIKit screen_view events (they'd all read
+	     "UIHostingController"). -->
+	<!-- Only standard encryption (HTTPS/TLS via iOS) → exempt; skips the
+	     export compliance question on every upload. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<key>FirebaseAutomaticScreenReportingEnabled</key>
+	<false/>
+</dict>
+</plist>

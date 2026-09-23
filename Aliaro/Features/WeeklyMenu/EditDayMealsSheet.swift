@@ -25,6 +25,11 @@ struct EditDayMealsSheet: View {
     }
 
     var body: some View {
+        trackedBody.trackScreen("menu_day_editor")
+    }
+
+    @ViewBuilder
+    private var trackedBody: some View {
         NavigationStack {
             VStack(spacing: 20) {
                 if !canEdit {
@@ -39,8 +44,14 @@ struct EditDayMealsSheet: View {
                     }
                 }
 
-                mealPicker(label: "Lunch", selection: $lunchDish) { mealTypeBeingPicked = .lunch }
-                mealPicker(label: "Dinner", selection: $dinnerDish) { mealTypeBeingPicked = .dinner }
+                mealPicker(label: "Lunch", selection: $lunchDish) {
+                    Track.event("menu_meal_pick_tap", ["meal": "lunch", "weekday": String(describing: day)])
+                    mealTypeBeingPicked = .lunch
+                }
+                mealPicker(label: "Dinner", selection: $dinnerDish) {
+                    Track.event("menu_meal_pick_tap", ["meal": "dinner", "weekday": String(describing: day)])
+                    mealTypeBeingPicked = .dinner
+                }
 
                 Spacer()
 
@@ -56,7 +67,10 @@ struct EditDayMealsSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+                    Button("Cancel") {
+                        Track.event("menu_day_cancel", ["weekday": String(describing: day)])
+                        dismiss()
+                    }
                 }
             }
         }
@@ -106,6 +120,7 @@ struct EditDayMealsSheet: View {
 
                 if selection.wrappedValue != nil && canEdit {
                     Button {
+                        Track.event("menu_meal_clear_tap")
                         selection.wrappedValue = nil
                     } label: {
                         Image(systemName: "xmark.circle.fill")
@@ -132,6 +147,16 @@ struct EditDayMealsSheet: View {
         )
         let existing = try? modelContext.fetch(descriptor).first
         let familyID = familySession.familyID
+        // Analytics: only real changes (saving an untouched meal logs nothing).
+        let changed = (dish?.id != existing?.dishID) || (dish == nil) != (existing == nil)
+        if changed {
+            let eventName = dish == nil ? "menu_meal_removed" : (existing == nil ? "menu_meal_planned" : "menu_meal_changed")
+            Track.event(eventName, [
+                "weekday": String(describing: day),
+                "meal": String(describing: mealType),
+                "dish_name": dish?.name
+            ])
+        }
 
         if let dish {
             let entry: MealPlanEntry

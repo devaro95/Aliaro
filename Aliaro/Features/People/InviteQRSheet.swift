@@ -20,6 +20,11 @@ struct InviteQRSheet: View {
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
     var body: some View {
+        trackedBody.trackScreen("invite_qr")
+    }
+
+    @ViewBuilder
+    private var trackedBody: some View {
         NavigationStack {
             VStack(spacing: 24) {
                 Text("Invite someone")
@@ -70,6 +75,7 @@ struct InviteQRSheet: View {
                             .foregroundStyle(ALIColors.mutedInk)
 
                         Button {
+                            Track.event("invite_code_copied")
                             UIPasteboard.general.string = shortCode
                         } label: {
                             HStack(spacing: 10) {

@@ -75,6 +75,11 @@ struct LoginSheet: View {
     }
 
     var body: some View {
+        trackedBody.trackScreen("login")
+    }
+
+    @ViewBuilder
+    private var trackedBody: some View {
         NavigationStack {
             VStack(spacing: 20) {
                 Text(title)
@@ -143,10 +148,12 @@ struct LoginSheet: View {
             titleVisibility: .visible
         ) {
             Button("Continue — sign in and use that group instead", role: .destructive) {
+                Track.event("login_replace_group_choice", ["choice": "replace"])
                 usingSignInFallback = true
                 submitEmail()
             }
             Button("Leave this group & go to the login screen") {
+                Track.event("login_replace_group_choice", ["choice": "leave_first"])
                 Task { await leaveCurrentGroupAndReturnToLogin() }
             }
             Button("Cancel", role: .cancel) {}
@@ -159,6 +166,8 @@ struct LoginSheet: View {
         guard canSubmitEmail else { return }
         isSubmitting = true
         errorMessage = nil
+        let modeKey = effectiveMode == .link ? "link" : "sign_in"
+        Track.event("login_email_submit", ["mode": modeKey, "fallback": usingSignInFallback])
         Task {
             do {
                 switch effectiveMode {
@@ -168,9 +177,11 @@ struct LoginSheet: View {
                 isSubmitting = false
                 code = ""
                 step = .code
+                Track.event("login_code_sent", ["mode": modeKey])
             } catch {
                 isSubmitting = false
                 errorMessage = error.localizedDescription
+                Track.event("login_email_error", ["mode": modeKey, "already_registered": isAlreadyRegisteredError(error)])
                 if mode == .link, !usingSignInFallback, isAlreadyRegisteredError(error) {
                     // This device has its own group, and this email
                     // belongs to a different, already-registered account
@@ -193,6 +204,8 @@ struct LoginSheet: View {
     private func confirmCode() async {
         isSubmitting = true
         errorMessage = nil
+        let modeKey = effectiveMode == .link ? "link" : "sign_in"
+        Track.event("login_code_submit", ["mode": modeKey])
         do {
             switch effectiveMode {
             case .link:
@@ -211,11 +224,14 @@ struct LoginSheet: View {
                 try await authSession.confirmSignIn(email: email.trimmed, code: code.trimmed)
             }
             isSubmitting = false
+            Track.event("login_success", ["mode": modeKey, "replaced_group": usingSignInFallback])
+            Track.refreshUserProperties()
             onSuccess()
             dismiss()
         } catch {
             isSubmitting = false
             errorMessage = error.localizedDescription
+            Track.event("login_code_error", ["mode": modeKey])
         }
     }
 

@@ -14,6 +14,29 @@ struct PaywallView: View {
     @State private var isPurchasing = false
     @State private var errorMessage: String?
 
+    // Analytics: what opened this paywall, when, and how it ended.
+    @State private var trigger = Track.pendingPaywallTrigger
+    @State private var openedAt = Date.now
+    @State private var didPurchase = false
+    @State private var purchaseAttempts = 0
+    @State private var closedWithButton = false
+
+    private func planKey(_ plan: Plan) -> String { plan == .monthly ? "monthly" : "yearly" }
+
+    /// Common params for every paywall event.
+    private func paywallParams(_ extra: [String: Any?] = [:]) -> [String: Any?] {
+        var params: [String: Any?] = [
+            "trigger": trigger,
+            "plan": planKey(selectedPlan),
+            "product_id": selectedProduct?.id,
+            "price": selectedProduct.map { NSDecimalNumber(decimal: $0.price).doubleValue },
+            "currency": selectedProduct?.priceFormatStyle.currencyCode,
+            "seconds_open": Int(Date.now.timeIntervalSince(openedAt))
+        ]
+        extra.forEach { params[$0.key] = $0.value }
+        return params
+    }
+
     /// Cloud backup first -- it's the feature that matters most (losing
     /// your group's data on reinstall is the scariest thing Premium
     /// prevents), everything else keeps its normal order after it.
@@ -24,6 +47,33 @@ struct PaywallView: View {
             features.insert(cloud, at: 0)
         }
         return features
+    }
+
+    private struct FeatureRow: Identifiable {
+        let id: String
+        let title: LocalizedStringKey
+        let systemImage: String
+    }
+
+    /// Pairs of related features shown as a single paywall row when both
+    /// are premium, to keep the list short: the row takes the first
+    /// feature's place and icon.
+    private static let mergedRows: [(first: PremiumFeature, second: PremiumFeature, title: LocalizedStringKey)] = [
+        (.houseTasksStats, .economiaStats, "Task and finance statistics"),
+        (.unlimitedReminders, .unlimitedHouseTasks, "Unlimited reminders and house tasks")
+    ]
+
+    /// `lockedFeatures` as paywall rows, with `mergedRows` applied.
+    private var featureRows: [FeatureRow] {
+        let features = lockedFeatures
+        let merges = Self.mergedRows.filter { features.contains($0.first) && features.contains($0.second) }
+        return features.compactMap { feature in
+            if merges.contains(where: { $0.second == feature }) { return nil }
+            if let merge = merges.first(where: { $0.first == feature }) {
+                return FeatureRow(id: feature.rawValue, title: merge.title, systemImage: feature.systemImage)
+            }
+            return FeatureRow(id: feature.rawValue, title: feature.title, systemImage: feature.systemImage)
+        }
     }
 
     /// e.g. "3-month free trial", read straight from the product's
@@ -78,7 +128,7 @@ struct PaywallView: View {
                     ALIPrimaryButton(
                         text: isPurchasing ? "Processing…" : "Continue",
                         enabled: !isPurchasing && selectedProduct != nil,
-                        accent: ALIColors.economiaAccent,
+                        accent: ALIColors.primary,
                         action: purchase
                     )
                     ALITextButton(text: "Restore purchases", action: restore)
@@ -91,10 +141,30 @@ struct PaywallView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") { dismiss() }
+                    Button("Close") { closedWithButton = true; dismiss() }
                 }
             }
             .task { await premium.subscriptions.loadProducts() }
+            .onAppear {
+                trigger = Track.pendingPaywallTrigger
+                openedAt = .now
+                Track.screen("paywall")
+                Track.event("paywall_open", [
+                    "trigger": trigger,
+                    "locked_features": lockedFeatures.count,
+                    "default_plan": planKey(selectedPlan)
+                ])
+            }
+            .onDisappear {
+                Track.event("paywall_close", paywallParams([
+                    "converted": didPurchase,
+                    "purchase_attempts": purchaseAttempts,
+                    "method": closedWithButton ? "close_button" : (didPurchase ? "purchased" : "swipe")
+                ]))
+            }
+            .onChange(of: selectedPlan) { _, _ in
+                Track.event("paywall_plan_selected", paywallParams())
+            }
             .alert(
                 "Couldn't complete the purchase",
                 isPresented: Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })
@@ -118,6 +188,14 @@ struct PaywallView: View {
 
     private var header: some View {
         VStack(spacing: 10) {
+            // Same crown as the premium badges across the app, just bigger.
+            Image(systemName: "crown.fill")
+                .font(.system(size: 26, weight: .bold))
+                .foregroundStyle(ALIColors.onAccent)
+                .frame(width: 60, height: 60)
+                .background(ALIColors.sun)
+                .clipShape(Circle())
+                .padding(.bottom, 4)
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 AliaroWordmark(size: Self.wordmarkSize)
                 Text("Premium")
@@ -134,19 +212,16 @@ struct PaywallView: View {
     private var featuresCard: some View {
         ALICard {
             VStack(alignment: .leading, spacing: 10) {
-                ForEach(lockedFeatures) { feature in
+                ForEach(featureRows) { feature in
                     HStack(spacing: 12) {
                         Image(systemName: feature.systemImage)
                             .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(ALIColors.economiaAccent)
+                            .foregroundStyle(ALIColors.primary)
                             .frame(width: 24)
                         Text(feature.title)
                             .font(ALITypography.bodyMedium)
                             .foregroundStyle(ALIColors.ink)
                         Spacer()
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundStyle(ALIColors.success)
                     }
                 }
             }
@@ -163,6 +238,7 @@ struct PaywallView: View {
                     planRow(
                         title: "Yearly",
                         price: yearlyProduct.displayPrice,
+                        period: "/year",
                         subtitle: planSubtitle(
                             for: yearlyProduct,
                             fallback: nil
@@ -174,7 +250,8 @@ struct PaywallView: View {
                 if let monthlyProduct {
                     planRow(
                         title: "Monthly",
-                        price: "\(monthlyProduct.displayPrice)/month",
+                        price: monthlyProduct.displayPrice,
+                        period: "/month",
                         subtitle: planSubtitle(
                             for: monthlyProduct,
                             fallback: nil
@@ -189,6 +266,7 @@ struct PaywallView: View {
     private func planRow(
         title: LocalizedStringKey,
         price: String,
+        period: LocalizedStringKey,
         subtitle: LocalizedStringKey?,
         badge: LocalizedStringKey? = nil,
         isSelected: Bool,
@@ -203,29 +281,29 @@ struct PaywallView: View {
                     if let subtitle {
                         Text(subtitle)
                             .font(ALITypography.labelLarge)
-                            .foregroundStyle(ALIColors.economiaAccent)
+                            .foregroundStyle(ALIColors.primary)
                     }
                 }
                 Spacer()
                 VStack(alignment: .trailing, spacing: 2) {
-                    Text(price)
+                    (Text(price) + Text(period))
                         .font(ALITypography.titleLarge)
                         .foregroundStyle(ALIColors.ink)
                     if let badge {
                         Text(badge)
                             .font(ALITypography.labelLarge)
-                            .foregroundStyle(ALIColors.economiaAccent)
+                            .foregroundStyle(ALIColors.primary)
                     }
                 }
                 Image(systemName: isSelected ? "largecircle.fill.circle" : "circle")
-                    .foregroundStyle(isSelected ? ALIColors.economiaAccent : ALIColors.mutedInk)
+                    .foregroundStyle(isSelected ? ALIColors.primary : ALIColors.mutedInk)
             }
             .padding(16)
             .background(ALIColors.surface)
             .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .stroke(isSelected ? ALIColors.economiaAccent : ALIColors.outline, lineWidth: isSelected ? 2 : 1)
+                    .stroke(isSelected ? ALIColors.primary : ALIColors.outline, lineWidth: isSelected ? 2 : 1)
             )
         }
         .buttonStyle(.plain)
@@ -241,24 +319,45 @@ struct PaywallView: View {
     private func purchase() {
         guard let product = selectedProduct else { return }
         isPurchasing = true
+        purchaseAttempts += 1
+        Track.event("paywall_purchase_tap", paywallParams(["has_trial": trialText(for: product) != nil]))
         Task {
             defer { isPurchasing = false }
             do {
-                try await premium.subscriptions.purchase(product, appAccountToken: FamilySession.shared.memberID)
+                let outcome = try await premium.subscriptions.purchase(product, appAccountToken: FamilySession.shared.memberID)
+                switch outcome {
+                case .success:
+                    didPurchase = true
+                    Track.event("paywall_purchase_success", paywallParams())
+                case .cancelled:
+                    Track.event("paywall_purchase_cancel", paywallParams())
+                }
                 // Explicit dismiss right after a confirmed purchase, in
                 // addition to the .onChange below -- don't rely on the
                 // observed-property update alone to close the sheet.
                 if premium.subscriptions.isSubscribed { dismiss() }
             } catch {
+                if case SubscriptionError.pending = error {
+                    Track.event("paywall_purchase_pending", paywallParams())
+                } else {
+                    Track.event("paywall_purchase_error", paywallParams(["error": String(describing: error)]))
+                }
                 errorMessage = error.localizedDescription
             }
         }
     }
 
     private func restore() {
+        Track.event("paywall_restore_tap", paywallParams())
         Task {
-            do { try await premium.subscriptions.restorePurchases() }
-            catch { errorMessage = error.localizedDescription }
+            do {
+                try await premium.subscriptions.restorePurchases()
+                Track.event("paywall_restore_result", paywallParams(["restored": premium.subscriptions.isSubscribed]))
+                if premium.subscriptions.isSubscribed { didPurchase = true }
+            } catch {
+                Track.event("paywall_restore_error", paywallParams(["error": String(describing: error)]))
+                errorMessage = error.localizedDescription
+            }
         }
     }
 }

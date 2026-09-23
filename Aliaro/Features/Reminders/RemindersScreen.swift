@@ -35,6 +35,11 @@ struct RemindersScreen: View {
     private var canDelete: Bool { currentMember?.can(.remindersDelete) ?? true }
 
     var body: some View {
+        trackedBody.trackScreen("reminders")
+    }
+
+    @ViewBuilder
+    private var trackedBody: some View {
         ScrollView {
             Color.clear.frame(height: 0).trackBottomBarScroll(bottomBarScrollTracker)
 
@@ -42,7 +47,10 @@ struct RemindersScreen: View {
                 ALITopBar(title: "Reminders", accent: ALIColors.remindersAccent) {
                     if canCreate {
                         ALIFloatingButton(accent: ALIColors.remindersAccent) {
-                            if isNewReminderLocked { showPaywall = true } else { showAddSheet = true }
+                            if isNewReminderLocked { showPaywall = Track.paywall("new_reminder") } else {
+                                Track.event("reminder_add_tap", ["reminders": reminders.count])
+                                showAddSheet = true
+                            }
                         }
                         .scaleEffect(0.72)
                         .aliPremiumLockOverlay(isNewReminderLocked)
@@ -66,9 +74,15 @@ struct RemindersScreen: View {
                                     canDelete: canDelete,
                                     locked: isLocked,
                                     onOpenDetail: {
-                                        if isLocked { showPaywall = true } else { selectedReminder = reminder }
+                                        if isLocked { showPaywall = Track.paywall("locked_reminder_detail") } else {
+                                            Track.event("reminder_open", ["is_past": reminder.fireDate < .now])
+                                            selectedReminder = reminder
+                                        }
                                     },
-                                    onDelete: { reminderPendingDelete = reminder }
+                                    onDelete: {
+                                        Track.event("reminder_delete_tap")
+                                        reminderPendingDelete = reminder
+                                    }
                                 )
                                 if index < reminders.count - 1 {
                                     Divider().overlay(ALIColors.outline)

@@ -47,3 +47,4 @@ final class Expense {
         self.createdAt = createdAt
     }
 }
+

@@ -30,6 +30,11 @@ struct SelectDishSheet: View {
     }
 
     var body: some View {
+        trackedBody.trackScreen("dish_picker")
+    }
+
+    @ViewBuilder
+    private var trackedBody: some View {
         NavigationStack {
             VStack(spacing: 14) {
                 ALITextField(placeholder: "Search or create dish…", text: $searchText, onSubmit: createFromSearchIfNeeded)
@@ -68,6 +73,7 @@ struct SelectDishSheet: View {
                                     dish: dish,
                                     onSelect: { select(dish) },
                                     onEdit: {
+                                        Track.event("dish_edit_tap")
                                         renamingDish = dish
                                         renameText = dish.name
                                     },
@@ -93,6 +99,7 @@ struct SelectDishSheet: View {
                 Button("Cancel", role: .cancel) { renamingDish = nil }
                 Button("Save") {
                     if let dish = renamingDish, !renameText.trimmed.isEmpty {
+                        Track.event("dish_renamed", ["dish_name": renameText.trimmed])
                         dish.name = renameText.trimmed
                         if let familyID = familySession.familyID { dataSync.pushDish(dish, familyID: familyID) }
                     }
@@ -105,6 +112,7 @@ struct SelectDishSheet: View {
             ) {
                 if let dish = dishPendingDelete {
                     let dishID = dish.id
+                    Track.event("dish_deleted", ["dish_name": dish.name])
                     modelContext.delete(dish)
                     dataSync.deleteDish(id: dishID)
                 }
@@ -113,7 +121,14 @@ struct SelectDishSheet: View {
         .presentationDetents([.medium, .large])
     }
 
-    private func select(_ dish: Dish) {
+    private func select(_ dish: Dish, isNew: Bool = false) {
+        Track.event("dish_selected", [
+            "dish_name": dish.name,
+            "meal": String(describing: mealType),
+            "is_new": isNew,
+            "searching": !searchText.trimmed.isEmpty,
+            "catalog_size": catalog.count
+        ])
         onSelect(DishSelection(id: dish.id, name: dish.name))
         dismiss()
     }
@@ -124,7 +139,8 @@ struct SelectDishSheet: View {
         let dish = Dish(name: name)
         modelContext.insert(dish)
         if let familyID = familySession.familyID { dataSync.pushDish(dish, familyID: familyID) }
-        select(dish)
+        Track.event("dish_created", ["dish_name": name, "catalog_size": catalog.count + 1])
+        select(dish, isNew: true)
     }
 }
 

@@ -39,6 +39,11 @@ struct WeeklyMenuScreen: View {
     }
 
     var body: some View {
+        trackedBody.trackScreen("weekly_menu")
+    }
+
+    @ViewBuilder
+    private var trackedBody: some View {
         ScrollView {
             Color.clear.frame(height: 0).trackBottomBarScroll(bottomBarScrollTracker)
 
@@ -46,6 +51,7 @@ struct WeeklyMenuScreen: View {
                 ALITopBar(title: "Weekly menu", accent: ALIColors.weeklyMenuAccent) {
                     if !entries.isEmpty && canEditMenu {
                         Button {
+                            Track.event("menu_clear_tap", ["planned_meals": entries.count])
                             showClearConfirm = true
                         } label: {
                             Image(systemName: "trash")
@@ -63,6 +69,12 @@ struct WeeklyMenuScreen: View {
                     VStack(spacing: 0) {
                         ForEach(Array(Weekday.allCases.enumerated()), id: \.element.id) { index, day in
                             Button {
+                                Track.event("menu_day_open", [
+                                    "weekday": String(describing: day),
+                                    "is_today": day == todayWeekday,
+                                    "is_past": isPast(day),
+                                    "can_edit": canEditMenu
+                                ])
                                 dayBeingEdited = day
                             } label: {
                                 dayRow(day)
@@ -97,6 +109,7 @@ struct WeeklyMenuScreen: View {
     }
 
     private func clearAll() {
+        Track.event("menu_cleared", ["planned_meals": entries.count])
         withAnimation {
             for entry in entries {
                 let entryID = entry.id

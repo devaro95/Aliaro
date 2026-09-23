@@ -40,10 +40,18 @@ struct AppIntroView: View {
     private var isLastPage: Bool { page == pages.count - 1 }
 
     var body: some View {
+        trackedBody.trackScreen("onboarding_intro")
+    }
+
+    @ViewBuilder
+    private var trackedBody: some View {
         VStack(spacing: 0) {
             HStack {
                 Spacer()
-                ALITextButton(text: "Skip") { onFinish() }
+                ALITextButton(text: "Skip") {
+                    Track.event("intro_skip", ["page": page, "pages": pages.count])
+                    onFinish()
+                }
                     .frame(width: 80)
             }
             .padding(.top, 12)
@@ -57,6 +65,7 @@ struct AppIntroView: View {
                 }
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
+            .onChange(of: page) { _, p in Track.event("intro_page_view", ["page": p]) }
 
             HStack(spacing: 8) {
                 ForEach(pages.indices, id: \.self) { index in
@@ -71,6 +80,7 @@ struct AppIntroView: View {
             VStack(spacing: 12) {
                 if isLastPage {
                     ALIPrimaryButton(text: "Get started", accent: pages[page].accent) {
+                        Track.event("intro_complete", ["pages": pages.count])
                         onFinish()
                     }
                 } else {

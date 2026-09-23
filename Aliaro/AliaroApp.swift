@@ -24,7 +24,8 @@ struct AliaroApp: App {
             FamilyEvent.self,
             Expense.self,
             ExpenseCategory.self,
-            ActivityLogEntry.self
+            ActivityLogEntry.self,
+            ExpenseArchive.self
         ])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
         do {
@@ -69,10 +70,15 @@ struct AliaroApp: App {
                     Task {
                         await authSession.wipeStaleSessionIfFreshInstall()
                         await authSession.ensureSession()
+                        // RLS is scoped to family_members.auth_user_id — this
+                        // self-heals that column for the case it's stale/null
+                        // (see FamilyService.linkAuthIfNeeded doc comment).
+                        await familyService.linkAuthIfNeeded()
                     }
                     Task {
                         await premiumManager.start()
                     }
+                    Track.refreshUserProperties()
                 }
         }
         .modelContainer(modelContainer)

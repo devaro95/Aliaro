@@ -20,6 +20,11 @@ struct CreateFamilySheet: View {
     }
 
     var body: some View {
+        trackedBody.trackScreen("family_create")
+    }
+
+    @ViewBuilder
+    private var trackedBody: some View {
         NavigationStack {
             VStack(spacing: 20) {
                 Text("Create family group")

@@ -70,7 +70,10 @@ final class SubscriptionManager: ObservableObject {
     ///   device to reopen the app -- know which family's
     ///   `premium_member_id` to update. No token, no family lookup: pass
     ///   it whenever the buyer has joined a family group.
-    func purchase(_ product: Product, appAccountToken: UUID? = nil) async throws {
+    enum PurchaseOutcome { case success, cancelled }
+
+    @discardableResult
+    func purchase(_ product: Product, appAccountToken: UUID? = nil) async throws -> PurchaseOutcome {
         var options: Set<Product.PurchaseOption> = []
         if let appAccountToken {
             options.insert(.appAccountToken(appAccountToken))
@@ -84,15 +87,17 @@ final class SubscriptionManager: ObservableObject {
                 // silently leaving the paywall open with no feedback.
                 throw SubscriptionError.unverified
             }
+            Track.logTransaction(transaction)
             await transaction.finish()
             await refreshEntitlement()
+            return .success
         case .pending:
             // Awaiting approval (Ask to Buy, etc). Not an error, but the
             // entitlement isn't active yet, so tell the UI rather than
             // pretending the purchase finished.
             throw SubscriptionError.pending
         case .userCancelled:
-            break
+            return .cancelled
         @unknown default:
             throw SubscriptionError.unverified
         }
@@ -114,6 +119,7 @@ final class SubscriptionManager: ObservableObject {
         }
         isSubscribed = subscribed
         onEntitlementChanged?()
+        Track.refreshUserProperties()
     }
 
     private func listenForTransactionUpdates() {
@@ -121,6 +127,12 @@ final class SubscriptionManager: ObservableObject {
         updatesTask = Task { [weak self] in
             for await result in Transaction.updates {
                 if case .verified(let transaction) = result {
+                    Track.event("subscription_transaction_update", [
+                        "product_id": transaction.productID,
+                        "revoked": transaction.revocationDate != nil,
+                        "is_upgraded": transaction.isUpgraded
+                    ])
+                    Track.logTransaction(transaction)
                     await transaction.finish()
                     await self?.refreshEntitlement()
                 }

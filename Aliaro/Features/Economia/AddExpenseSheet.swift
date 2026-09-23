@@ -36,6 +36,11 @@ struct AddExpenseSheet: View {
     }
 
     var body: some View {
+        trackedBody.trackScreen("expense_editor")
+    }
+
+    @ViewBuilder
+    private var trackedBody: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
@@ -177,10 +182,12 @@ struct AddExpenseSheet: View {
         let isSelected = categoryIDs.contains(category.id)
         return Button {
             if locked {
-                showPaywall = true
+                showPaywall = Track.paywall("locked_category")
             } else if isSelected {
+                Track.event("expense_category_toggle", ["selected": false, "is_default": category.isDefault])
                 categoryIDs.remove(category.id)
             } else {
+                Track.event("expense_category_toggle", ["selected": true, "is_default": category.isDefault])
                 categoryIDs.insert(category.id)
             }
         } label: {
@@ -221,7 +228,10 @@ struct AddExpenseSheet: View {
 
     private var newCategoryRow: some View {
         Button {
-            if isNewCategoryLocked { showPaywall = true } else { showAddCategorySheet = true }
+            if isNewCategoryLocked { showPaywall = Track.paywall("new_category") } else {
+                Track.event("expense_category_new_tap", ["custom_categories": categories.filter { !$0.isDefault }.count])
+                showAddCategorySheet = true
+            }
         } label: {
             HStack(spacing: 12) {
                 Image(systemName: "plus.circle")
@@ -248,6 +258,14 @@ struct AddExpenseSheet: View {
         // Set's arbitrary order.
         let orderedCategoryIDs = categories.map(\.id).filter { categoryIDs.contains($0) }
         let wasEditing = expenseToEdit != nil
+        let selected = categories.filter { categoryIDs.contains($0.id) }
+        Track.event(wasEditing ? "expense_edited" : "expense_new", [
+            "is_income": isIncome,
+            "categories": selected.count,
+            "custom_categories": selected.filter { !$0.isDefault }.count,
+            "paid_by_me": personID == familySession.memberID,
+            "members": members.count
+        ])
 
         let expense: Expense
         if let existing = expenseToEdit {
@@ -305,6 +323,11 @@ private struct AddCategorySheet: View {
     private var canSave: Bool { !name.trimmed.isEmpty }
 
     var body: some View {
+        trackedBody.trackScreen("expense_category_new")
+    }
+
+    @ViewBuilder
+    private var trackedBody: some View {
         NavigationStack {
             VStack(spacing: 20) {
                 ALITextField(placeholder: "Category name", text: $name)
@@ -356,6 +379,7 @@ private struct AddCategorySheet: View {
         let trimmedName = name.trimmed
         guard !trimmedName.isEmpty else { return }
         let category = ExpenseCategory(name: trimmedName, emoji: emoji)
+        Track.event("expense_category_created", ["emoji": emoji])
         modelContext.insert(category)
         if let familyID = familySession.familyID {
             dataSync.pushCategory(category, familyID: familyID)

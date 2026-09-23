@@ -79,6 +79,11 @@ struct AddReminderSheet: View {
     }
 
     var body: some View {
+        trackedBody.trackScreen("reminder_editor")
+    }
+
+    @ViewBuilder
+    private var trackedBody: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
@@ -305,6 +310,14 @@ struct AddReminderSheet: View {
 
         let noticeSeconds = advanceNoticeSeconds
         let wasEditing = reminderToEdit != nil
+        Track.event(wasEditing ? "reminder_edited" : "reminder_new", [
+            "schedule_mode": String(describing: scheduleMode),
+            "notify_everyone": notifyEveryone,
+            "recipients": recipientIDs.count,
+            "advance_notices": noticeSeconds.count,
+            "has_note": !trimmedNote.isEmpty,
+            "minutes_ahead": Int(fireDate.timeIntervalSinceNow / 60)
+        ])
 
         let reminder: Reminder
         if let existing = reminderToEdit {

@@ -36,6 +36,11 @@ struct FamilyOnboardingView: View {
     }
 
     var body: some View {
+        trackedBody.trackScreen("family_onboarding")
+    }
+
+    @ViewBuilder
+    private var trackedBody: some View {
         Group {
             if isCheckingForExistingGroup {
                 checkingView
@@ -89,15 +94,19 @@ struct FamilyOnboardingView: View {
 
             VStack(spacing: 12) {
                 ALIPrimaryButton(text: "Create my family group", accent: ALIColors.familyAccent) {
+                    Track.event("onboarding_choice", ["choice": "create"])
                     route = .createName
                 }
                 ALISecondaryButton(text: "Join with a QR code") {
+                    Track.event("onboarding_choice", ["choice": "join_qr"])
                     route = .scanQR
                 }
                 ALITextButton(text: "Join with a code") {
+                    Track.event("onboarding_choice", ["choice": "join_code"])
                     route = .joinByCode
                 }
                 ALITextButton(text: isRestoring ? "Checking your account…" : "Already have an account? Log in") {
+                    Track.event("onboarding_choice", ["choice": "login"])
                     route = .login
                 }
                 .disabled(isRestoring)

@@ -51,8 +51,9 @@ struct MainTabContainer: View {
         }
         .background(ALIColors.background)
         .ignoresSafeArea(.keyboard)
-        .onChange(of: selected) { _, _ in
+        .onChange(of: selected) { old, new in
             bottomBarScrollTracker.reset()
+            Track.event("tab_selected", ["tab": new.settingsKey, "from": old.settingsKey])
         }
         .onChange(of: familySession.disabledTabs) { _, _ in
             // The tab we're on may have just been hidden by the admin
@@ -61,6 +62,9 @@ struct MainTabContainer: View {
             if !visibleTabs.contains(selected) {
                 selected = visibleTabs.first ?? .people
             }
+        }
+        .onAppear {
+            Track.event("app_home_shown", ["initial_tab": selected.settingsKey, "visible_tabs": visibleTabs.count])
         }
         .task {
             if let familyID = familySession.familyID, let memberID = familySession.memberID {

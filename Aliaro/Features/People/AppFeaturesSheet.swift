@@ -36,6 +36,11 @@ struct AppFeaturesSheet: View {
     }
 
     var body: some View {
+        trackedBody.trackScreen("app_features")
+    }
+
+    @ViewBuilder
+    private var trackedBody: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 16) {
