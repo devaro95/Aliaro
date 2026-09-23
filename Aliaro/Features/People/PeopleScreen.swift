@@ -188,17 +188,11 @@ struct PeopleScreen: View {
                     Image(systemName: "icloud.and.arrow.up")
                         .font(.system(size: 18, weight: .semibold))
                         .foregroundStyle(ALIColors.peopleAccent)
+                        .aliPremiumLockOverlay(isCloudBackupLocked)
                     VStack(alignment: .leading, spacing: 6) {
-                        HStack(spacing: 6) {
-                            Text("Don't lose this group")
-                                .font(ALITypography.bodyLarge)
-                                .foregroundStyle(ALIColors.ink)
-                            if isCloudBackupLocked {
-                                Image(systemName: "lock.fill")
-                                    .font(.system(size: 12, weight: .semibold))
-                                    .foregroundStyle(ALIColors.economiaAccent)
-                            }
-                        }
+                        Text("Don't lose this group")
+                            .font(ALITypography.bodyLarge)
+                            .foregroundStyle(ALIColors.ink)
                         Text(isCloudBackupLocked
                              ? "Aliaro Premium feature: sign in so you can always get your group back, even after reinstalling the app."
                              : "Sign in so you can always get it back, even after reinstalling the app.")
@@ -315,20 +309,19 @@ struct PeopleScreen: View {
     }
 
     /// Entry point into `HistorialSheet`: everyone in the group can see
-    /// who created, edited or deleted what — unless History is currently
-    /// premium and this device isn't subscribed, in which case it opens
-    /// the paywall instead.
+    /// who created, edited or deleted what. If History is locked it still
+    /// opens, as a premium preview with sample data.
     private var historialCard: some View {
         let isLocked = premium.isLocked(.historial)
         return Button {
-            if isLocked { showPaywall = true } else { showHistorialSheet = true }
+            showHistorialSheet = true
         } label: {
             ALICard {
                 HStack(spacing: 12) {
                     Image(systemName: "clock.arrow.circlepath")
                         .font(.system(size: 18, weight: .semibold))
                         .foregroundStyle(ALIColors.peopleAccent)
-                        .aliPremiumLockOverlay(isLocked)
+                        .aliPremiumPreviewOverlay(isLocked)
                     VStack(alignment: .leading, spacing: 2) {
                         Text("History")
                             .font(ALITypography.bodyLarge)

@@ -7,91 +7,96 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		016A0BECA2EF4D429D7CDD52 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = FFDCD37B58804BBBA8374EEE /* Localizable.xcstrings */; };
-		02557DF681104359A618802C /* FamilyPermission.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AB73C8E420F4E7F8CE61852 /* FamilyPermission.swift */; };
-		037C45843DB04956A0327D19 /* MainTabContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD6451EDDE054E18959A1DA2 /* MainTabContainer.swift */; };
-		03DA76FD55F247DFA877C2FA /* SplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 951ACC913A1E46B8AC9F9232 /* SplashView.swift */; };
-		050306AF54B94C7F8A81F901 /* MealPlanEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42BC4480B6CA4A43B35FC91B /* MealPlanEntry.swift */; };
+		8E3FBE1512044497B9BCFB29 /* AliaroApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 394C1C5F765A4E4D8908A9BC /* AliaroApp.swift */; };
+		4AD3BABA997B491387DFAD5C /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D979301D6F9145E18CD16856 /* ContentView.swift */; };
+		8D30F31F93864AF2A6AC3631 /* AuthSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = F130790896AB4003B9CD05C9 /* AuthSession.swift */; };
+		D8054B3994AF4E58AFF6D1A1 /* DataSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C90C4846BA04E1AAB736148 /* DataSync.swift */; };
+		18978F563B0F4ED2BD375033 /* DebugMockData.swift in Sources */ = {isa = PBXBuildFile; fileRef = E26AFB14FF66412EB92D108B /* DebugMockData.swift */; };
+		2304A049FF3C46C9B8C94B82 /* FamilyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F03E828668B94E799B261633 /* FamilyService.swift */; };
+		A17B3676D2B94090A5BF8A6C /* FamilySession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CC61BF421A84FBC8D554C5B /* FamilySession.swift */; };
+		768EB744946C48B8BD2294A7 /* InviteLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CE59658BA35458AB5A1C86E /* InviteLink.swift */; };
+		7D4AEC4C192B49ABBDE59D5D /* PremiumConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = E127D4F026454A1BAE6D9AEE /* PremiumConfig.swift */; };
+		8B00E2689AA445F19A5FA3D3 /* PremiumFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99B038F411D94F6FB8CB5AFA /* PremiumFeature.swift */; };
+		DB0FBF4FA7944CAD90B53F25 /* PremiumManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6920C2954F484637A8EE1E34 /* PremiumManager.swift */; };
+		2F98DDF1E9D54E0C8F18C80F /* PushNotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9CF3E31604543828F15716D /* PushNotificationManager.swift */; };
+		04B6FEBC5D464435853491EC /* QRScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5620218F1FC4B12AF703665 /* QRScannerView.swift */; };
+		E488392CC7D94ACD98391E7B /* RemoteSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = 172610B5835345699CCEC2CB /* RemoteSync.swift */; };
+		1BA2B1D8004944D7845EF255 /* SubscriptionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6858213C9A954116A52A5406 /* SubscriptionManager.swift */; };
+		D10F2F28BAC44D968C4DBC39 /* Supabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDDA6D1BCF4F4EE382DA1980 /* Supabase.swift */; };
+		417D87A36F9143BCA666E911 /* SupabaseConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = B124A82308D849E0B76F2AA9 /* SupabaseConfig.swift */; };
+		ED09E87DAC334BD596F434EE /* WidgetSnapshotWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA654591199F4ED9A3916386 /* WidgetSnapshotWriter.swift */; };
+		DA571B12B2F44E44B9F4D829 /* ALIColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38596AA93FCC4618AD946EA6 /* ALIColors.swift */; };
+		B3BC1E574CD34242BC929D8F /* ALIComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A275B094035420B8379E52B /* ALIComponents.swift */; };
+		F6549D9C3E0C48769711BFC8 /* ALITypography.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1881C70E7D6C4DE383891304 /* ALITypography.swift */; };
+		EF71C04D2D5243B6ABBFC626 /* AliaroWordmark.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3293308105594470B6A93F6B /* AliaroWordmark.swift */; };
+		3A9105B84F4A4D6DA908FA79 /* AddExpenseSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D8A47E8F9D447F184CDE253 /* AddExpenseSheet.swift */; };
+		508206C280DE42BDA42B2AB9 /* EconomiaScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 719988E8457A4C03B53CBB2B /* EconomiaScreen.swift */; };
+		F71099D24EF6464EB35B8D2E /* EconomiaStatsScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD4D7FB0023C42F69B9B7098 /* EconomiaStatsScreen.swift */; };
+		2B6C433774CB4BDCBD96BE1C /* ExpenseArchivePDF.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45CEC1413F1341B5AB331FC3 /* ExpenseArchivePDF.swift */; };
+		18B505C5FD7844DBB09BC211 /* ExpenseArchivesSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3405136BB6D45648A2929D5 /* ExpenseArchivesSheet.swift */; };
+		EF1C39AD22364C218F1AC463 /* FinanceBalances.swift in Sources */ = {isa = PBXBuildFile; fileRef = 130535300E43468986EF0929 /* FinanceBalances.swift */; };
+		C0EE5F0C7DD744D39AC731CC /* AddFamilyEventSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB716460979A4685936C37D3 /* AddFamilyEventSheet.swift */; };
+		01B7D4135533436E9B276A3B /* FamilyCalendarMonthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00DE9CE5C32941E5916EB551 /* FamilyCalendarMonthView.swift */; };
+		9D93CC65B58D47E79104FEBE /* FamilyCalendarScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A1B09F0F3964610931EB89F /* FamilyCalendarScreen.swift */; };
+		BAF993839FA248F6AF77E8E6 /* AddHouseTaskSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0B5AB85D2B2483C96A03AC3 /* AddHouseTaskSheet.swift */; };
+		5D5EFAF268A34218A9E258F8 /* HouseTaskDetailSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EB0936D837E4CD29BB5A26D /* HouseTaskDetailSheet.swift */; };
+		2A6FE1904C0042288EE65F34 /* HouseTasksCalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 771053A7BDA247D5A8B6E926 /* HouseTasksCalendarView.swift */; };
+		06B64D9462F84DF49899A3C7 /* HouseTasksScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26E36BD3E1394139803A4E67 /* HouseTasksScreen.swift */; };
+		407E90BD9A4B485499BBCFE4 /* HouseTasksStatsScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB5BE74DA2714209AC519938 /* HouseTasksStatsScreen.swift */; };
+		C64C1D5468A641AAA0E2EEA4 /* AppIntroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7309C2B7093F426E8B144230 /* AppIntroView.swift */; };
+		008A6A36D42B4D419596DED7 /* CreateFamilySheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1DAF4B197FF47D28DB529BA /* CreateFamilySheet.swift */; };
+		DBEE7781512E4AC8AA0895DC /* FamilyOnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E97E886231B42E59BCB11BC /* FamilyOnboardingView.swift */; };
+		F6076501FB1E4A1A9D64E175 /* NameEntrySheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 284C4E0104414917886B5384 /* NameEntrySheet.swift */; };
+		F5DB05F0F64D4F7C93B48BE4 /* AppFeaturesSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B13374A78DA4FFC9C37497E /* AppFeaturesSheet.swift */; };
+		5225E549956A4EC4A57104FC /* HistorialSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E95CC0A23664590B3D46309 /* HistorialSheet.swift */; };
+		DA9EBF7F0E6344E8847112C9 /* InviteQRSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B128AD0BB504DDC9820EE38 /* InviteQRSheet.swift */; };
+		6951B0A1B5944EDC8785B706 /* JoinByCodeSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BEFD864162047DFAD78E9AB /* JoinByCodeSheet.swift */; };
+		FEB18710EE5445C282D61941 /* JoinByQRSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2753282678F243D785CDCCE6 /* JoinByQRSheet.swift */; };
+		052D914D774B40FDBD02C0CE /* LoginSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 361BDBC7E8FF40D69028A97B /* LoginSheet.swift */; };
+		F7EC10708AAD42DAA76C6410 /* MemberPermissionsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51892F8289C84C5580233A7E /* MemberPermissionsSheet.swift */; };
+		08B5AD7B4C6244CDBA204FC6 /* PeopleScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = A59239CB8CC744E59135A266 /* PeopleScreen.swift */; };
+		41F6BE3928324497A786DC2B /* SyncReminderSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 153364E8EC924F4A97431483 /* SyncReminderSheet.swift */; };
+		6434B2C9E7C3421F89487578 /* PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 442CCF347FAF404BABDADA67 /* PaywallView.swift */; };
+		99C4CE6AE6634AEBB763DD54 /* AddReminderSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B229257D56CB4C23AA4F3BC8 /* AddReminderSheet.swift */; };
+		25781BFD104D43B98056CED0 /* RemindersScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8286F6D3043F45EF890830D1 /* RemindersScreen.swift */; };
+		0B068EE248CC40A5A5E924C1 /* AddToShoppingListSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB50882606D64C7590313F5C /* AddToShoppingListSheet.swift */; };
+		BA1E40ADD9004F709CEC019F /* ShoppingListScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = E420AFCC911045699D510F5C /* ShoppingListScreen.swift */; };
+		2B13DE5EE88F4461865B2BEC /* SplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1972C3CE24CE409AA75D7751 /* SplashView.swift */; };
+		252DB057ECF04C3D99762B50 /* EditDayMealsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAC40C4D4B064A9B9B3E5207 /* EditDayMealsSheet.swift */; };
+		C52A5B6368284AA69E45B049 /* SelectDishSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC4DCD0713843AD84678EFC /* SelectDishSheet.swift */; };
+		7F20F2C8201C4BC98D1BBCF3 /* WeeklyMenu+Support.swift in Sources */ = {isa = PBXBuildFile; fileRef = 289F5FFB8E23494A88D69F5C /* WeeklyMenu+Support.swift */; };
+		B86AAAA5D2A6483493C86091 /* WeeklyMenuScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C9EFA7800A243EE8E806182 /* WeeklyMenuScreen.swift */; };
+		9715BA91C5934113BF8BCA6A /* ActivityLogEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4845A4ECAE514AA8BBAB73E4 /* ActivityLogEntry.swift */; };
+		CF46654F83844D15BB26408A /* Dish.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AC8337849BF4C7F9AB9361C /* Dish.swift */; };
+		6C2EBD5BE84D47B8B0C60B95 /* Expense.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA6A826E0108463486510558 /* Expense.swift */; };
+		1A5FB692796C4D7F938D5E2C /* ExpenseArchive.swift in Sources */ = {isa = PBXBuildFile; fileRef = 836533959D6B45489A8DF002 /* ExpenseArchive.swift */; };
+		049FBEE5E16348C68920F1DE /* ExpenseCategory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 052CB46C2D3D4E48A4E48CA9 /* ExpenseCategory.swift */; };
+		88DB49EEDB9F443A88941F40 /* FamilyEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2855669BED224EABB9B880C2 /* FamilyEvent.swift */; };
+		2F8D6321A3DB430FBD581374 /* FamilyMember.swift in Sources */ = {isa = PBXBuildFile; fileRef = A335CD6C96C94640A92CC1D9 /* FamilyMember.swift */; };
+		9C7A7B1CB1B841769365F0A0 /* FamilyPermission.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFD612B3049642C59D9B7B94 /* FamilyPermission.swift */; };
+		0E24B3418C904985B7C96833 /* GroceryItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BDDB419226643A08840C9F7 /* GroceryItem.swift */; };
+		26126661880343B99618E0D2 /* HouseTask.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E366D2A9C4E4C4E80C2B4E8 /* HouseTask.swift */; };
+		C6340AF5BA7B4B00982964A6 /* HouseTaskLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68C4969FEEC84C75A1815635 /* HouseTaskLog.swift */; };
+		6469427D5D2A4BC797ECC703 /* MealPlanEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D92231F6D6642B79140F06B /* MealPlanEntry.swift */; };
+		F84C6A6C299C4D8ABD7CCC74 /* Reminder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D3D93E0A210404C8227DCD4 /* Reminder.swift */; };
+		CB0C1645AFC34A14BA6D5E06 /* ShoppingList.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC4C5D0C62F8443EB921252C /* ShoppingList.swift */; };
+		3835F29E377D40E095201DD8 /* ShoppingListEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 254236039AB541EEB9E1685B /* ShoppingListEntry.swift */; };
+		9E5DEE8BB844421EB9442FE1 /* ALIBottomBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = D12197642C67405ABDB9363C /* ALIBottomBar.swift */; };
+		EBD757560CA94EAB8FB4E115 /* AppTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D7E723F309A47B08DC28D26 /* AppTab.swift */; };
+		8F2E6FEDC0314F4DBCA1B969 /* MainTabContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF8E5F56AAE14E31BD60A167 /* MainTabContainer.swift */; };
+		2390C29D42464D24AF510181 /* AppGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = C087BEFA217E4A378771BA0A /* AppGroup.swift */; };
+		5D09F69A583340DF959A7186 /* WidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB54C97917B84B0D8124E21E /* WidgetSnapshot.swift */; };
+		ED26FDA4FDE549EF9145C65A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C11CC530239A412882F5CFA5 /* Assets.xcassets */; };
+		DEA04F5CB0704827B065BD88 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = F7449BAB5D184E91B8D08973 /* Localizable.xcstrings */; };
+		1DAA37B3A9E4432D83129454 /* AppGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = C087BEFA217E4A378771BA0A /* AppGroup.swift */; };
+		01EF6951FDFB49248B24995A /* WidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB54C97917B84B0D8124E21E /* WidgetSnapshot.swift */; };
+		1B1ECEEC6F154FF89DB23585 /* AliaroWidgetsBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 139D7D85361E491F90BD8855 /* AliaroWidgetsBundle.swift */; };
+		C725C79A9DB94F089A6C7FBE /* FamilyCalendarWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CD25DCD5890490A85F36DB2 /* FamilyCalendarWidget.swift */; };
+		558EEEAFCD91460BBE5935D3 /* RemindersWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40D2C1F9251C4CDE950C8BF8 /* RemindersWidget.swift */; };
+		490076F7E4E64B6785405498 /* TodayMenuWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3572683741E45C4BFB52E44 /* TodayMenuWidget.swift */; };
+
 		0FEF33B016C6496BA9654921 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = B7B7056AAFC64E8A9BC4C390 /* Supabase */; };
-		1878DEB47B9247BDB3F1E620 /* AppGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 202E00A15A424A9A93A50BB4 /* AppGroup.swift */; };
-		1F203A852CD44382BD1B3E3D /* DataSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72977E789C9D448AAA6E0026 /* DataSync.swift */; };
-		241E90A305BF4BCEB8B36200 /* ALIBottomBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98A29B092FC640EBAFCBF626 /* ALIBottomBar.swift */; };
-		261CCC2A3EF844F6836C18DB /* EconomiaStatsScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65B855A8DE744B6194F71896 /* EconomiaStatsScreen.swift */; };
-		29C930058E2F4706935D74D3 /* QRScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3194DDA8E874D48AB1C8AD2 /* QRScannerView.swift */; };
-		2A347D95CF92434C93B3B9D5 /* PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B73EEF76B2143A8945B204F /* PaywallView.swift */; };
-		2D3C6B18635C4613A46A3FA8 /* FamilyCalendarScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7B27A0FD7044463B3AADBC1 /* FamilyCalendarScreen.swift */; };
-		3064043252C946E088893D0A /* AliaroWordmark.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3241F73CBDE44D24A9D4BEA8 /* AliaroWordmark.swift */; };
-		34D455782F3740A0A9E24C08 /* FamilyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19676F5FC41843C88452F8CA /* FamilyService.swift */; };
-		35C4F66CD7284D678EE72EC9 /* FamilyOnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0AE4B0BD601433193C510CD /* FamilyOnboardingView.swift */; };
-		3767B1DE764341D3A9BAB0EC /* ShoppingList.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9188170E472443DA97A6555E /* ShoppingList.swift */; };
-		37CD90E60ADD465DA2BFE180 /* PremiumFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C26F4B0104240CA867E499C /* PremiumFeature.swift */; };
-		384F25A4258E49C8A09A3013 /* HistorialSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 989E50684B514ADF82EA065F /* HistorialSheet.swift */; };
-		39FEF7CE34694A988A0BC0CA /* ShoppingListEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4C0D252AB314DE281C8998C /* ShoppingListEntry.swift */; };
-		3C06D45B3E7D490F967A3B54 /* FamilyEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58981245DEFF45DFBB75102F /* FamilyEvent.swift */; };
-		4226FC95F44C4CB28DA0F013 /* AppGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 202E00A15A424A9A93A50BB4 /* AppGroup.swift */; };
-		44C8E9540A5941E8ABE82C33 /* WidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FCC1D686C504959BCC2F3DD /* WidgetSnapshot.swift */; };
-		480BC50DA5B14BAA823BF8C7 /* AddExpenseSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1930B3A3BBDB43C5BDE9FA58 /* AddExpenseSheet.swift */; };
-		4AABC52C77224138B14984D3 /* InviteLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA979B7C51B44ED081140E61 /* InviteLink.swift */; };
-		4C8751468E654CB88F89E41B /* Dish.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3B888FD1E8B4334A3C85A0A /* Dish.swift */; };
-		56823178305C83AE004FC890 /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 56823177305C83AD004FC890 /* StoreKit.framework */; };
-		5E830FDF0E83431B91A52E9B /* ExpenseCategory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06F02798BF3B4CE39E2D5582 /* ExpenseCategory.swift */; };
-		5F2B9ABB70E84CD295F76D38 /* PremiumManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38FFD0065B5B4FC799DDA788 /* PremiumManager.swift */; };
-		616E9D31826445C4860641D9 /* FamilySession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 716B6CB98E2A437598879BDD /* FamilySession.swift */; };
-		63BB2FA51F1648D9A985CDC1 /* AddToShoppingListSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1966CE56EEC469BA91A6592 /* AddToShoppingListSheet.swift */; };
-		648B27B9EFE44DF0826D13FB /* RemindersWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6AE697463404CD5818E5ABE /* RemindersWidget.swift */; };
-		6972716B9FDB4B22B61E4389 /* FamilyMember.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0618D5D96C064818B115E1DC /* FamilyMember.swift */; };
-		6A7A5D52F04444C2A0C8D531 /* RemoteSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12363BF580E045A8B8C4B0B6 /* RemoteSync.swift */; };
-		6C643BE58A6844249A43667B /* SyncReminderSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = D29B87CA0CD94D3ABF1E04EA /* SyncReminderSheet.swift */; };
-		6FC97B321A564E91ADB8195D /* AddHouseTaskSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50450113098849599E44F889 /* AddHouseTaskSheet.swift */; };
-		70D4C414F9C44EDE86182357 /* ALIColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64CE33FAEAA347108B51E3D3 /* ALIColors.swift */; };
-		740AED5CC073498EB01897F1 /* AppIntroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2916850968524D0182F92F32 /* AppIntroView.swift */; };
-		74BB8D839C1C445FB42DB991 /* Reminder.swift in Sources */ = {isa = PBXBuildFile; fileRef = E150D9A69DF14649ABE87245 /* Reminder.swift */; };
-		75D9B0A76ACF46E096887DD5 /* AppFeaturesSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 341F1E438AC94EFBA7ECCD8C /* AppFeaturesSheet.swift */; };
-		7646962431434B0283F5C300 /* AliaroApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FA9B62DD3D0482A9196F6F5 /* AliaroApp.swift */; };
-		77C0B734D89D426EA2921CE0 /* AliaroWidgetsBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 675708E4CB3B4FC1B5CB0E16 /* AliaroWidgetsBundle.swift */; };
-		7BFB984B183B4FCAB2221985 /* EditDayMealsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87D94AEBF0F641DA95C52B25 /* EditDayMealsSheet.swift */; };
-		7D497E2BC09842BD8AB10CBB /* ALIComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F9AC1CD956B467AACAAB74B /* ALIComponents.swift */; };
-		81FC6452FCD146E59A8F1477 /* PushNotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1AA0A046778445ABE8DF405 /* PushNotificationManager.swift */; };
-		84EB5634A8F143B1B3C357C6 /* HouseTasksScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D813528E2634BFE87B83D51 /* HouseTasksScreen.swift */; };
-		8F3F1123F36E4F96BDC7FE0E /* InviteQRSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5388AF792D44C60929AB417 /* InviteQRSheet.swift */; };
-		94A578B2335E423DA118B5F8 /* EconomiaScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9EBC0D88CD4448DA3449399 /* EconomiaScreen.swift */; };
-		9834DC4227014654B1F1C94A /* AuthSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = C712AA2627244194A0865395 /* AuthSession.swift */; };
-		9F61F16C9B304EFC99275534 /* HouseTaskDetailSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8D2F82FAD914AD09D832C3F /* HouseTaskDetailSheet.swift */; };
-		A1DF75307CC64758874AE7DA /* TodayMenuWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D3E2B532DA1421690CEB486 /* TodayMenuWidget.swift */; };
-		AA25596E2B444B859D619A74 /* HouseTaskLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0928A97FAD648A7A7E9BECE /* HouseTaskLog.swift */; };
-		AE1640165193432882F90258 /* SelectDishSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = C696421110CA4B83AE4EFD42 /* SelectDishSheet.swift */; };
-		AE606C87A0D54D4A8EBE22B8 /* JoinByCodeSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DF77F4ABC1B43A4BB5012B0 /* JoinByCodeSheet.swift */; };
-		AFEC69368D7B45F19B2E0B2F /* HouseTask.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1F80C5F07843129C20FA91 /* HouseTask.swift */; };
-		B0997E22B1374EDAB6D20315 /* HouseTasksCalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF14E4F4E3454466B70CE81D /* HouseTasksCalendarView.swift */; };
-		B2C13CDEED4E49A9B9C21F62 /* JoinByQRSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A49D4CCF54374904A0FC2274 /* JoinByQRSheet.swift */; };
-		B74E9A12A0554319A84A9AD8 /* AppTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6615CE9183243A198876894 /* AppTab.swift */; };
-		B825FF90215046208AFD7469 /* Supabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 574D8A2B44974D6C841764A7 /* Supabase.swift */; };
-		B9301CAE5CCB4BEABFB1E016 /* DebugMockData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D09CEADFD6347CEA3B0B383 /* DebugMockData.swift */; };
-		BEDB22B44C7343F68369B085 /* PeopleScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = B11A24A774FB4AB8B721534B /* PeopleScreen.swift */; };
-		C13ADA6F978B4B4CAC3F621D /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA45D9A9762444BF935F28BE /* ContentView.swift */; };
-		C259D4E667334971A82C45A1 /* LoginSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B867194FD2E4A4BBF87109E /* LoginSheet.swift */; };
-		C291EB5035B8452DB9AA66C4 /* SupabaseConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD745CA6128742F58ABE329F /* SupabaseConfig.swift */; };
-		C51AE572532D4E1EB5E9859C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 55B8BA9AEDC3444BBBF403D9 /* Assets.xcassets */; };
-		C6485C610FEF4D0C88F39E6A /* FamilyCalendarMonthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B77301A3AC8942BCAEE5E6EA /* FamilyCalendarMonthView.swift */; };
-		C682F262286A458EAC93CB2C /* CreateFamilySheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 864CE2F4A6C44E61A8218D24 /* CreateFamilySheet.swift */; };
-		CF488043869D4CA3866C9397 /* GroceryItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98A50B1E519945218B70C108 /* GroceryItem.swift */; };
-		D0D67F3DE22A4E7492F20D7C /* PremiumConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC62320D35F94C989A9CDC19 /* PremiumConfig.swift */; };
-		D10069D1689D4EB488C19A00 /* WeeklyMenu+Support.swift in Sources */ = {isa = PBXBuildFile; fileRef = F98D1373186743C3AE6F84AF /* WeeklyMenu+Support.swift */; };
-		D567634374DA4748B3373FA1 /* MemberPermissionsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BA4F8AC06884B71BF724C9D /* MemberPermissionsSheet.swift */; };
-		D7ABEC4DEDC24A1BAD5D8C2D /* RemindersScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = B452D239D2904C60BFF5B3D0 /* RemindersScreen.swift */; };
-		DB0B53D8EAEB4050AC09628B /* FamilyCalendarWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1ADF3C5691B4135A6A9B04B /* FamilyCalendarWidget.swift */; };
-		DC5494D2046A48F9A263DB7C /* WeeklyMenuScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FD7A5D39BAA4D4D8BBADBF3 /* WeeklyMenuScreen.swift */; };
-		DD1BC5C67ACB4AF2832AFF18 /* WidgetSnapshotWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40A5026E90994D8CA07BF1C8 /* WidgetSnapshotWriter.swift */; };
-		E04E8A33067F49ADA469A788 /* AddReminderSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52FB442A1C0E4430A51C441E /* AddReminderSheet.swift */; };
-		E0D24CD2A820452789DA5362 /* ALITypography.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBA77C170E3042E6B2A6A4C9 /* ALITypography.swift */; };
-		E0E72A52AA6C4FC2BCB6758B /* AddFamilyEventSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41040D8EC3AC4618A560C961 /* AddFamilyEventSheet.swift */; };
-		E5CC3E773ACB4A92ACAA43C7 /* NameEntrySheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A113E026BD26481B99E134F8 /* NameEntrySheet.swift */; };
-		EB3430E128264AAB9D99A476 /* ActivityLogEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90EF3377C965474796E5B4C9 /* ActivityLogEntry.swift */; };
-		F19EE820377F41EBA38F16E6 /* Expense.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C6D3F4EE1E54D8E857C1CA2 /* Expense.swift */; };
 		F409A44400EA4A9491D48DBE /* AliaroWidgetsExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = E3BA4BEAFA634ABCADBD26C5 /* AliaroWidgetsExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		F80EFFF8EA38430EB653D237 /* ShoppingListScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B4986E5D8774DE6834C082F /* ShoppingListScreen.swift */; };
-		FC063E9FF5C1427A9CFBB21B /* SubscriptionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9146362A6E6A4035A9F7061A /* SubscriptionManager.swift */; };
-		FCDD9441683A423F95D123C5 /* WidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FCC1D686C504959BCC2F3DD /* WidgetSnapshot.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -119,96 +124,108 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		0618D5D96C064818B115E1DC /* FamilyMember.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilyMember.swift; sourceTree = "<group>"; };
-		06F02798BF3B4CE39E2D5582 /* ExpenseCategory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpenseCategory.swift; sourceTree = "<group>"; };
-		0DF77F4ABC1B43A4BB5012B0 /* JoinByCodeSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JoinByCodeSheet.swift; sourceTree = "<group>"; };
-		0E4758F79B9B44A68FEC9A89 /* Products.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = Products.storekit; sourceTree = "<group>"; };
-		12363BF580E045A8B8C4B0B6 /* RemoteSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteSync.swift; sourceTree = "<group>"; };
-		1930B3A3BBDB43C5BDE9FA58 /* AddExpenseSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddExpenseSheet.swift; sourceTree = "<group>"; };
-		19676F5FC41843C88452F8CA /* FamilyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilyService.swift; sourceTree = "<group>"; };
-		1AB73C8E420F4E7F8CE61852 /* FamilyPermission.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilyPermission.swift; sourceTree = "<group>"; };
-		1B73EEF76B2143A8945B204F /* PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallView.swift; sourceTree = "<group>"; };
-		1C6D3F4EE1E54D8E857C1CA2 /* Expense.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Expense.swift; sourceTree = "<group>"; };
-		1D813528E2634BFE87B83D51 /* HouseTasksScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HouseTasksScreen.swift; sourceTree = "<group>"; };
-		202E00A15A424A9A93A50BB4 /* AppGroup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppGroup.swift; sourceTree = "<group>"; };
-		2916850968524D0182F92F32 /* AppIntroView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIntroView.swift; sourceTree = "<group>"; };
-		2C26F4B0104240CA867E499C /* PremiumFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PremiumFeature.swift; sourceTree = "<group>"; };
-		3241F73CBDE44D24A9D4BEA8 /* AliaroWordmark.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AliaroWordmark.swift; sourceTree = "<group>"; };
-		341F1E438AC94EFBA7ECCD8C /* AppFeaturesSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppFeaturesSheet.swift; sourceTree = "<group>"; };
-		38FFD0065B5B4FC799DDA788 /* PremiumManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PremiumManager.swift; sourceTree = "<group>"; };
-		3F9AC1CD956B467AACAAB74B /* ALIComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ALIComponents.swift; sourceTree = "<group>"; };
-		3FCC1D686C504959BCC2F3DD /* WidgetSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetSnapshot.swift; sourceTree = "<group>"; };
-		40A5026E90994D8CA07BF1C8 /* WidgetSnapshotWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetSnapshotWriter.swift; sourceTree = "<group>"; };
-		41040D8EC3AC4618A560C961 /* AddFamilyEventSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddFamilyEventSheet.swift; sourceTree = "<group>"; };
-		42BC4480B6CA4A43B35FC91B /* MealPlanEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MealPlanEntry.swift; sourceTree = "<group>"; };
-		4B867194FD2E4A4BBF87109E /* LoginSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginSheet.swift; sourceTree = "<group>"; };
-		50450113098849599E44F889 /* AddHouseTaskSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddHouseTaskSheet.swift; sourceTree = "<group>"; };
-		52FB442A1C0E4430A51C441E /* AddReminderSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddReminderSheet.swift; sourceTree = "<group>"; };
-		55B8BA9AEDC3444BBBF403D9 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		56823177305C83AD004FC890 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
-		574D8A2B44974D6C841764A7 /* Supabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Supabase.swift; sourceTree = "<group>"; };
-		58981245DEFF45DFBB75102F /* FamilyEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilyEvent.swift; sourceTree = "<group>"; };
-		5D3E2B532DA1421690CEB486 /* TodayMenuWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayMenuWidget.swift; sourceTree = "<group>"; };
-		64CE33FAEAA347108B51E3D3 /* ALIColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ALIColors.swift; sourceTree = "<group>"; };
-		65B855A8DE744B6194F71896 /* EconomiaStatsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EconomiaStatsScreen.swift; sourceTree = "<group>"; };
-		675708E4CB3B4FC1B5CB0E16 /* AliaroWidgetsBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AliaroWidgetsBundle.swift; sourceTree = "<group>"; };
-		6B4986E5D8774DE6834C082F /* ShoppingListScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingListScreen.swift; sourceTree = "<group>"; };
-		6D09CEADFD6347CEA3B0B383 /* DebugMockData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugMockData.swift; sourceTree = "<group>"; };
-		6FD7A5D39BAA4D4D8BBADBF3 /* WeeklyMenuScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyMenuScreen.swift; sourceTree = "<group>"; };
-		716B6CB98E2A437598879BDD /* FamilySession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilySession.swift; sourceTree = "<group>"; };
-		72977E789C9D448AAA6E0026 /* DataSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataSync.swift; sourceTree = "<group>"; };
-		7A1F80C5F07843129C20FA91 /* HouseTask.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HouseTask.swift; sourceTree = "<group>"; };
-		864CE2F4A6C44E61A8218D24 /* CreateFamilySheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateFamilySheet.swift; sourceTree = "<group>"; };
-		87D94AEBF0F641DA95C52B25 /* EditDayMealsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditDayMealsSheet.swift; sourceTree = "<group>"; };
-		8BA4F8AC06884B71BF724C9D /* MemberPermissionsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemberPermissionsSheet.swift; sourceTree = "<group>"; };
-		8FA9B62DD3D0482A9196F6F5 /* AliaroApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AliaroApp.swift; sourceTree = "<group>"; };
-		90EF3377C965474796E5B4C9 /* ActivityLogEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityLogEntry.swift; sourceTree = "<group>"; };
-		9146362A6E6A4035A9F7061A /* SubscriptionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionManager.swift; sourceTree = "<group>"; };
-		9188170E472443DA97A6555E /* ShoppingList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingList.swift; sourceTree = "<group>"; };
-		951ACC913A1E46B8AC9F9232 /* SplashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashView.swift; sourceTree = "<group>"; };
-		952CEE3A8D684761BA187334 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		989E50684B514ADF82EA065F /* HistorialSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistorialSheet.swift; sourceTree = "<group>"; };
-		98A29B092FC640EBAFCBF626 /* ALIBottomBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ALIBottomBar.swift; sourceTree = "<group>"; };
-		98A50B1E519945218B70C108 /* GroceryItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroceryItem.swift; sourceTree = "<group>"; };
-		A113E026BD26481B99E134F8 /* NameEntrySheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NameEntrySheet.swift; sourceTree = "<group>"; };
-		A49D4CCF54374904A0FC2274 /* JoinByQRSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JoinByQRSheet.swift; sourceTree = "<group>"; };
-		AA979B7C51B44ED081140E61 /* InviteLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InviteLink.swift; sourceTree = "<group>"; };
-		AD6451EDDE054E18959A1DA2 /* MainTabContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabContainer.swift; sourceTree = "<group>"; };
-		AD745CA6128742F58ABE329F /* SupabaseConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseConfig.swift; sourceTree = "<group>"; };
-		AF14E4F4E3454466B70CE81D /* HouseTasksCalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HouseTasksCalendarView.swift; sourceTree = "<group>"; };
-		B11A24A774FB4AB8B721534B /* PeopleScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeopleScreen.swift; sourceTree = "<group>"; };
-		B1ADF3C5691B4135A6A9B04B /* FamilyCalendarWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilyCalendarWidget.swift; sourceTree = "<group>"; };
-		B452D239D2904C60BFF5B3D0 /* RemindersScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemindersScreen.swift; sourceTree = "<group>"; };
-		B4C0D252AB314DE281C8998C /* ShoppingListEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingListEntry.swift; sourceTree = "<group>"; };
-		B77301A3AC8942BCAEE5E6EA /* FamilyCalendarMonthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilyCalendarMonthView.swift; sourceTree = "<group>"; };
-		C5388AF792D44C60929AB417 /* InviteQRSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InviteQRSheet.swift; sourceTree = "<group>"; };
-		C6615CE9183243A198876894 /* AppTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTab.swift; sourceTree = "<group>"; };
-		C696421110CA4B83AE4EFD42 /* SelectDishSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectDishSheet.swift; sourceTree = "<group>"; };
-		C712AA2627244194A0865395 /* AuthSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthSession.swift; sourceTree = "<group>"; };
-		C7B27A0FD7044463B3AADBC1 /* FamilyCalendarScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilyCalendarScreen.swift; sourceTree = "<group>"; };
-		CA45D9A9762444BF935F28BE /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-		CC62320D35F94C989A9CDC19 /* PremiumConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PremiumConfig.swift; sourceTree = "<group>"; };
-		D29B87CA0CD94D3ABF1E04EA /* SyncReminderSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncReminderSheet.swift; sourceTree = "<group>"; };
-		D6AE697463404CD5818E5ABE /* RemindersWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemindersWidget.swift; sourceTree = "<group>"; };
-		D9EBC0D88CD4448DA3449399 /* EconomiaScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EconomiaScreen.swift; sourceTree = "<group>"; };
-		E0AE4B0BD601433193C510CD /* FamilyOnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilyOnboardingView.swift; sourceTree = "<group>"; };
-		E150D9A69DF14649ABE87245 /* Reminder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Reminder.swift; sourceTree = "<group>"; };
-		E1966CE56EEC469BA91A6592 /* AddToShoppingListSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddToShoppingListSheet.swift; sourceTree = "<group>"; };
-		E3B888FD1E8B4334A3C85A0A /* Dish.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Dish.swift; sourceTree = "<group>"; };
-		E3BA4BEAFA634ABCADBD26C5 /* AliaroWidgetsExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = AliaroWidgetsExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
-		E8D2F82FAD914AD09D832C3F /* HouseTaskDetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HouseTaskDetailSheet.swift; sourceTree = "<group>"; };
-		F0928A97FAD648A7A7E9BECE /* HouseTaskLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HouseTaskLog.swift; sourceTree = "<group>"; };
-		F1AA0A046778445ABE8DF405 /* PushNotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushNotificationManager.swift; sourceTree = "<group>"; };
-		F3194DDA8E874D48AB1C8AD2 /* QRScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QRScannerView.swift; sourceTree = "<group>"; };
-		F7290FD81F7F45768052AC71 /* Aliaro.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Aliaro.entitlements; sourceTree = "<group>"; };
-		F98D1373186743C3AE6F84AF /* WeeklyMenu+Support.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WeeklyMenu+Support.swift"; sourceTree = "<group>"; };
+		2572DA38587D4EBDA8192B04 /* Aliaro.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Aliaro.entitlements; sourceTree = "<group>"; };
+		394C1C5F765A4E4D8908A9BC /* AliaroApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AliaroApp.swift; sourceTree = "<group>"; };
+		C11CC530239A412882F5CFA5 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		D979301D6F9145E18CD16856 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		F7449BAB5D184E91B8D08973 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
+		9519473BE7CF49C2B149BEFC /* Products.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = Products.storekit; sourceTree = "<group>"; };
+		F130790896AB4003B9CD05C9 /* AuthSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthSession.swift; sourceTree = "<group>"; };
+		8C90C4846BA04E1AAB736148 /* DataSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataSync.swift; sourceTree = "<group>"; };
+		E26AFB14FF66412EB92D108B /* DebugMockData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugMockData.swift; sourceTree = "<group>"; };
+		F03E828668B94E799B261633 /* FamilyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilyService.swift; sourceTree = "<group>"; };
+		2CC61BF421A84FBC8D554C5B /* FamilySession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilySession.swift; sourceTree = "<group>"; };
+		6CE59658BA35458AB5A1C86E /* InviteLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InviteLink.swift; sourceTree = "<group>"; };
+		E127D4F026454A1BAE6D9AEE /* PremiumConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PremiumConfig.swift; sourceTree = "<group>"; };
+		99B038F411D94F6FB8CB5AFA /* PremiumFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PremiumFeature.swift; sourceTree = "<group>"; };
+		6920C2954F484637A8EE1E34 /* PremiumManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PremiumManager.swift; sourceTree = "<group>"; };
+		D9CF3E31604543828F15716D /* PushNotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushNotificationManager.swift; sourceTree = "<group>"; };
+		A5620218F1FC4B12AF703665 /* QRScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QRScannerView.swift; sourceTree = "<group>"; };
+		172610B5835345699CCEC2CB /* RemoteSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteSync.swift; sourceTree = "<group>"; };
+		6858213C9A954116A52A5406 /* SubscriptionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionManager.swift; sourceTree = "<group>"; };
+		FDDA6D1BCF4F4EE382DA1980 /* Supabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Supabase.swift; sourceTree = "<group>"; };
+		B124A82308D849E0B76F2AA9 /* SupabaseConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseConfig.swift; sourceTree = "<group>"; };
+		FA654591199F4ED9A3916386 /* WidgetSnapshotWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetSnapshotWriter.swift; sourceTree = "<group>"; };
+		38596AA93FCC4618AD946EA6 /* ALIColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ALIColors.swift; sourceTree = "<group>"; };
+		5A275B094035420B8379E52B /* ALIComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ALIComponents.swift; sourceTree = "<group>"; };
+		1881C70E7D6C4DE383891304 /* ALITypography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ALITypography.swift; sourceTree = "<group>"; };
+		3293308105594470B6A93F6B /* AliaroWordmark.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AliaroWordmark.swift; sourceTree = "<group>"; };
+		3D8A47E8F9D447F184CDE253 /* AddExpenseSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddExpenseSheet.swift; sourceTree = "<group>"; };
+		719988E8457A4C03B53CBB2B /* EconomiaScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EconomiaScreen.swift; sourceTree = "<group>"; };
+		AD4D7FB0023C42F69B9B7098 /* EconomiaStatsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EconomiaStatsScreen.swift; sourceTree = "<group>"; };
+		45CEC1413F1341B5AB331FC3 /* ExpenseArchivePDF.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpenseArchivePDF.swift; sourceTree = "<group>"; };
+		F3405136BB6D45648A2929D5 /* ExpenseArchivesSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpenseArchivesSheet.swift; sourceTree = "<group>"; };
+		130535300E43468986EF0929 /* FinanceBalances.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinanceBalances.swift; sourceTree = "<group>"; };
+		BB716460979A4685936C37D3 /* AddFamilyEventSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddFamilyEventSheet.swift; sourceTree = "<group>"; };
+		00DE9CE5C32941E5916EB551 /* FamilyCalendarMonthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilyCalendarMonthView.swift; sourceTree = "<group>"; };
+		9A1B09F0F3964610931EB89F /* FamilyCalendarScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilyCalendarScreen.swift; sourceTree = "<group>"; };
+		E0B5AB85D2B2483C96A03AC3 /* AddHouseTaskSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddHouseTaskSheet.swift; sourceTree = "<group>"; };
+		7EB0936D837E4CD29BB5A26D /* HouseTaskDetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HouseTaskDetailSheet.swift; sourceTree = "<group>"; };
+		771053A7BDA247D5A8B6E926 /* HouseTasksCalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HouseTasksCalendarView.swift; sourceTree = "<group>"; };
+		26E36BD3E1394139803A4E67 /* HouseTasksScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HouseTasksScreen.swift; sourceTree = "<group>"; };
+		EB5BE74DA2714209AC519938 /* HouseTasksStatsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HouseTasksStatsScreen.swift; sourceTree = "<group>"; };
+		7309C2B7093F426E8B144230 /* AppIntroView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIntroView.swift; sourceTree = "<group>"; };
+		F1DAF4B197FF47D28DB529BA /* CreateFamilySheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateFamilySheet.swift; sourceTree = "<group>"; };
+		7E97E886231B42E59BCB11BC /* FamilyOnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilyOnboardingView.swift; sourceTree = "<group>"; };
+		284C4E0104414917886B5384 /* NameEntrySheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NameEntrySheet.swift; sourceTree = "<group>"; };
+		8B13374A78DA4FFC9C37497E /* AppFeaturesSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppFeaturesSheet.swift; sourceTree = "<group>"; };
+		3E95CC0A23664590B3D46309 /* HistorialSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistorialSheet.swift; sourceTree = "<group>"; };
+		8B128AD0BB504DDC9820EE38 /* InviteQRSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InviteQRSheet.swift; sourceTree = "<group>"; };
+		3BEFD864162047DFAD78E9AB /* JoinByCodeSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JoinByCodeSheet.swift; sourceTree = "<group>"; };
+		2753282678F243D785CDCCE6 /* JoinByQRSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JoinByQRSheet.swift; sourceTree = "<group>"; };
+		361BDBC7E8FF40D69028A97B /* LoginSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginSheet.swift; sourceTree = "<group>"; };
+		51892F8289C84C5580233A7E /* MemberPermissionsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemberPermissionsSheet.swift; sourceTree = "<group>"; };
+		A59239CB8CC744E59135A266 /* PeopleScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeopleScreen.swift; sourceTree = "<group>"; };
+		153364E8EC924F4A97431483 /* SyncReminderSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncReminderSheet.swift; sourceTree = "<group>"; };
+		442CCF347FAF404BABDADA67 /* PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallView.swift; sourceTree = "<group>"; };
+		B229257D56CB4C23AA4F3BC8 /* AddReminderSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddReminderSheet.swift; sourceTree = "<group>"; };
+		8286F6D3043F45EF890830D1 /* RemindersScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemindersScreen.swift; sourceTree = "<group>"; };
+		EB50882606D64C7590313F5C /* AddToShoppingListSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddToShoppingListSheet.swift; sourceTree = "<group>"; };
+		E420AFCC911045699D510F5C /* ShoppingListScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingListScreen.swift; sourceTree = "<group>"; };
+		1972C3CE24CE409AA75D7751 /* SplashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashView.swift; sourceTree = "<group>"; };
+		AAC40C4D4B064A9B9B3E5207 /* EditDayMealsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditDayMealsSheet.swift; sourceTree = "<group>"; };
+		4BC4DCD0713843AD84678EFC /* SelectDishSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectDishSheet.swift; sourceTree = "<group>"; };
+		289F5FFB8E23494A88D69F5C /* WeeklyMenu+Support.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WeeklyMenu+Support.swift"; sourceTree = "<group>"; };
+		6C9EFA7800A243EE8E806182 /* WeeklyMenuScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyMenuScreen.swift; sourceTree = "<group>"; };
+		4845A4ECAE514AA8BBAB73E4 /* ActivityLogEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityLogEntry.swift; sourceTree = "<group>"; };
+		6AC8337849BF4C7F9AB9361C /* Dish.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Dish.swift; sourceTree = "<group>"; };
+		AA6A826E0108463486510558 /* Expense.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Expense.swift; sourceTree = "<group>"; };
+		836533959D6B45489A8DF002 /* ExpenseArchive.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpenseArchive.swift; sourceTree = "<group>"; };
+		052CB46C2D3D4E48A4E48CA9 /* ExpenseCategory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpenseCategory.swift; sourceTree = "<group>"; };
+		2855669BED224EABB9B880C2 /* FamilyEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilyEvent.swift; sourceTree = "<group>"; };
+		A335CD6C96C94640A92CC1D9 /* FamilyMember.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilyMember.swift; sourceTree = "<group>"; };
+		BFD612B3049642C59D9B7B94 /* FamilyPermission.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilyPermission.swift; sourceTree = "<group>"; };
+		1BDDB419226643A08840C9F7 /* GroceryItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroceryItem.swift; sourceTree = "<group>"; };
+		6E366D2A9C4E4C4E80C2B4E8 /* HouseTask.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HouseTask.swift; sourceTree = "<group>"; };
+		68C4969FEEC84C75A1815635 /* HouseTaskLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HouseTaskLog.swift; sourceTree = "<group>"; };
+		4D92231F6D6642B79140F06B /* MealPlanEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MealPlanEntry.swift; sourceTree = "<group>"; };
+		5D3D93E0A210404C8227DCD4 /* Reminder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Reminder.swift; sourceTree = "<group>"; };
+		CC4C5D0C62F8443EB921252C /* ShoppingList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingList.swift; sourceTree = "<group>"; };
+		254236039AB541EEB9E1685B /* ShoppingListEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingListEntry.swift; sourceTree = "<group>"; };
+		D12197642C67405ABDB9363C /* ALIBottomBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ALIBottomBar.swift; sourceTree = "<group>"; };
+		7D7E723F309A47B08DC28D26 /* AppTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTab.swift; sourceTree = "<group>"; };
+		BF8E5F56AAE14E31BD60A167 /* MainTabContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabContainer.swift; sourceTree = "<group>"; };
+		C087BEFA217E4A378771BA0A /* AppGroup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppGroup.swift; sourceTree = "<group>"; };
+		AB54C97917B84B0D8124E21E /* WidgetSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetSnapshot.swift; sourceTree = "<group>"; };
+		139D7D85361E491F90BD8855 /* AliaroWidgetsBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AliaroWidgetsBundle.swift; sourceTree = "<group>"; };
+		426EE525BBA64AF1AD27269F /* AliaroWidgetsExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AliaroWidgetsExtension.entitlements; sourceTree = "<group>"; };
+		9CD25DCD5890490A85F36DB2 /* FamilyCalendarWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilyCalendarWidget.swift; sourceTree = "<group>"; };
+		0B541ECD6AA14BDCA174958C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		40D2C1F9251C4CDE950C8BF8 /* RemindersWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemindersWidget.swift; sourceTree = "<group>"; };
+		F3572683741E45C4BFB52E44 /* TodayMenuWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayMenuWidget.swift; sourceTree = "<group>"; };
 		FAA17B628B4C4513AFD4C4AB /* Aliaro.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Aliaro.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		FBA77C170E3042E6B2A6A4C9 /* ALITypography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ALITypography.swift; sourceTree = "<group>"; };
-		FF99B2528E3641E7B36E457E /* AliaroWidgetsExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AliaroWidgetsExtension.entitlements; sourceTree = "<group>"; };
-		FFDCD37B58804BBBA8374EEE /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
+		E3BA4BEAFA634ABCADBD26C5 /* AliaroWidgetsExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = AliaroWidgetsExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		EDFB19B198B84CE3AC90F855 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0FEF33B016C6496BA9654921 /* Supabase in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		0278A7F50CC14A249CD4016D /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -216,153 +233,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		EDFB19B198B84CE3AC90F855 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				0FEF33B016C6496BA9654921 /* Supabase in Frameworks */,
-				56823178305C83AE004FC890 /* StoreKit.framework in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		0336E51D04FE49CC921D75CD /* Premium */ = {
-			isa = PBXGroup;
-			children = (
-				1B73EEF76B2143A8945B204F /* PaywallView.swift */,
-			);
-			path = Premium;
-			sourceTree = "<group>";
-		};
-		105D4848B2E1440C8EBA3464 /* Reminders */ = {
-			isa = PBXGroup;
-			children = (
-				52FB442A1C0E4430A51C441E /* AddReminderSheet.swift */,
-				B452D239D2904C60BFF5B3D0 /* RemindersScreen.swift */,
-			);
-			path = Reminders;
-			sourceTree = "<group>";
-		};
-		13D598667C9E471C8D0BB4C8 /* Navigation */ = {
-			isa = PBXGroup;
-			children = (
-				98A29B092FC640EBAFCBF626 /* ALIBottomBar.swift */,
-				C6615CE9183243A198876894 /* AppTab.swift */,
-				AD6451EDDE054E18959A1DA2 /* MainTabContainer.swift */,
-			);
-			path = Navigation;
-			sourceTree = "<group>";
-		};
-		143C3DE92FB642D697FBF6DF /* AliaroShared */ = {
-			isa = PBXGroup;
-			children = (
-				202E00A15A424A9A93A50BB4 /* AppGroup.swift */,
-				3FCC1D686C504959BCC2F3DD /* WidgetSnapshot.swift */,
-			);
-			path = AliaroShared;
-			sourceTree = "<group>";
-		};
-		195280C5FD7647F18D801678 /* Core */ = {
-			isa = PBXGroup;
-			children = (
-				C712AA2627244194A0865395 /* AuthSession.swift */,
-				72977E789C9D448AAA6E0026 /* DataSync.swift */,
-				6D09CEADFD6347CEA3B0B383 /* DebugMockData.swift */,
-				19676F5FC41843C88452F8CA /* FamilyService.swift */,
-				716B6CB98E2A437598879BDD /* FamilySession.swift */,
-				AA979B7C51B44ED081140E61 /* InviteLink.swift */,
-				CC62320D35F94C989A9CDC19 /* PremiumConfig.swift */,
-				2C26F4B0104240CA867E499C /* PremiumFeature.swift */,
-				38FFD0065B5B4FC799DDA788 /* PremiumManager.swift */,
-				F1AA0A046778445ABE8DF405 /* PushNotificationManager.swift */,
-				F3194DDA8E874D48AB1C8AD2 /* QRScannerView.swift */,
-				12363BF580E045A8B8C4B0B6 /* RemoteSync.swift */,
-				9146362A6E6A4035A9F7061A /* SubscriptionManager.swift */,
-				574D8A2B44974D6C841764A7 /* Supabase.swift */,
-				AD745CA6128742F58ABE329F /* SupabaseConfig.swift */,
-				40A5026E90994D8CA07BF1C8 /* WidgetSnapshotWriter.swift */,
-			);
-			path = Core;
-			sourceTree = "<group>";
-		};
-		2FB284E3D9FE40459876C293 /* Models */ = {
-			isa = PBXGroup;
-			children = (
-				90EF3377C965474796E5B4C9 /* ActivityLogEntry.swift */,
-				E3B888FD1E8B4334A3C85A0A /* Dish.swift */,
-				1C6D3F4EE1E54D8E857C1CA2 /* Expense.swift */,
-				06F02798BF3B4CE39E2D5582 /* ExpenseCategory.swift */,
-				58981245DEFF45DFBB75102F /* FamilyEvent.swift */,
-				0618D5D96C064818B115E1DC /* FamilyMember.swift */,
-				1AB73C8E420F4E7F8CE61852 /* FamilyPermission.swift */,
-				98A50B1E519945218B70C108 /* GroceryItem.swift */,
-				7A1F80C5F07843129C20FA91 /* HouseTask.swift */,
-				F0928A97FAD648A7A7E9BECE /* HouseTaskLog.swift */,
-				42BC4480B6CA4A43B35FC91B /* MealPlanEntry.swift */,
-				E150D9A69DF14649ABE87245 /* Reminder.swift */,
-				9188170E472443DA97A6555E /* ShoppingList.swift */,
-				B4C0D252AB314DE281C8998C /* ShoppingListEntry.swift */,
-			);
-			path = Models;
-			sourceTree = "<group>";
-		};
-		38D819EB74A34C509A180D3D /* WeeklyMenu */ = {
-			isa = PBXGroup;
-			children = (
-				87D94AEBF0F641DA95C52B25 /* EditDayMealsSheet.swift */,
-				C696421110CA4B83AE4EFD42 /* SelectDishSheet.swift */,
-				F98D1373186743C3AE6F84AF /* WeeklyMenu+Support.swift */,
-				6FD7A5D39BAA4D4D8BBADBF3 /* WeeklyMenuScreen.swift */,
-			);
-			path = WeeklyMenu;
-			sourceTree = "<group>";
-		};
-		56823176305C83AD004FC890 /* Frameworks */ = {
-			isa = PBXGroup;
-			children = (
-				56823177305C83AD004FC890 /* StoreKit.framework */,
-			);
-			name = Frameworks;
-			sourceTree = "<group>";
-		};
-		5E692FDD29D24E668325DC56 /* Onboarding */ = {
-			isa = PBXGroup;
-			children = (
-				2916850968524D0182F92F32 /* AppIntroView.swift */,
-				864CE2F4A6C44E61A8218D24 /* CreateFamilySheet.swift */,
-				E0AE4B0BD601433193C510CD /* FamilyOnboardingView.swift */,
-				A113E026BD26481B99E134F8 /* NameEntrySheet.swift */,
-			);
-			path = Onboarding;
-			sourceTree = "<group>";
-		};
-		66DB0619BCCF4E7AB345110F /* Aliaro */ = {
-			isa = PBXGroup;
-			children = (
-				F7290FD81F7F45768052AC71 /* Aliaro.entitlements */,
-				8FA9B62DD3D0482A9196F6F5 /* AliaroApp.swift */,
-				55B8BA9AEDC3444BBBF403D9 /* Assets.xcassets */,
-				CA45D9A9762444BF935F28BE /* ContentView.swift */,
-				FFDCD37B58804BBBA8374EEE /* Localizable.xcstrings */,
-				0E4758F79B9B44A68FEC9A89 /* Products.storekit */,
-				195280C5FD7647F18D801678 /* Core */,
-				B01A75C8CE9645B59243F67B /* DesignSystem */,
-				838C11B7207040EFAC116A6F /* Features */,
-				2FB284E3D9FE40459876C293 /* Models */,
-				13D598667C9E471C8D0BB4C8 /* Navigation */,
-			);
-			path = Aliaro;
-			sourceTree = "<group>";
-		};
 		6D68F50690314D93829540D8 = {
 			isa = PBXGroup;
 			children = (
-				66DB0619BCCF4E7AB345110F /* Aliaro */,
-				143C3DE92FB642D697FBF6DF /* AliaroShared */,
-				F956D97DA37C4864AB85F7FC /* AliaroWidgets */,
-				56823176305C83AD004FC890 /* Frameworks */,
+				B18F55B6D8AD483194C65197 /* Aliaro */,
+				849662D4AEAF4F66ACA4A830 /* AliaroShared */,
+				CCBFB20C74FE4716BAED51F1 /* AliaroWidgets */,
 				818840976DA64EA79BD25E75 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -376,107 +255,232 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		838C11B7207040EFAC116A6F /* Features */ = {
+		01121C9214634AD1A049DC80 /* Core */ = {
 			isa = PBXGroup;
 			children = (
-				B1BB33865BEA44B0A8D40FCF /* Economia */,
-				B1F3B9F691DD46D195B8EA18 /* FamilyCalendar */,
-				940DB6FB87FC4A019FE78C56 /* HouseTasks */,
-				5E692FDD29D24E668325DC56 /* Onboarding */,
-				B1B37EE4EB1C400E808FABD5 /* People */,
-				0336E51D04FE49CC921D75CD /* Premium */,
-				105D4848B2E1440C8EBA3464 /* Reminders */,
-				D8A1223257E24A3DBC444292 /* ShoppingList */,
-				DE65B13C1C3446E9AC3E7B5A /* Splash */,
-				38D819EB74A34C509A180D3D /* WeeklyMenu */,
+				F130790896AB4003B9CD05C9,
+				8C90C4846BA04E1AAB736148,
+				E26AFB14FF66412EB92D108B,
+				F03E828668B94E799B261633,
+				2CC61BF421A84FBC8D554C5B,
+				6CE59658BA35458AB5A1C86E,
+				E127D4F026454A1BAE6D9AEE,
+				99B038F411D94F6FB8CB5AFA,
+				6920C2954F484637A8EE1E34,
+				D9CF3E31604543828F15716D,
+				A5620218F1FC4B12AF703665,
+				172610B5835345699CCEC2CB,
+				6858213C9A954116A52A5406,
+				FDDA6D1BCF4F4EE382DA1980,
+				B124A82308D849E0B76F2AA9,
+				FA654591199F4ED9A3916386
 			);
-			path = Features;
+			path = Core;
 			sourceTree = "<group>";
 		};
-		940DB6FB87FC4A019FE78C56 /* HouseTasks */ = {
+		B0D7C0898D0A45B2A0877D64 /* DesignSystem */ = {
 			isa = PBXGroup;
 			children = (
-				50450113098849599E44F889 /* AddHouseTaskSheet.swift */,
-				E8D2F82FAD914AD09D832C3F /* HouseTaskDetailSheet.swift */,
-				AF14E4F4E3454466B70CE81D /* HouseTasksCalendarView.swift */,
-				1D813528E2634BFE87B83D51 /* HouseTasksScreen.swift */,
-			);
-			path = HouseTasks;
-			sourceTree = "<group>";
-		};
-		B01A75C8CE9645B59243F67B /* DesignSystem */ = {
-			isa = PBXGroup;
-			children = (
-				64CE33FAEAA347108B51E3D3 /* ALIColors.swift */,
-				3F9AC1CD956B467AACAAB74B /* ALIComponents.swift */,
-				FBA77C170E3042E6B2A6A4C9 /* ALITypography.swift */,
-				3241F73CBDE44D24A9D4BEA8 /* AliaroWordmark.swift */,
+				38596AA93FCC4618AD946EA6,
+				5A275B094035420B8379E52B,
+				1881C70E7D6C4DE383891304,
+				3293308105594470B6A93F6B
 			);
 			path = DesignSystem;
 			sourceTree = "<group>";
 		};
-		B1B37EE4EB1C400E808FABD5 /* People */ = {
+		89C3E8DB1EC74A4FBF5C3375 /* Economia */ = {
 			isa = PBXGroup;
 			children = (
-				341F1E438AC94EFBA7ECCD8C /* AppFeaturesSheet.swift */,
-				989E50684B514ADF82EA065F /* HistorialSheet.swift */,
-				C5388AF792D44C60929AB417 /* InviteQRSheet.swift */,
-				0DF77F4ABC1B43A4BB5012B0 /* JoinByCodeSheet.swift */,
-				A49D4CCF54374904A0FC2274 /* JoinByQRSheet.swift */,
-				4B867194FD2E4A4BBF87109E /* LoginSheet.swift */,
-				8BA4F8AC06884B71BF724C9D /* MemberPermissionsSheet.swift */,
-				B11A24A774FB4AB8B721534B /* PeopleScreen.swift */,
-				D29B87CA0CD94D3ABF1E04EA /* SyncReminderSheet.swift */,
-			);
-			path = People;
-			sourceTree = "<group>";
-		};
-		B1BB33865BEA44B0A8D40FCF /* Economia */ = {
-			isa = PBXGroup;
-			children = (
-				1930B3A3BBDB43C5BDE9FA58 /* AddExpenseSheet.swift */,
-				D9EBC0D88CD4448DA3449399 /* EconomiaScreen.swift */,
-				65B855A8DE744B6194F71896 /* EconomiaStatsScreen.swift */,
+				3D8A47E8F9D447F184CDE253,
+				719988E8457A4C03B53CBB2B,
+				AD4D7FB0023C42F69B9B7098,
+				45CEC1413F1341B5AB331FC3,
+				F3405136BB6D45648A2929D5,
+				130535300E43468986EF0929
 			);
 			path = Economia;
 			sourceTree = "<group>";
 		};
-		B1F3B9F691DD46D195B8EA18 /* FamilyCalendar */ = {
+		C5E940DDB71C41A0A89FA817 /* FamilyCalendar */ = {
 			isa = PBXGroup;
 			children = (
-				41040D8EC3AC4618A560C961 /* AddFamilyEventSheet.swift */,
-				B77301A3AC8942BCAEE5E6EA /* FamilyCalendarMonthView.swift */,
-				C7B27A0FD7044463B3AADBC1 /* FamilyCalendarScreen.swift */,
+				BB716460979A4685936C37D3,
+				00DE9CE5C32941E5916EB551,
+				9A1B09F0F3964610931EB89F
 			);
 			path = FamilyCalendar;
 			sourceTree = "<group>";
 		};
-		D8A1223257E24A3DBC444292 /* ShoppingList */ = {
+		4158D9C6FF2545468AD4A48A /* HouseTasks */ = {
 			isa = PBXGroup;
 			children = (
-				E1966CE56EEC469BA91A6592 /* AddToShoppingListSheet.swift */,
-				6B4986E5D8774DE6834C082F /* ShoppingListScreen.swift */,
+				E0B5AB85D2B2483C96A03AC3,
+				7EB0936D837E4CD29BB5A26D,
+				771053A7BDA247D5A8B6E926,
+				26E36BD3E1394139803A4E67,
+				EB5BE74DA2714209AC519938
+			);
+			path = HouseTasks;
+			sourceTree = "<group>";
+		};
+		55E7413EC9FF44F28DB262D3 /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				7309C2B7093F426E8B144230,
+				F1DAF4B197FF47D28DB529BA,
+				7E97E886231B42E59BCB11BC,
+				284C4E0104414917886B5384
+			);
+			path = Onboarding;
+			sourceTree = "<group>";
+		};
+		6D6454F9E399466EAD2B6BD4 /* People */ = {
+			isa = PBXGroup;
+			children = (
+				8B13374A78DA4FFC9C37497E,
+				3E95CC0A23664590B3D46309,
+				8B128AD0BB504DDC9820EE38,
+				3BEFD864162047DFAD78E9AB,
+				2753282678F243D785CDCCE6,
+				361BDBC7E8FF40D69028A97B,
+				51892F8289C84C5580233A7E,
+				A59239CB8CC744E59135A266,
+				153364E8EC924F4A97431483
+			);
+			path = People;
+			sourceTree = "<group>";
+		};
+		CAAD2553416C465A909920F8 /* Premium */ = {
+			isa = PBXGroup;
+			children = (
+				442CCF347FAF404BABDADA67
+			);
+			path = Premium;
+			sourceTree = "<group>";
+		};
+		03F3E5DED3D541B280FA77B7 /* Reminders */ = {
+			isa = PBXGroup;
+			children = (
+				B229257D56CB4C23AA4F3BC8,
+				8286F6D3043F45EF890830D1
+			);
+			path = Reminders;
+			sourceTree = "<group>";
+		};
+		54C16ECB50FC4FCAB677BAA1 /* ShoppingList */ = {
+			isa = PBXGroup;
+			children = (
+				EB50882606D64C7590313F5C,
+				E420AFCC911045699D510F5C
 			);
 			path = ShoppingList;
 			sourceTree = "<group>";
 		};
-		DE65B13C1C3446E9AC3E7B5A /* Splash */ = {
+		5EE5C8A1F5DF4E608BB55086 /* Splash */ = {
 			isa = PBXGroup;
 			children = (
-				951ACC913A1E46B8AC9F9232 /* SplashView.swift */,
+				1972C3CE24CE409AA75D7751
 			);
 			path = Splash;
 			sourceTree = "<group>";
 		};
-		F956D97DA37C4864AB85F7FC /* AliaroWidgets */ = {
+		E078B2864BD34E60A6EE6213 /* WeeklyMenu */ = {
 			isa = PBXGroup;
 			children = (
-				675708E4CB3B4FC1B5CB0E16 /* AliaroWidgetsBundle.swift */,
-				FF99B2528E3641E7B36E457E /* AliaroWidgetsExtension.entitlements */,
-				B1ADF3C5691B4135A6A9B04B /* FamilyCalendarWidget.swift */,
-				952CEE3A8D684761BA187334 /* Info.plist */,
-				D6AE697463404CD5818E5ABE /* RemindersWidget.swift */,
-				5D3E2B532DA1421690CEB486 /* TodayMenuWidget.swift */,
+				AAC40C4D4B064A9B9B3E5207,
+				4BC4DCD0713843AD84678EFC,
+				289F5FFB8E23494A88D69F5C,
+				6C9EFA7800A243EE8E806182
+			);
+			path = WeeklyMenu;
+			sourceTree = "<group>";
+		};
+		F667F34D14804D18965073EB /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				89C3E8DB1EC74A4FBF5C3375,
+				C5E940DDB71C41A0A89FA817,
+				4158D9C6FF2545468AD4A48A,
+				55E7413EC9FF44F28DB262D3,
+				6D6454F9E399466EAD2B6BD4,
+				CAAD2553416C465A909920F8,
+				03F3E5DED3D541B280FA77B7,
+				54C16ECB50FC4FCAB677BAA1,
+				5EE5C8A1F5DF4E608BB55086,
+				E078B2864BD34E60A6EE6213
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		0307CB3AF57F4007B9995DCE /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				4845A4ECAE514AA8BBAB73E4,
+				6AC8337849BF4C7F9AB9361C,
+				AA6A826E0108463486510558,
+				836533959D6B45489A8DF002,
+				052CB46C2D3D4E48A4E48CA9,
+				2855669BED224EABB9B880C2,
+				A335CD6C96C94640A92CC1D9,
+				BFD612B3049642C59D9B7B94,
+				1BDDB419226643A08840C9F7,
+				6E366D2A9C4E4C4E80C2B4E8,
+				68C4969FEEC84C75A1815635,
+				4D92231F6D6642B79140F06B,
+				5D3D93E0A210404C8227DCD4,
+				CC4C5D0C62F8443EB921252C,
+				254236039AB541EEB9E1685B
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		7D682381CD144129A6797203 /* Navigation */ = {
+			isa = PBXGroup;
+			children = (
+				D12197642C67405ABDB9363C,
+				7D7E723F309A47B08DC28D26,
+				BF8E5F56AAE14E31BD60A167
+			);
+			path = Navigation;
+			sourceTree = "<group>";
+		};
+		B18F55B6D8AD483194C65197 /* Aliaro */ = {
+			isa = PBXGroup;
+			children = (
+				2572DA38587D4EBDA8192B04,
+				394C1C5F765A4E4D8908A9BC,
+				C11CC530239A412882F5CFA5,
+				D979301D6F9145E18CD16856,
+				F7449BAB5D184E91B8D08973,
+				9519473BE7CF49C2B149BEFC,
+				01121C9214634AD1A049DC80,
+				B0D7C0898D0A45B2A0877D64,
+				F667F34D14804D18965073EB,
+				0307CB3AF57F4007B9995DCE,
+				7D682381CD144129A6797203
+			);
+			path = Aliaro;
+			sourceTree = "<group>";
+		};
+		849662D4AEAF4F66ACA4A830 /* AliaroShared */ = {
+			isa = PBXGroup;
+			children = (
+				C087BEFA217E4A378771BA0A,
+				AB54C97917B84B0D8124E21E
+			);
+			path = AliaroShared;
+			sourceTree = "<group>";
+		};
+		CCBFB20C74FE4716BAED51F1 /* AliaroWidgets */ = {
+			isa = PBXGroup;
+			children = (
+				139D7D85361E491F90BD8855,
+				426EE525BBA64AF1AD27269F,
+				9CD25DCD5890490A85F36DB2,
+				0B541ECD6AA14BDCA174958C,
+				40D2C1F9251C4CDE950C8BF8,
+				F3572683741E45C4BFB52E44
 			);
 			path = AliaroWidgets;
 			sourceTree = "<group>";
@@ -484,23 +488,6 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		50A3FCBD0B734C24A8BBA281 /* AliaroWidgetsExtension */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = ABF76E2E95A24CF4B10EEE28 /* Build configuration list for PBXNativeTarget "AliaroWidgetsExtension" */;
-			buildPhases = (
-				ACEFB4A52E364781A1341095 /* Sources */,
-				0278A7F50CC14A249CD4016D /* Frameworks */,
-				DB77B6A166AA449C8140A461 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = AliaroWidgetsExtension;
-			productName = AliaroWidgetsExtension;
-			productReference = E3BA4BEAFA634ABCADBD26C5 /* AliaroWidgetsExtension.appex */;
-			productType = "com.apple.product-type.app-extension";
-		};
 		54C09DDCAF634A8D99B25D81 /* Aliaro */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 3970917891F344248D624B5C /* Build configuration list for PBXNativeTarget "Aliaro" */;
@@ -523,6 +510,23 @@
 			productReference = FAA17B628B4C4513AFD4C4AB /* Aliaro.app */;
 			productType = "com.apple.product-type.application";
 		};
+		50A3FCBD0B734C24A8BBA281 /* AliaroWidgetsExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = ABF76E2E95A24CF4B10EEE28 /* Build configuration list for PBXNativeTarget "AliaroWidgetsExtension" */;
+			buildPhases = (
+				ACEFB4A52E364781A1341095 /* Sources */,
+				0278A7F50CC14A249CD4016D /* Frameworks */,
+				DB77B6A166AA449C8140A461 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = AliaroWidgetsExtension;
+			productName = AliaroWidgetsExtension;
+			productReference = E3BA4BEAFA634ABCADBD26C5 /* AliaroWidgetsExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -533,18 +537,18 @@
 				LastSwiftUpdateCheck = 1600;
 				LastUpgradeCheck = 1600;
 				TargetAttributes = {
-					50A3FCBD0B734C24A8BBA281 = {
+					54C09DDCAF634A8D99B25D81 = {
 						CreatedOnToolsVersion = 16.0;
 						SystemCapabilities = {
-							com.apple.ApplicationGroups.iOS = {
+							"com.apple.ApplicationGroups.iOS" = {
 								enabled = 1;
 							};
 						};
 					};
-					54C09DDCAF634A8D99B25D81 = {
+					50A3FCBD0B734C24A8BBA281 = {
 						CreatedOnToolsVersion = 16.0;
 						SystemCapabilities = {
-							com.apple.ApplicationGroups.iOS = {
+							"com.apple.ApplicationGroups.iOS" = {
 								enabled = 1;
 							};
 						};
@@ -579,8 +583,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C51AE572532D4E1EB5E9859C /* Assets.xcassets in Resources */,
-				016A0BECA2EF4D429D7CDD52 /* Localizable.xcstrings in Resources */,
+				ED26FDA4FDE549EF9145C65A /* Assets.xcassets in Resources */,
+				DEA04F5CB0704827B065BD88 /* Localizable.xcstrings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -588,6 +592,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -598,80 +603,85 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				7646962431434B0283F5C300 /* AliaroApp.swift in Sources */,
-				C13ADA6F978B4B4CAC3F621D /* ContentView.swift in Sources */,
-				9834DC4227014654B1F1C94A /* AuthSession.swift in Sources */,
-				1F203A852CD44382BD1B3E3D /* DataSync.swift in Sources */,
-				B9301CAE5CCB4BEABFB1E016 /* DebugMockData.swift in Sources */,
-				34D455782F3740A0A9E24C08 /* FamilyService.swift in Sources */,
-				616E9D31826445C4860641D9 /* FamilySession.swift in Sources */,
-				4AABC52C77224138B14984D3 /* InviteLink.swift in Sources */,
-				D0D67F3DE22A4E7492F20D7C /* PremiumConfig.swift in Sources */,
-				37CD90E60ADD465DA2BFE180 /* PremiumFeature.swift in Sources */,
-				5F2B9ABB70E84CD295F76D38 /* PremiumManager.swift in Sources */,
-				81FC6452FCD146E59A8F1477 /* PushNotificationManager.swift in Sources */,
-				29C930058E2F4706935D74D3 /* QRScannerView.swift in Sources */,
-				6A7A5D52F04444C2A0C8D531 /* RemoteSync.swift in Sources */,
-				FC063E9FF5C1427A9CFBB21B /* SubscriptionManager.swift in Sources */,
-				B825FF90215046208AFD7469 /* Supabase.swift in Sources */,
-				C291EB5035B8452DB9AA66C4 /* SupabaseConfig.swift in Sources */,
-				DD1BC5C67ACB4AF2832AFF18 /* WidgetSnapshotWriter.swift in Sources */,
-				70D4C414F9C44EDE86182357 /* ALIColors.swift in Sources */,
-				7D497E2BC09842BD8AB10CBB /* ALIComponents.swift in Sources */,
-				E0D24CD2A820452789DA5362 /* ALITypography.swift in Sources */,
-				3064043252C946E088893D0A /* AliaroWordmark.swift in Sources */,
-				480BC50DA5B14BAA823BF8C7 /* AddExpenseSheet.swift in Sources */,
-				94A578B2335E423DA118B5F8 /* EconomiaScreen.swift in Sources */,
-				261CCC2A3EF844F6836C18DB /* EconomiaStatsScreen.swift in Sources */,
-				E0E72A52AA6C4FC2BCB6758B /* AddFamilyEventSheet.swift in Sources */,
-				C6485C610FEF4D0C88F39E6A /* FamilyCalendarMonthView.swift in Sources */,
-				2D3C6B18635C4613A46A3FA8 /* FamilyCalendarScreen.swift in Sources */,
-				6FC97B321A564E91ADB8195D /* AddHouseTaskSheet.swift in Sources */,
-				9F61F16C9B304EFC99275534 /* HouseTaskDetailSheet.swift in Sources */,
-				B0997E22B1374EDAB6D20315 /* HouseTasksCalendarView.swift in Sources */,
-				84EB5634A8F143B1B3C357C6 /* HouseTasksScreen.swift in Sources */,
-				740AED5CC073498EB01897F1 /* AppIntroView.swift in Sources */,
-				C682F262286A458EAC93CB2C /* CreateFamilySheet.swift in Sources */,
-				35C4F66CD7284D678EE72EC9 /* FamilyOnboardingView.swift in Sources */,
-				E5CC3E773ACB4A92ACAA43C7 /* NameEntrySheet.swift in Sources */,
-				75D9B0A76ACF46E096887DD5 /* AppFeaturesSheet.swift in Sources */,
-				384F25A4258E49C8A09A3013 /* HistorialSheet.swift in Sources */,
-				8F3F1123F36E4F96BDC7FE0E /* InviteQRSheet.swift in Sources */,
-				AE606C87A0D54D4A8EBE22B8 /* JoinByCodeSheet.swift in Sources */,
-				B2C13CDEED4E49A9B9C21F62 /* JoinByQRSheet.swift in Sources */,
-				C259D4E667334971A82C45A1 /* LoginSheet.swift in Sources */,
-				D567634374DA4748B3373FA1 /* MemberPermissionsSheet.swift in Sources */,
-				BEDB22B44C7343F68369B085 /* PeopleScreen.swift in Sources */,
-				6C643BE58A6844249A43667B /* SyncReminderSheet.swift in Sources */,
-				2A347D95CF92434C93B3B9D5 /* PaywallView.swift in Sources */,
-				E04E8A33067F49ADA469A788 /* AddReminderSheet.swift in Sources */,
-				D7ABEC4DEDC24A1BAD5D8C2D /* RemindersScreen.swift in Sources */,
-				63BB2FA51F1648D9A985CDC1 /* AddToShoppingListSheet.swift in Sources */,
-				F80EFFF8EA38430EB653D237 /* ShoppingListScreen.swift in Sources */,
-				03DA76FD55F247DFA877C2FA /* SplashView.swift in Sources */,
-				7BFB984B183B4FCAB2221985 /* EditDayMealsSheet.swift in Sources */,
-				AE1640165193432882F90258 /* SelectDishSheet.swift in Sources */,
-				D10069D1689D4EB488C19A00 /* WeeklyMenu+Support.swift in Sources */,
-				DC5494D2046A48F9A263DB7C /* WeeklyMenuScreen.swift in Sources */,
-				EB3430E128264AAB9D99A476 /* ActivityLogEntry.swift in Sources */,
-				4C8751468E654CB88F89E41B /* Dish.swift in Sources */,
-				F19EE820377F41EBA38F16E6 /* Expense.swift in Sources */,
-				5E830FDF0E83431B91A52E9B /* ExpenseCategory.swift in Sources */,
-				3C06D45B3E7D490F967A3B54 /* FamilyEvent.swift in Sources */,
-				6972716B9FDB4B22B61E4389 /* FamilyMember.swift in Sources */,
-				02557DF681104359A618802C /* FamilyPermission.swift in Sources */,
-				CF488043869D4CA3866C9397 /* GroceryItem.swift in Sources */,
-				AFEC69368D7B45F19B2E0B2F /* HouseTask.swift in Sources */,
-				AA25596E2B444B859D619A74 /* HouseTaskLog.swift in Sources */,
-				050306AF54B94C7F8A81F901 /* MealPlanEntry.swift in Sources */,
-				74BB8D839C1C445FB42DB991 /* Reminder.swift in Sources */,
-				3767B1DE764341D3A9BAB0EC /* ShoppingList.swift in Sources */,
-				39FEF7CE34694A988A0BC0CA /* ShoppingListEntry.swift in Sources */,
-				241E90A305BF4BCEB8B36200 /* ALIBottomBar.swift in Sources */,
-				B74E9A12A0554319A84A9AD8 /* AppTab.swift in Sources */,
-				037C45843DB04956A0327D19 /* MainTabContainer.swift in Sources */,
-				1878DEB47B9247BDB3F1E620 /* AppGroup.swift in Sources */,
-				44C8E9540A5941E8ABE82C33 /* WidgetSnapshot.swift in Sources */,
+				8E3FBE1512044497B9BCFB29 /* AliaroApp.swift in Sources */,
+				4AD3BABA997B491387DFAD5C /* ContentView.swift in Sources */,
+				8D30F31F93864AF2A6AC3631 /* AuthSession.swift in Sources */,
+				D8054B3994AF4E58AFF6D1A1 /* DataSync.swift in Sources */,
+				18978F563B0F4ED2BD375033 /* DebugMockData.swift in Sources */,
+				2304A049FF3C46C9B8C94B82 /* FamilyService.swift in Sources */,
+				A17B3676D2B94090A5BF8A6C /* FamilySession.swift in Sources */,
+				768EB744946C48B8BD2294A7 /* InviteLink.swift in Sources */,
+				7D4AEC4C192B49ABBDE59D5D /* PremiumConfig.swift in Sources */,
+				8B00E2689AA445F19A5FA3D3 /* PremiumFeature.swift in Sources */,
+				DB0FBF4FA7944CAD90B53F25 /* PremiumManager.swift in Sources */,
+				2F98DDF1E9D54E0C8F18C80F /* PushNotificationManager.swift in Sources */,
+				04B6FEBC5D464435853491EC /* QRScannerView.swift in Sources */,
+				E488392CC7D94ACD98391E7B /* RemoteSync.swift in Sources */,
+				1BA2B1D8004944D7845EF255 /* SubscriptionManager.swift in Sources */,
+				D10F2F28BAC44D968C4DBC39 /* Supabase.swift in Sources */,
+				417D87A36F9143BCA666E911 /* SupabaseConfig.swift in Sources */,
+				ED09E87DAC334BD596F434EE /* WidgetSnapshotWriter.swift in Sources */,
+				DA571B12B2F44E44B9F4D829 /* ALIColors.swift in Sources */,
+				B3BC1E574CD34242BC929D8F /* ALIComponents.swift in Sources */,
+				F6549D9C3E0C48769711BFC8 /* ALITypography.swift in Sources */,
+				EF71C04D2D5243B6ABBFC626 /* AliaroWordmark.swift in Sources */,
+				3A9105B84F4A4D6DA908FA79 /* AddExpenseSheet.swift in Sources */,
+				508206C280DE42BDA42B2AB9 /* EconomiaScreen.swift in Sources */,
+				F71099D24EF6464EB35B8D2E /* EconomiaStatsScreen.swift in Sources */,
+				2B6C433774CB4BDCBD96BE1C /* ExpenseArchivePDF.swift in Sources */,
+				18B505C5FD7844DBB09BC211 /* ExpenseArchivesSheet.swift in Sources */,
+				EF1C39AD22364C218F1AC463 /* FinanceBalances.swift in Sources */,
+				C0EE5F0C7DD744D39AC731CC /* AddFamilyEventSheet.swift in Sources */,
+				01B7D4135533436E9B276A3B /* FamilyCalendarMonthView.swift in Sources */,
+				9D93CC65B58D47E79104FEBE /* FamilyCalendarScreen.swift in Sources */,
+				BAF993839FA248F6AF77E8E6 /* AddHouseTaskSheet.swift in Sources */,
+				5D5EFAF268A34218A9E258F8 /* HouseTaskDetailSheet.swift in Sources */,
+				2A6FE1904C0042288EE65F34 /* HouseTasksCalendarView.swift in Sources */,
+				06B64D9462F84DF49899A3C7 /* HouseTasksScreen.swift in Sources */,
+				407E90BD9A4B485499BBCFE4 /* HouseTasksStatsScreen.swift in Sources */,
+				C64C1D5468A641AAA0E2EEA4 /* AppIntroView.swift in Sources */,
+				008A6A36D42B4D419596DED7 /* CreateFamilySheet.swift in Sources */,
+				DBEE7781512E4AC8AA0895DC /* FamilyOnboardingView.swift in Sources */,
+				F6076501FB1E4A1A9D64E175 /* NameEntrySheet.swift in Sources */,
+				F5DB05F0F64D4F7C93B48BE4 /* AppFeaturesSheet.swift in Sources */,
+				5225E549956A4EC4A57104FC /* HistorialSheet.swift in Sources */,
+				DA9EBF7F0E6344E8847112C9 /* InviteQRSheet.swift in Sources */,
+				6951B0A1B5944EDC8785B706 /* JoinByCodeSheet.swift in Sources */,
+				FEB18710EE5445C282D61941 /* JoinByQRSheet.swift in Sources */,
+				052D914D774B40FDBD02C0CE /* LoginSheet.swift in Sources */,
+				F7EC10708AAD42DAA76C6410 /* MemberPermissionsSheet.swift in Sources */,
+				08B5AD7B4C6244CDBA204FC6 /* PeopleScreen.swift in Sources */,
+				41F6BE3928324497A786DC2B /* SyncReminderSheet.swift in Sources */,
+				6434B2C9E7C3421F89487578 /* PaywallView.swift in Sources */,
+				99C4CE6AE6634AEBB763DD54 /* AddReminderSheet.swift in Sources */,
+				25781BFD104D43B98056CED0 /* RemindersScreen.swift in Sources */,
+				0B068EE248CC40A5A5E924C1 /* AddToShoppingListSheet.swift in Sources */,
+				BA1E40ADD9004F709CEC019F /* ShoppingListScreen.swift in Sources */,
+				2B13DE5EE88F4461865B2BEC /* SplashView.swift in Sources */,
+				252DB057ECF04C3D99762B50 /* EditDayMealsSheet.swift in Sources */,
+				C52A5B6368284AA69E45B049 /* SelectDishSheet.swift in Sources */,
+				7F20F2C8201C4BC98D1BBCF3 /* WeeklyMenu+Support.swift in Sources */,
+				B86AAAA5D2A6483493C86091 /* WeeklyMenuScreen.swift in Sources */,
+				9715BA91C5934113BF8BCA6A /* ActivityLogEntry.swift in Sources */,
+				CF46654F83844D15BB26408A /* Dish.swift in Sources */,
+				6C2EBD5BE84D47B8B0C60B95 /* Expense.swift in Sources */,
+				1A5FB692796C4D7F938D5E2C /* ExpenseArchive.swift in Sources */,
+				049FBEE5E16348C68920F1DE /* ExpenseCategory.swift in Sources */,
+				88DB49EEDB9F443A88941F40 /* FamilyEvent.swift in Sources */,
+				2F8D6321A3DB430FBD581374 /* FamilyMember.swift in Sources */,
+				9C7A7B1CB1B841769365F0A0 /* FamilyPermission.swift in Sources */,
+				0E24B3418C904985B7C96833 /* GroceryItem.swift in Sources */,
+				26126661880343B99618E0D2 /* HouseTask.swift in Sources */,
+				C6340AF5BA7B4B00982964A6 /* HouseTaskLog.swift in Sources */,
+				6469427D5D2A4BC797ECC703 /* MealPlanEntry.swift in Sources */,
+				F84C6A6C299C4D8ABD7CCC74 /* Reminder.swift in Sources */,
+				CB0C1645AFC34A14BA6D5E06 /* ShoppingList.swift in Sources */,
+				3835F29E377D40E095201DD8 /* ShoppingListEntry.swift in Sources */,
+				9E5DEE8BB844421EB9442FE1 /* ALIBottomBar.swift in Sources */,
+				EBD757560CA94EAB8FB4E115 /* AppTab.swift in Sources */,
+				8F2E6FEDC0314F4DBCA1B969 /* MainTabContainer.swift in Sources */,
+				2390C29D42464D24AF510181 /* AppGroup.swift in Sources */,
+				5D09F69A583340DF959A7186 /* WidgetSnapshot.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -679,12 +689,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4226FC95F44C4CB28DA0F013 /* AppGroup.swift in Sources */,
-				FCDD9441683A423F95D123C5 /* WidgetSnapshot.swift in Sources */,
-				77C0B734D89D426EA2921CE0 /* AliaroWidgetsBundle.swift in Sources */,
-				DB0B53D8EAEB4050AC09628B /* FamilyCalendarWidget.swift in Sources */,
-				648B27B9EFE44DF0826D13FB /* RemindersWidget.swift in Sources */,
-				A1DF75307CC64758874AE7DA /* TodayMenuWidget.swift in Sources */,
+				1DAA37B3A9E4432D83129454 /* AppGroup.swift in Sources */,
+				01EF6951FDFB49248B24995A /* WidgetSnapshot.swift in Sources */,
+				1B1ECEEC6F154FF89DB23585 /* AliaroWidgetsBundle.swift in Sources */,
+				C725C79A9DB94F089A6C7FBE /* FamilyCalendarWidget.swift in Sources */,
+				558EEEAFCD91460BBE5935D3 /* RemindersWidget.swift in Sources */,
+				490076F7E4E64B6785405498 /* TodayMenuWidget.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -699,65 +709,6 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
-		054A9F810E24421C83F0194E /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_ANALYZER_NONNULL = YES;
-				CLANG_ENABLE_MODULES = YES;
-				CLANG_ENABLE_OBJC_ARC = YES;
-				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
-				COPY_PHASE_STRIP = NO;
-				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				ENABLE_NS_ASSERTIONS = NO;
-				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu17;
-				GCC_NO_COMMON_BLOCKS = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MTL_ENABLE_DEBUG_INFO = NO;
-				MTL_FAST_MATH = YES;
-				SDKROOT = iphoneos;
-				SWIFT_COMPILATION_MODE = wholemodule;
-				SWIFT_OPTIMIZATION_LEVEL = "-O";
-				SWIFT_VERSION = 5.0;
-				VALIDATE_PRODUCT = YES;
-			};
-			name = Release;
-		};
-		40AED3B7FEE44EB2A0F9DDAC /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				APP_GROUP_ID = group.com.devaro.aliaro.dev;
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = Aliaro/Aliaro.entitlements;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
-				DEVELOPMENT_ASSET_PATHS = "";
-				DEVELOPMENT_TEAM = P88UK832W4;
-				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Aliaro Dev";
-				INFOPLIST_KEY_CFBundleURLTypes = "{\n    CFBundleTypeRole = Editor;\n    CFBundleURLSchemes =     (\n        aliaro\n    );\n}";
-				INFOPLIST_KEY_NSCameraUsageDescription = "Aliaro necesita la cámara para escanear el código QR de invitación al grupo familiar.";
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UIStatusBarStyle = UIStatusBarStyleDefault;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				MARKETING_VERSION = 0.0.5;
-				PRODUCT_BUNDLE_IDENTIFIER = com.devaro.aliaro.dev;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
-			};
-			name = Debug;
-		};
 		65F054DE52D648A09635DA7A /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -789,52 +740,100 @@
 			};
 			name = Debug;
 		};
-		D394FE0A470C46DA88F1CE95 /* Debug */ = {
+		054A9F810E24421C83F0194E /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				APP_GROUP_ID = group.com.devaro.aliaro.dev;
-				CODE_SIGN_ENTITLEMENTS = AliaroWidgets/AliaroWidgetsExtension.entitlements;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3;
-				DEVELOPMENT_TEAM = P88UK832W4;
-				INFOPLIST_FILE = AliaroWidgets/Info.plist;
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		40AED3B7FEE44EB2A0F9DDAC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APP_GROUP_ID = "group.com.devaro.aliaro.dev";
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Aliaro/Aliaro.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = P88UK832W4;
+				CURRENT_PROJECT_VERSION = 5;
+				DEVELOPMENT_ASSET_PATHS = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Aliaro Dev";
+				INFOPLIST_KEY_CFBundleURLTypes = (
+					{
+						CFBundleTypeRole = Editor;
+						CFBundleURLSchemes = (
+							aliaro,
+						);
+					},
+				);
+				INFOPLIST_KEY_NSCameraUsageDescription = "Aliaro necesita la cámara para escanear el código QR de invitación al grupo familiar.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UIStatusBarStyle = UIStatusBarStyleDefault;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 0.0.4;
-				PRODUCT_BUNDLE_IDENTIFIER = com.devaro.aliaro.dev.widgets;
+				MARKETING_VERSION = 0.0.5;
+				PRODUCT_BUNDLE_IDENTIFIER = com.devaro.aliaro.dev;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1";
 			};
 			name = Debug;
 		};
 		E00A53D51DD94C90A6C65FC9 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				APP_GROUP_ID = group.com.devaro.aliaro;
+				APP_GROUP_ID = "group.com.devaro.aliaro";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Aliaro/Aliaro.entitlements;
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = P88UK832W4;
 				CURRENT_PROJECT_VERSION = 5;
 				DEVELOPMENT_ASSET_PATHS = "";
-				DEVELOPMENT_TEAM = P88UK832W4;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = Aliaro;
-				INFOPLIST_KEY_CFBundleURLTypes = "{\n    CFBundleTypeRole = Editor;\n    CFBundleURLSchemes =     (\n        aliaro\n    );\n}";
+				INFOPLIST_KEY_CFBundleDisplayName = "Aliaro";
+				INFOPLIST_KEY_CFBundleURLTypes = (
+					{
+						CFBundleTypeRole = Editor;
+						CFBundleURLSchemes = (
+							aliaro,
+						);
+					},
+				);
 				INFOPLIST_KEY_NSCameraUsageDescription = "Aliaro necesita la cámara para escanear el código QR de invitación al grupo familiar.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UIStatusBarStyle = UIStatusBarStyleDefault;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -844,18 +843,18 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1";
 			};
 			name = Release;
 		};
-		F32ADBCFB08948059364C2A3 /* Release */ = {
+		D394FE0A470C46DA88F1CE95 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				APP_GROUP_ID = group.com.devaro.aliaro;
+				APP_GROUP_ID = "group.com.devaro.aliaro.dev";
 				CODE_SIGN_ENTITLEMENTS = AliaroWidgets/AliaroWidgetsExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = P88UK832W4;
+				CURRENT_PROJECT_VERSION = 5;
 				INFOPLIST_FILE = AliaroWidgets/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -863,13 +862,38 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 0.0.4;
+				MARKETING_VERSION = 0.0.5;
+				PRODUCT_BUNDLE_IDENTIFIER = com.devaro.aliaro.dev.widgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1";
+			};
+			name = Debug;
+		};
+		F32ADBCFB08948059364C2A3 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APP_GROUP_ID = "group.com.devaro.aliaro";
+				CODE_SIGN_ENTITLEMENTS = AliaroWidgets/AliaroWidgetsExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = P88UK832W4;
+				CURRENT_PROJECT_VERSION = 5;
+				INFOPLIST_FILE = AliaroWidgets/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 0.0.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.devaro.aliaro.widgets;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1";
 			};
 			name = Release;
 		};

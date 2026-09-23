@@ -12,12 +12,25 @@ struct EconomiaScreen: View {
     @EnvironmentObject private var familySession: FamilySession
     @EnvironmentObject private var premium: PremiumManager
 
-    @Query(sort: \Expense.occurredAt, order: .reverse) private var expenses: [Expense]
+    @Query(sort: \Expense.occurredAt, order: .reverse) private var allExpenses: [Expense]
+    /// What the screen actually renders: a fresh fetch, never the `@Query`
+    /// array itself. When many expenses are deleted at once (archiving, or
+    /// the burst of real-time deletes it triggers), `@Query` can hand back
+    /// for one render objects SwiftData has already detached, and reading
+    /// any attribute of those crashes ("backing data was detached…"). A
+    /// fetch only ever returns live objects. `allExpenses` stays only as
+    /// the trigger that re-renders this view when expenses change.
+    private var expenses: [Expense] {
+        _ = allExpenses.count
+        let descriptor = FetchDescriptor<Expense>(sortBy: [SortDescriptor(\.occurredAt, order: .reverse)])
+        return (try? modelContext.fetch(descriptor)) ?? []
+    }
     @Query(sort: \FamilyMember.createdAt) private var members: [FamilyMember]
     @Query(sort: \ExpenseCategory.createdAt) private var categories: [ExpenseCategory]
 
     @State private var showAddSheet = false
     @State private var showStats = false
+    @State private var showArchives = false
     @State private var expensePendingDelete: Expense?
     @State private var expenseToEdit: Expense?
     @State private var showPaywall = false
@@ -42,7 +55,19 @@ struct EconomiaScreen: View {
                 ALITopBar(title: "Finances", accent: ALIColors.economiaAccent) {
                     HStack(spacing: 10) {
                         Button {
-                            if isStatsLocked { showPaywall = true } else { showStats = true }
+                            showArchives = true
+                        } label: {
+                            Image(systemName: "archivebox.fill")
+                                .font(.system(size: 17, weight: .semibold))
+                                .foregroundStyle(ALIColors.ink)
+                                .frame(width: 40, height: 40)
+                                .background(ALIColors.surfaceVariant)
+                                .clipShape(Circle())
+                                .aliPremiumPreviewOverlay(premium.isLocked(.financeArchive))
+                        }
+                        .accessibilityLabel("Archive")
+                        Button {
+                            showStats = true
                         } label: {
                             Image(systemName: "chart.pie.fill")
                                 .font(.system(size: 17, weight: .semibold))
@@ -50,7 +75,7 @@ struct EconomiaScreen: View {
                                 .frame(width: 40, height: 40)
                                 .background(ALIColors.surfaceVariant)
                                 .clipShape(Circle())
-                                .aliPremiumLockOverlay(isStatsLocked)
+                                .aliPremiumPreviewOverlay(isStatsLocked)
                         }
                         if canAdd {
                             ALIFloatingButton(accent: ALIColors.economiaAccent) { showAddSheet = true }
@@ -80,23 +105,7 @@ struct EconomiaScreen: View {
                         subtitle: "Try another name, amount, or date."
                     )
                 } else {
-                    ALICard {
-                        VStack(spacing: 0) {
-                            ForEach(Array(filteredExpenses.enumerated()), id: \.element.id) { index, expense in
-                                ExpenseRow(
-                                    expense: expense,
-                                    categories: categories.filter { expense.categoryIDs.contains($0.id) },
-                                    canEdit: canEdit,
-                                    canDelete: canDelete,
-                                    onEdit: { expenseToEdit = expense },
-                                    onDelete: { expensePendingDelete = expense }
-                                )
-                                if index < filteredExpenses.count - 1 {
-                                    Divider().overlay(ALIColors.outline)
-                                }
-                            }
-                        }
-                    }
+                    expenseList(rowData(for: filteredExpenses))
                 }
             }
             .padding(.horizontal, 20)
@@ -111,6 +120,9 @@ struct EconomiaScreen: View {
         }
         .sheet(isPresented: $showStats) {
             EconomiaStatsScreen(expenses: expenses, categories: categories)
+        }
+        .sheet(isPresented: $showArchives) {
+            ExpenseArchivesSheet()
         }
         .sheet(isPresented: $showPaywall) {
             PaywallView()
@@ -144,6 +156,53 @@ struct EconomiaScreen: View {
     }
 
     // MARK: Search and filter
+
+    /// Copies each expense into a plain value right here in `body`, so the
+    /// `ForEach` below never touches a SwiftData object. SwiftUI re-runs a
+    /// `ForEach` row closure on its own (with the element it captured)
+    /// whenever that object changes — including when it gets deleted. If
+    /// the closure read the model (e.g. `categoryIDs`), deleting several
+    /// expenses at once (archiving) made it read already-detached objects
+    /// and crash.
+    private func rowData(for expenses: [Expense]) -> [ExpenseRowData] {
+        let byID = Dictionary(categories.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+        return expenses.map { expense in
+            let cats = expense.categoryIDs.compactMap { byID[$0] }
+            return ExpenseRowData(
+                id: expense.id,
+                name: expense.name,
+                amount: expense.amount,
+                isIncome: expense.isIncome,
+                personName: expense.personName,
+                occurredAt: expense.occurredAt,
+                emoji: cats.first?.emoji ?? (expense.isIncome ? "💰" : "🧾"),
+                categoryNames: cats.map(\.name)
+            )
+        }
+    }
+
+    private func expenseList(_ rows: [ExpenseRowData]) -> some View {
+        ALICard {
+            VStack(spacing: 0) {
+                ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
+                    ExpenseRow(
+                        row: row,
+                        canEdit: canEdit,
+                        canDelete: canDelete,
+                        onEdit: { expenseToEdit = liveExpense(id: row.id) },
+                        onDelete: { expensePendingDelete = liveExpense(id: row.id) }
+                    )
+                    if index < rows.count - 1 {
+                        Divider().overlay(ALIColors.outline)
+                    }
+                }
+            }
+        }
+    }
+
+    private func liveExpense(id: UUID) -> Expense? {
+        try? modelContext.fetch(FetchDescriptor<Expense>(predicate: #Predicate { $0.id == id })).first
+    }
 
     private var filteredExpenses: [Expense] {
         expenses.filter { expense in
@@ -237,51 +296,8 @@ struct EconomiaScreen: View {
 
     // MARK: Balances
 
-    /// Net balance for each member, splitting every expense/income
-    /// equally among everyone: positive = owed to them, negative = owes the group.
-    private var balances: [UUID: Double] {
-        guard members.count > 1 else { return [:] }
-        let n = Double(members.count)
-        var result: [UUID: Double] = [:]
-        for member in members { result[member.id] = 0 }
-        for expense in expenses {
-            let share = expense.amount / n
-            let sign: Double = expense.isIncome ? -1 : 1
-            for member in members {
-                if member.id == expense.personID {
-                    result[member.id, default: 0] += sign * (expense.amount - share)
-                } else {
-                    result[member.id, default: 0] -= sign * share
-                }
-            }
-        }
-        return result
-    }
-
-    /// Pairs debtors with creditors to settle all balances with the
-    /// fewest possible transfers.
     private var settlements: [(from: FamilyMember, to: FamilyMember, amount: Double)] {
-        var creditors: [(FamilyMember, Double)] = []
-        var debtors: [(FamilyMember, Double)] = []
-        for member in members {
-            let balance = balances[member.id] ?? 0
-            if balance > 0.01 { creditors.append((member, balance)) }
-            else if balance < -0.01 { debtors.append((member, -balance)) }
-        }
-        creditors.sort { $0.1 > $1.1 }
-        debtors.sort { $0.1 > $1.1 }
-
-        var result: [(from: FamilyMember, to: FamilyMember, amount: Double)] = []
-        var i = 0, j = 0
-        while i < debtors.count, j < creditors.count {
-            let amount = min(debtors[i].1, creditors[j].1)
-            result.append((from: debtors[i].0, to: creditors[j].0, amount: amount))
-            debtors[i].1 -= amount
-            creditors[j].1 -= amount
-            if debtors[i].1 < 0.01 { i += 1 }
-            if creditors[j].1 < 0.01 { j += 1 }
-        }
-        return result
+        FinanceBalances.settlements(expenses: expenses, members: members)
     }
 
     private var balancesCard: some View {
@@ -316,44 +332,56 @@ struct EconomiaScreen: View {
     }
 }
 
-/// Row for a transaction: name, who carried it out, when, and the
-/// amount (green if it's income), with actions to edit or delete it.
+/// Plain-value copy of an `Expense` for its row (see `rowData(for:)`).
+private struct ExpenseRowData: Identifiable {
+    let id: UUID
+    let name: String
+    let amount: Double
+    let isIncome: Bool
+    let personName: String
+    let occurredAt: Date
+    let emoji: String
+    let categoryNames: [String]
+}
+
+/// Row for a transaction: name, categories, who carried it out and when,
+/// and the amount (green if it's income), with actions to edit or delete it.
 private struct ExpenseRow: View {
-    let expense: Expense
-    /// This expense's own categories, already resolved (order matches
-    /// `expense.categoryIDs`; empty if uncategorized or they were deleted).
-    let categories: [ExpenseCategory]
+    let row: ExpenseRowData
     var canEdit: Bool = true
     var canDelete: Bool = true
     let onEdit: () -> Void
     let onDelete: () -> Void
 
-    private var subtitle: String {
-        var parts: [String] = []
-        if !categories.isEmpty { parts.append(categories.map(\.name).joined(separator: ", ")) }
-        parts.append(expense.personName)
-        parts.append(expense.occurredAt.formatted(date: .abbreviated, time: .omitted))
-        return parts.joined(separator: " · ")
-    }
-
     var body: some View {
         HStack(spacing: 12) {
-            Text(categories.first?.emoji ?? (expense.isIncome ? "💰" : "🧾"))
-                .font(.system(size: 22))
+            Text(row.emoji)
+                .font(.system(size: 17))
+                .frame(width: 24)
             VStack(alignment: .leading, spacing: 3) {
-                Text(expense.name)
+                Text(row.name)
                     .font(ALITypography.bodyLarge)
                     .foregroundStyle(ALIColors.ink)
-                    .lineLimit(1)
-                Text(subtitle)
+                    .lineLimit(2)
+                if !row.categoryNames.isEmpty {
+                    Text(row.categoryNames.joined(separator: ", "))
+                        .font(ALITypography.labelLarge)
+                        .foregroundStyle(ALIColors.mutedInk)
+                        .lineLimit(2)
+                }
+                Text("\(row.personName) · \(row.occurredAt.formatted(date: .abbreviated, time: .omitted))")
                     .font(ALITypography.labelLarge)
                     .foregroundStyle(ALIColors.mutedInk)
                     .lineLimit(1)
+                    .minimumScaleFactor(0.85)
             }
-            Spacer()
-            Text((expense.isIncome ? "+" : "-") + expense.amount.formattedEuros)
+            .fixedSize(horizontal: false, vertical: true)
+            .layoutPriority(1)
+            Spacer(minLength: 8)
+            Text((row.isIncome ? "+" : "-") + row.amount.formattedEuros)
                 .font(ALITypography.bodyLarge)
-                .foregroundStyle(expense.isIncome ? ALIColors.success : ALIColors.ink)
+                .fixedSize()
+                .foregroundStyle(row.isIncome ? ALIColors.success : ALIColors.ink)
             if canEdit {
                 Button(action: onEdit) {
                     Image(systemName: "pencil")

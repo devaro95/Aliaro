@@ -29,8 +29,7 @@ struct SyncReminderSheet: View {
                     .multilineTextAlignment(.center)
                 if isCloudBackupLocked {
                     HStack(spacing: 5) {
-                        Image(systemName: "lock.fill")
-                            .font(.system(size: 11, weight: .semibold))
+                        ALIPremiumLockBadge()
                         Text("Aliaro Premium feature")
                             .font(ALITypography.labelLarge)
                     }

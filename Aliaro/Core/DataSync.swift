@@ -1,5 +1,6 @@
 import Foundation
 import SwiftData
+import Supabase
 
 // MARK: - Remote rows (Supabase) — one per table, flat snake_case shape
 // so it matches Postgres's columns exactly.
@@ -156,6 +157,18 @@ struct RemoteActivityLogEntry: FamilySynced {
     var created_at: Date
 }
 
+struct RemoteExpenseArchive: FamilySynced {
+    static let tableName = "expense_archives"
+    var id: UUID
+    var family_id: UUID
+    var name: String
+    var start_date: Date
+    var end_date: Date
+    var archived_by_name: String?
+    var snapshot: ExpenseArchiveSnapshot
+    var created_at: Date
+}
+
 /// Coordinates syncing all of the app's data (menu, shopping, tasks,
 /// calendar, reminders) with Supabase: initial load, real time from any
 /// device in the group, and uploading local changes.
@@ -184,6 +197,7 @@ final class AppDataSyncCoordinator: ObservableObject {
     private let categories = RemoteSync<RemoteCategory>()
     private let expenses = RemoteSync<RemoteExpense>()
     private let activityLogEntries = RemoteSync<RemoteActivityLogEntry>()
+    private let expenseArchives = RemoteSync<RemoteExpenseArchive>()
 
     private var started = false
     /// Kept so `refreshWidgetSnapshot()` can be called from places (like
@@ -220,6 +234,7 @@ final class AppDataSyncCoordinator: ObservableObject {
         await startCategories(familyID: familyID, modelContext: modelContext)
         await startExpenses(familyID: familyID, modelContext: modelContext)
         await startActivityLogEntries(familyID: familyID, modelContext: modelContext)
+        await startExpenseArchives(familyID: familyID, modelContext: modelContext)
         refreshWidgetSnapshot()
     }
 
@@ -240,6 +255,7 @@ final class AppDataSyncCoordinator: ObservableObject {
         await categories.stop()
         await expenses.stop()
         await activityLogEntries.stop()
+        await expenseArchives.stop()
     }
 
     // MARK: FamilyMembers
@@ -821,6 +837,7 @@ final class AppDataSyncCoordinator: ObservableObject {
                 let descriptor = FetchDescriptor<Expense>(predicate: #Predicate { $0.id == id })
                 if let existing = try? modelContext.fetch(descriptor).first {
                     modelContext.delete(existing)
+                    try? modelContext.save()
                 }
             }
         )
@@ -858,6 +875,68 @@ final class AppDataSyncCoordinator: ObservableObject {
 
     func deleteExpense(id: UUID) {
         Task { try? await expenses.remove(id: id) }
+    }
+
+    // MARK: ExpenseArchives (archived finances)
+
+    private func startExpenseArchives(familyID: UUID, modelContext: ModelContext) async {
+        do {
+            let remote = try await expenseArchives.fetchAll(familyID: familyID)
+            for r in remote { applyExpenseArchive(r, modelContext: modelContext) }
+        } catch {
+            lastError = error.localizedDescription
+        }
+        await expenseArchives.start(
+            familyID: familyID,
+            onUpsert: { [weak self] r in self?.applyExpenseArchive(r, modelContext: modelContext) },
+            onDelete: { id in
+                let descriptor = FetchDescriptor<ExpenseArchive>(predicate: #Predicate { $0.id == id })
+                if let existing = try? modelContext.fetch(descriptor).first {
+                    modelContext.delete(existing)
+                }
+            }
+        )
+    }
+
+    private func applyExpenseArchive(_ remote: RemoteExpenseArchive, modelContext: ModelContext) {
+        let descriptor = FetchDescriptor<ExpenseArchive>(predicate: #Predicate { $0.id == remote.id })
+        if let existing = try? modelContext.fetch(descriptor).first {
+            existing.name = remote.name
+            existing.startDate = remote.start_date
+            existing.endDate = remote.end_date
+            existing.archivedByName = remote.archived_by_name
+            existing.snapshotData = (try? JSONEncoder().encode(remote.snapshot)) ?? existing.snapshotData
+        } else {
+            modelContext.insert(ExpenseArchive(
+                id: remote.id, name: remote.name, startDate: remote.start_date, endDate: remote.end_date,
+                archivedByName: remote.archived_by_name, snapshot: remote.snapshot, createdAt: remote.created_at
+            ))
+        }
+    }
+
+    /// Uploads the archive and, only once it's safely stored, deletes the
+    /// archived transactions from the live list (other devices drop them
+    /// through the `expenses` real-time channel). Throws so the UI can keep
+    /// everything as it was if either step fails.
+    func archiveExpenses(_ archive: ExpenseArchive, expenseIDs: [UUID], familyID: UUID) async throws {
+        let record = RemoteExpenseArchive(
+            id: archive.id, family_id: familyID, name: archive.name,
+            start_date: archive.startDate, end_date: archive.endDate,
+            archived_by_name: archive.archivedByName, snapshot: archive.snapshot,
+            created_at: archive.createdAt
+        )
+        try await expenseArchives.push(record)
+        guard !expenseIDs.isEmpty else { return }
+        try await supabase
+            .from(RemoteExpense.tableName)
+            .delete()
+            .eq("family_id", value: familyID)
+            .in("id", values: expenseIDs.map(\.uuidString))
+            .execute()
+    }
+
+    func deleteExpenseArchive(id: UUID) {
+        Task { try? await expenseArchives.remove(id: id) }
     }
 
     // MARK: ActivityLogEntries ("History")

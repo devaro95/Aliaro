@@ -22,10 +22,15 @@ struct HouseTasksScreen: View {
     @State private var selectedTask: HouseTask?
     @State private var viewMode: ViewMode = .list
     @State private var showPaywall = false
+    @State private var showStats = false
 
     /// The calendar view needs a subscription if `houseTasksCalendar`
     /// is currently premium.
     private var isCalendarViewLocked: Bool { premium.isLocked(.houseTasksCalendar) }
+    /// Statistics need a subscription if `houseTasksStats` is currently premium.
+    private var isStatsLocked: Bool { premium.isLocked(.houseTasksStats) }
+    /// Calendar view open as a premium preview (sample data + floating banner).
+    private var isCalendarPreview: Bool { viewMode == .calendar && isCalendarViewLocked }
     /// Beyond 5 tasks, adding another one needs a subscription if
     /// `unlimitedHouseTasks` is currently premium.
     private var isNewTaskLocked: Bool { tasks.count >= 5 && premium.isLocked(.unlimitedHouseTasks) }
@@ -45,6 +50,7 @@ struct HouseTasksScreen: View {
             VStack(spacing: 16) {
                 ALITopBar(title: "House Tasks", accent: ALIColors.houseTasksAccent) {
                     HStack(spacing: 10) {
+                        statsButton
                         viewModeToggleButton
                         ALIFloatingButton(accent: ALIColors.houseTasksAccent) {
                             if isNewTaskLocked { showPaywall = true } else { showAddSheet = true }
@@ -86,11 +92,33 @@ struct HouseTasksScreen: View {
                         }
                     }
                 case .calendar:
-                    HouseTasksCalendarView(logs: logs)
+                    if isCalendarViewLocked {
+                        HouseTasksCalendarView(logs: HouseTasksDemoData.logs)
+                            .aliPremiumPreview(true)
+                    } else {
+                        HouseTasksCalendarView(logs: logs)
+                    }
                 }
             }
             .padding(.horizontal, 20)
-            .padding(.bottom, 100)
+            // Extra room while the calendar preview banner floats over
+            // the content, so everything can still be scrolled into view.
+            .padding(.bottom, isCalendarPreview ? 320 : 100)
+        }
+        .overlay(alignment: .bottom) {
+            if isCalendarPreview {
+                // Floats just above the bottom bar (which lives in
+                // `MainTabContainer`'s ZStack, over this screen).
+                ALIPremiumPreviewBanner(
+                    message: .tasksCalendar,
+                    buttonTitle: "Unlock calendar"
+                ) { showPaywall = true }
+                .padding(.horizontal, 16)
+                // Bottom bar: 56pt tall + 8pt below it, measured from the
+                // safe-area bottom — plus a 12pt gap above it.
+                .padding(.bottom, 76)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
         }
         .background(ALIColors.background)
         .sheet(isPresented: $showAddSheet) {
@@ -99,22 +127,39 @@ struct HouseTasksScreen: View {
         .sheet(item: $selectedTask) { task in
             HouseTaskDetailSheet(task: task, logs: logs.filter { $0.taskID == task.id })
         }
+        .sheet(isPresented: $showStats) {
+            HouseTasksStatsScreen(tasks: tasks, logs: logs)
+        }
         .sheet(isPresented: $showPaywall) {
             PaywallView()
         }
     }
 
-    /// Button that toggles between the list view and the calendar view —
-    /// opens the paywall instead of switching if the calendar view is
-    /// currently premium and this device isn't subscribed.
+    /// Opens the statistics screen — always: if `houseTasksStats` is
+    /// locked it shows as a premium preview with sample data.
+    private var statsButton: some View {
+        Button {
+            showStats = true
+        } label: {
+            Image(systemName: "chart.bar.fill")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(ALIColors.ink)
+                .frame(width: 40, height: 40)
+                .background(ALIColors.surfaceVariant)
+                .clipShape(Circle())
+                .aliPremiumPreviewOverlay(isStatsLocked)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Statistics")
+    }
+
+    /// Button that toggles between the list view and the calendar view. If
+    /// the calendar view is locked it still switches, as a premium preview
+    /// with sample data.
     private var viewModeToggleButton: some View {
         Button {
-            if viewMode == .list && isCalendarViewLocked {
-                showPaywall = true
-            } else {
-                withAnimation(.easeInOut(duration: 0.15)) {
-                    viewMode = (viewMode == .list) ? .calendar : .list
-                }
+            withAnimation(.easeInOut(duration: 0.15)) {
+                viewMode = (viewMode == .list) ? .calendar : .list
             }
         } label: {
             Image(systemName: viewMode == .list ? "calendar" : "list.bullet")
@@ -123,7 +168,7 @@ struct HouseTasksScreen: View {
                 .frame(width: 40, height: 40)
                 .background(ALIColors.surfaceVariant)
                 .clipShape(Circle())
-                .aliPremiumLockOverlay(viewMode == .list && isCalendarViewLocked)
+                .aliPremiumPreviewOverlay(viewMode == .list && isCalendarViewLocked)
         }
         .buttonStyle(.plain)
         .accessibilityLabel(viewMode == .list ? "View as calendar" : "View as list")
@@ -142,9 +187,19 @@ struct HouseTasksScreen: View {
                 modelContext.delete(todayLog)
                 dataSync.deleteHouseTaskLog(id: logID)
             } else {
-                let log = HouseTaskLog(taskID: task.id, taskName: task.name)
+                // Record who did it — needed for per-member statistics.
+                let actorID = familySession.memberID
+                let actorName = actorID.flatMap { modelContext.familyMemberName(id: $0) }
+                let log = HouseTaskLog(taskID: task.id, taskName: task.name, createdByID: actorID, createdByName: actorName)
                 modelContext.insert(log)
-                if let familyID = familySession.familyID { dataSync.pushHouseTaskLog(log, familyID: familyID) }
+                if let familyID = familySession.familyID {
+                    dataSync.pushHouseTaskLog(log, familyID: familyID)
+                    dataSync.logActivity(
+                        entityType: "house_task_log", entityName: task.name, action: "created",
+                        actorID: actorID, actorName: actorName,
+                        familyID: familyID, modelContext: modelContext
+                    )
+                }
             }
         }
     }

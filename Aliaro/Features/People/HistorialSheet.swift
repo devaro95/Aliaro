@@ -3,10 +3,39 @@ import SwiftData
 
 /// "History" of the family group: every create/edit/delete on a
 /// shared item, and who did it — so no change goes unnoticed, even if
-/// it was made by a kid on someone else's device.
+/// it was made by a kid on someone else's device. Premium (`historial`):
+/// when locked, it opens as a preview built from sample entries (never
+/// the group's real history), blurred, with a banner leading to the paywall.
 struct HistorialSheet: View {
     @Environment(\.dismiss) private var dismiss
-    @Query(sort: \ActivityLogEntry.createdAt, order: .reverse) private var entries: [ActivityLogEntry]
+    @EnvironmentObject private var premium: PremiumManager
+    @Query(sort: \ActivityLogEntry.createdAt, order: .reverse) private var realEntries: [ActivityLogEntry]
+
+    @State private var showPaywall = false
+
+    private var isLocked: Bool { premium.isLocked(.historial) }
+    private var entries: [ActivityLogEntry] { isLocked ? Self.demoEntries : realEntries }
+
+    /// Sample history for the locked preview; never inserted into a context.
+    @MainActor private static let demoEntries: [ActivityLogEntry] = {
+        let now = Date.now
+        let samples: [(String, String, String, String, Double)] = [
+            ("house_task_log", String(localized: "Dishes"), "created", "Ana", 0.3),
+            ("expense", String(localized: "Weekly groceries"), "created", "Luis", 2),
+            ("reminder", String(localized: "Dentist appointment"), "updated", "Ana", 5),
+            ("house_task", String(localized: "Change the sheets"), "created", "Marta", 20),
+            ("family_event", String(localized: "Grandma's birthday"), "created", "Luis", 26),
+            ("expense", String(localized: "Dinner out"), "deleted", "Ana", 30),
+            ("house_task_log", String(localized: "Take out the trash"), "created", "Marta", 49),
+            ("expense", String(localized: "Electricity bill"), "updated", "Luis", 72)
+        ]
+        return samples.map { type, name, action, actor, hoursAgo in
+            ActivityLogEntry(
+                entityType: type, entityName: name, action: action,
+                actorName: actor, createdAt: now.addingTimeInterval(-hoursAgo * 3600)
+            )
+        }
+    }()
 
     var body: some View {
         NavigationStack {
@@ -32,7 +61,9 @@ struct HistorialSheet: View {
                     }
                 }
                 .padding(20)
+                .aliPremiumPreview(isLocked)
             }
+            .aliPremiumPreviewBanner(isLocked, buttonTitle: "Unlock history") { showPaywall = true }
             .background(ALIColors.background)
             .navigationTitle("History")
             .navigationBarTitleDisplayMode(.inline)
@@ -42,7 +73,10 @@ struct HistorialSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium, .large])
+        .presentationDetents(isLocked ? [.large] : [.medium, .large])
+        .sheet(isPresented: $showPaywall) {
+            PaywallView()
+        }
     }
 }
 
@@ -63,6 +97,7 @@ private struct HistorialRow: View {
         case "family_event": return String(localized: "Calendar")
         case "reminder": return String(localized: "Reminder")
         case "expense": return String(localized: "Finances")
+        case "expense_archive": return String(localized: "Finances archive")
         default: return entry.entityType.capitalized
         }
     }
