@@ -4,11 +4,26 @@ import Charts
 /// Expense statistics, grouped by week, month or year. Income isn't
 /// shown as a separate concept: each income is simply subtracted from
 /// the expenses of the period it occurs in. Also breaks down expenses
-/// of the current period by category.
+/// of the current period by category. Premium (`economiaStats`): when
+/// locked, it opens as a preview built from sample data (never the
+/// group's real finances), blurred, with a banner leading to the paywall.
 struct EconomiaStatsScreen: View {
     @Environment(\.dismiss) private var dismiss
-    let expenses: [Expense]
-    let categories: [ExpenseCategory]
+    @EnvironmentObject private var premium: PremiumManager
+
+    private let realExpenses: [Expense]
+    private let realCategories: [ExpenseCategory]
+
+    @State private var showPaywall = false
+
+    init(expenses: [Expense], categories: [ExpenseCategory]) {
+        self.realExpenses = expenses
+        self.realCategories = categories
+    }
+
+    private var isLocked: Bool { premium.isLocked(.economiaStats) }
+    private var expenses: [Expense] { isLocked ? EconomiaDemoData.expenses : realExpenses }
+    private var categories: [ExpenseCategory] { isLocked ? EconomiaDemoData.categories : realCategories }
 
     private enum Period: String, CaseIterable, Identifiable {
         case week = "Week", month = "Month", year = "Year"
@@ -73,7 +88,9 @@ struct EconomiaStatsScreen: View {
                     categoryCard
                 }
                 .padding(20)
+                .aliPremiumPreview(isLocked)
             }
+            .aliPremiumPreviewBanner(isLocked, buttonTitle: "Unlock statistics") { showPaywall = true }
             .background(ALIColors.background)
             .navigationTitle("Statistics")
             .navigationBarTitleDisplayMode(.inline)
@@ -84,6 +101,9 @@ struct EconomiaStatsScreen: View {
             }
         }
         .presentationDetents([.large])
+        .sheet(isPresented: $showPaywall) {
+            PaywallView()
+        }
     }
 
     private var buckets: [Bucket] {
@@ -250,4 +270,55 @@ struct EconomiaStatsScreen: View {
             .frame(height: 8)
         }
     }
+}
+
+/// Sample finances used by the premium preview of the statistics. Built
+/// once; the models are never inserted into a context, so nothing is
+/// persisted or synced.
+@MainActor
+enum EconomiaDemoData {
+    static let categories: [ExpenseCategory] = ExpenseCategory.defaults.map {
+        ExpenseCategory(name: $0.name, emoji: $0.emoji, isDefault: true)
+    }
+
+    static let expenses: [Expense] = {
+        let calendar = Calendar.current
+        let now = Date.now
+        let people = HouseTasksDemoData.members
+        // (category index, base amount, every how many days)
+        let recurring: [(Int, Double, Int)] = [
+            (0, 62, 4),    // Groceries
+            (1, 850, 30),  // Housing
+            (2, 45, 9),    // Transport
+            (3, 38, 8),    // Dining out
+            (4, 24, 13),   // Entertainment
+            (5, 55, 17),   // Shopping
+            (6, 19, 21)    // Other
+        ]
+        var expenses: [Expense] = []
+        for day in 0..<400 {
+            guard let date = calendar.date(byAdding: .day, value: -day, to: now) else { continue }
+            for (index, entry) in recurring.enumerated() where (day + index * 3) % entry.2 == 0 {
+                let category = categories[entry.0]
+                let variation = Double((day * 13 + index * 7) % 30) / 100 + 0.85
+                let person = people[(day + index) % people.count]
+                expenses.append(Expense(
+                    name: category.name,
+                    amount: (entry.1 * variation).rounded(),
+                    personID: person.id,
+                    personName: person.name,
+                    categoryIDs: [category.id],
+                    occurredAt: date
+                ))
+            }
+            if day % 30 == 5 {
+                let person = people[0]
+                expenses.append(Expense(
+                    name: String(localized: "Refund"), amount: 120, isIncome: true,
+                    personID: person.id, personName: person.name, occurredAt: date
+                ))
+            }
+        }
+        return expenses.sorted { $0.occurredAt > $1.occurredAt }
+    }()
 }

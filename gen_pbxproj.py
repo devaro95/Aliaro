@@ -137,6 +137,13 @@ def walk(dirpath, targets):
                 resource_build_files[t].append((bf, fref, rel_name))
         elif f.endswith('.entitlements'):
             file_refs.append((fref, rel_name, q(rel_name), "text.plist.entitlements", "<group>"))
+        elif f.startswith('GoogleService-Info') and f.endswith('.plist'):
+            # Firebase config: read at runtime from the bundle (see
+            # Core/Analytics.swift), so it must be copied as a resource.
+            file_refs.append((fref, rel_name, q(rel_name), "text.plist.xml", "<group>"))
+            for t in targets:
+                bf = uid(f"res:{t}:" + full)
+                resource_build_files[t].append((bf, fref, rel_name))
         elif f.endswith('.plist'):
             # Consumed via INFOPLIST_FILE directly, never through a build
             # phase (that would produce a duplicate-output build error).
@@ -242,6 +249,9 @@ ROOT_GROUP = uid("rootGroup")
 PKG_REF_UID = uid("pkgRef:supabase-swift")
 PKG_PRODUCT_UID = uid("pkgProduct:Supabase")
 PKG_BUILDFILE_UID = uid("pkgBuildFile:Supabase")
+FIREBASE_PKG_REF_UID = uid("pkgRef:firebase-ios-sdk")
+FIREBASE_PRODUCT_UID = uid("pkgProduct:FirebaseAnalytics")
+FIREBASE_BUILDFILE_UID = uid("pkgBuildFile:FirebaseAnalytics")
 
 pbxproj = f"""// !$*UTF8*$!
 {{
@@ -257,6 +267,7 @@ pbxproj = f"""// !$*UTF8*$!
 {emit_build_files_sources("widget")}
 {emit_build_files_resources("widget")}
 \t\t{PKG_BUILDFILE_UID} /* Supabase in Frameworks */ = {{isa = PBXBuildFile; productRef = {PKG_PRODUCT_UID} /* Supabase */; }};
+\t\t{FIREBASE_BUILDFILE_UID} /* FirebaseAnalytics in Frameworks */ = {{isa = PBXBuildFile; productRef = {FIREBASE_PRODUCT_UID} /* FirebaseAnalytics */; }};
 \t\t{EMBED_WIDGET_BUILDFILE} /* {WIDGET_PRODUCT_NAME}.appex in Embed Foundation Extensions */ = {{isa = PBXBuildFile; fileRef = {WIDGET_PRODUCT_REF} /* {WIDGET_PRODUCT_NAME}.appex */; settings = {{ATTRIBUTES = (RemoveHeadersOnCopy, ); }}; }};
 /* End PBXBuildFile section */
 
@@ -296,6 +307,7 @@ pbxproj = f"""// !$*UTF8*$!
 \t\t\tbuildActionMask = 2147483647;
 \t\t\tfiles = (
 \t\t\t\t{PKG_BUILDFILE_UID} /* Supabase in Frameworks */,
+\t\t\t\t{FIREBASE_BUILDFILE_UID} /* FirebaseAnalytics in Frameworks */,
 \t\t\t);
 \t\t\trunOnlyForDeploymentPostprocessing = 0;
 \t\t}};
@@ -349,6 +361,7 @@ pbxproj = f"""// !$*UTF8*$!
 \t\t\tname = {PRODUCT_NAME};
 \t\t\tpackageProductDependencies = (
 \t\t\t\t{PKG_PRODUCT_UID} /* Supabase */,
+\t\t\t\t{FIREBASE_PRODUCT_UID} /* FirebaseAnalytics */,
 \t\t\t);
 \t\t\tproductName = {PRODUCT_NAME};
 \t\t\tproductReference = {APP_PRODUCT_REF} /* {PRODUCT_NAME}.app */;
@@ -411,6 +424,7 @@ pbxproj = f"""// !$*UTF8*$!
 \t\t\tmainGroup = {ROOT_GROUP};
 \t\t\tpackageReferences = (
 \t\t\t\t{PKG_REF_UID} /* XCRemoteSwiftPackageReference "supabase-swift" */,
+\t\t\t\t{FIREBASE_PKG_REF_UID} /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 \t\t\t);
 \t\t\tproductRefGroup = {PRODUCTS_GROUP} /* Products */;
 \t\t\tprojectDirPath = "";
@@ -532,6 +546,10 @@ pbxproj = f"""// !$*UTF8*$!
 \t\t\t\tASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 \t\t\t\tASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 \t\t\t\tCODE_SIGN_ENTITLEMENTS = Aliaro/Aliaro.entitlements;
+\t\t\t\tOTHER_LDFLAGS = (
+\t\t\t\t\t"$(inherited)",
+\t\t\t\t\t"-ObjC",
+\t\t\t\t);
 \t\t\t\tCODE_SIGN_STYLE = Automatic;
 {DEVELOPMENT_TEAM_LINE}\t\t\t\tCURRENT_PROJECT_VERSION = {CURRENT_PROJECT_VERSION};
 \t\t\t\tDEVELOPMENT_ASSET_PATHS = "";
@@ -572,6 +590,10 @@ pbxproj = f"""// !$*UTF8*$!
 \t\t\t\tASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 \t\t\t\tASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 \t\t\t\tCODE_SIGN_ENTITLEMENTS = Aliaro/Aliaro.entitlements;
+\t\t\t\tOTHER_LDFLAGS = (
+\t\t\t\t\t"$(inherited)",
+\t\t\t\t\t"-ObjC",
+\t\t\t\t);
 \t\t\t\tCODE_SIGN_STYLE = Automatic;
 {DEVELOPMENT_TEAM_LINE}\t\t\t\tCURRENT_PROJECT_VERSION = {CURRENT_PROJECT_VERSION};
 \t\t\t\tDEVELOPMENT_ASSET_PATHS = "";
@@ -694,6 +716,14 @@ pbxproj = f"""// !$*UTF8*$!
 \t\t\t\tminimumVersion = 2.55.1;
 \t\t\t}};
 \t\t}};
+\t\t{FIREBASE_PKG_REF_UID} /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {{
+\t\t\tisa = XCRemoteSwiftPackageReference;
+\t\t\trepositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+\t\t\trequirement = {{
+\t\t\t\tkind = upToNextMajorVersion;
+\t\t\t\tminimumVersion = 12.0.0;
+\t\t\t}};
+\t\t}};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -701,6 +731,11 @@ pbxproj = f"""// !$*UTF8*$!
 \t\t\tisa = XCSwiftPackageProductDependency;
 \t\t\tpackage = {PKG_REF_UID} /* XCRemoteSwiftPackageReference "supabase-swift" */;
 \t\t\tproductName = Supabase;
+\t\t}};
+\t\t{FIREBASE_PRODUCT_UID} /* FirebaseAnalytics */ = {{
+\t\t\tisa = XCSwiftPackageProductDependency;
+\t\t\tpackage = {FIREBASE_PKG_REF_UID} /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+\t\t\tproductName = FirebaseAnalytics;
 \t\t}};
 /* End XCSwiftPackageProductDependency section */
 \t}};

@@ -421,6 +421,35 @@ final class FamilyService: ObservableObject {
         }
     }
 
+    // MARK: - RLS self-heal (link this device's auth_user_id)
+
+    /// Called once per launch, right after `AuthSession.ensureSession()`,
+    /// whenever this device already belongs to a family group. Supabase
+    /// RLS now scopes every table read/write to `family_members.auth_user_id
+    /// = auth.uid()`, but that column is only stamped at create/join time
+    /// (`create-family`/`join-family`) — a member row created before the
+    /// login-opcional feature existed has it `null`, or a device that lost
+    /// its Keychain session could drift out of sync with it. This calls
+    /// the `link-member-auth` edge function (service role, so it isn't
+    /// itself blocked by RLS) to (re)stamp the row for THIS device's
+    /// current session id. Idempotent and cheap; best-effort — a failure
+    /// here just means sync stays broken until the next successful call,
+    /// same as any other transient network issue, so it's never surfaced
+    /// as a user-facing error.
+    func linkAuthIfNeeded() async {
+        guard let familyID = session.familyID, let memberID = session.memberID else { return }
+        struct Body: Encodable { let familyId: UUID; let memberId: UUID; let deviceId: String }
+        struct LinkResponse: Decodable { let ok: Bool; let updated: Bool }
+        do {
+            let _: LinkResponse = try await invokeEdgeFunction(
+                "link-member-auth",
+                options: FunctionInvokeOptions(body: Body(familyId: familyID, memberId: memberID, deviceId: session.deviceID))
+            )
+        } catch {
+            print("⚠️ linkAuthIfNeeded failed (will retry next launch): \(error)")
+        }
+    }
+
     // MARK: - Remove a member (creator only)
 
     /// The group's creator removes another member. The removed device
@@ -503,6 +532,7 @@ final class FamilyService: ObservableObject {
             FamilyMember.self, Dish.self, MealPlanEntry.self, GroceryItem.self,
             ShoppingList.self, ShoppingListEntry.self, HouseTask.self, HouseTaskLog.self,
             FamilyEvent.self, Reminder.self, Expense.self, ExpenseCategory.self, ActivityLogEntry.self,
+            ExpenseArchive.self,
         ]
         for type in types {
             try? modelContext.delete(model: type)
