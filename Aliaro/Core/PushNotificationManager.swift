@@ -24,6 +24,8 @@ final class PushNotificationManager: NSObject, ObservableObject {
         // in the background or closed, but this is handy for testing).
         UNUserNotificationCenter.current().delegate = self
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, _ in
+            Track.event("push_permission_result", ["granted": granted])
+            Track.setProperty(granted ? "yes" : "no", for: "push_enabled")
             guard granted else { return }
             DispatchQueue.main.async {
                 UIApplication.shared.registerForRemoteNotifications()
@@ -48,7 +50,25 @@ extension PushNotificationManager: UNUserNotificationCenterDelegate {
         willPresent notification: UNNotification,
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
+        Track.event("push_received_foreground", ["kind": Self.kind(of: notification)])
         completionHandler([.banner, .sound, .badge])
+    }
+
+    /// Called when the user taps a notification (app in any state).
+    nonisolated func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
+        Track.event("push_opened", ["kind": Self.kind(of: response.notification)])
+        completionHandler()
+    }
+
+    /// Local reminder vs remote push, plus whatever `type` the payload carries.
+    nonisolated private static func kind(of notification: UNNotification) -> String {
+        let info = notification.request.content.userInfo
+        if let type = info["type"] as? String { return type }
+        return notification.request.trigger is UNPushNotificationTrigger ? "remote" : "local"
     }
 }
 
@@ -60,6 +80,9 @@ final class AliaroAppDelegate: NSObject, UIApplicationDelegate {
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
         Track.configure()
+        // So taps on notifications are tracked from the very first launch
+        // (not only after the onboarding permission prompt set it).
+        UNUserNotificationCenter.current().delegate = PushNotificationManager.shared
         return true
     }
 

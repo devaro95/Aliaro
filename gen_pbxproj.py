@@ -546,6 +546,7 @@ pbxproj = f"""// !$*UTF8*$!
 \t\t\t\tASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 \t\t\t\tASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 \t\t\t\tCODE_SIGN_ENTITLEMENTS = Aliaro/Aliaro.entitlements;
+\t\t\t\tINFOPLIST_FILE = Aliaro/Info.plist;
 \t\t\t\tOTHER_LDFLAGS = (
 \t\t\t\t\t"$(inherited)",
 \t\t\t\t\t"-ObjC",
@@ -590,6 +591,7 @@ pbxproj = f"""// !$*UTF8*$!
 \t\t\t\tASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 \t\t\t\tASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 \t\t\t\tCODE_SIGN_ENTITLEMENTS = Aliaro/Aliaro.entitlements;
+\t\t\t\tINFOPLIST_FILE = Aliaro/Info.plist;
 \t\t\t\tOTHER_LDFLAGS = (
 \t\t\t\t\t"$(inherited)",
 \t\t\t\t\t"-ObjC",

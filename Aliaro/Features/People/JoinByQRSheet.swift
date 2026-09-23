@@ -15,6 +15,11 @@ struct JoinByQRSheet: View {
     @State private var scanErrorMessage: String?
 
     var body: some View {
+        trackedBody.trackScreen("join_by_qr")
+    }
+
+    @ViewBuilder
+    private var trackedBody: some View {
         NavigationStack {
             ZStack {
                 QRScannerView { payload in
@@ -70,12 +75,14 @@ struct JoinByQRSheet: View {
         Task {
             do {
                 let familyName = try await familyService.inviteInfo(token: token)
+                Track.event("join_invite_checked", ["method": "qr", "valid": true])
                 await MainActor.run {
                     isCheckingInvite = false
                     scannedFamilyName = familyName
                     scannedToken = token
                 }
             } catch {
+                Track.event("join_invite_checked", ["method": "qr", "valid": false])
                 await MainActor.run {
                     isCheckingInvite = false
                     scanErrorMessage = error.localizedDescription

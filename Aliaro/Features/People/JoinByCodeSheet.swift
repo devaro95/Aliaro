@@ -18,6 +18,11 @@ struct JoinByCodeSheet: View {
     private static let codeLength = 6
 
     var body: some View {
+        trackedBody.trackScreen("join_by_code")
+    }
+
+    @ViewBuilder
+    private var trackedBody: some View {
         NavigationStack {
             VStack(spacing: 20) {
                 Text("Join with a code")
@@ -92,12 +97,14 @@ struct JoinByCodeSheet: View {
         Task {
             do {
                 let familyName = try await familyService.inviteInfo(code: code)
+                Track.event("join_invite_checked", ["method": "code", "valid": true])
                 await MainActor.run {
                     isChecking = false
                     parsedFamilyName = familyName
                     parsedCode = code
                 }
             } catch {
+                Track.event("join_invite_checked", ["method": "code", "valid": false])
                 await MainActor.run {
                     isChecking = false
                     errorMessage = error.localizedDescription

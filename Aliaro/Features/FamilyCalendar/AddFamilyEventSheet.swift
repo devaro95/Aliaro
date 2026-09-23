@@ -25,6 +25,11 @@ struct AddFamilyEventSheet: View {
     private var isValid: Bool { !title.trimmed.isEmpty && endDate >= startDate }
 
     var body: some View {
+        trackedBody.trackScreen("calendar_event_editor")
+    }
+
+    @ViewBuilder
+    private var trackedBody: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
@@ -157,6 +162,13 @@ struct AddFamilyEventSheet: View {
         guard !trimmedTitle.isEmpty, endDate >= startDate else { return }
         let trimmedNote = note.trimmed
         let wasEditing = isEditing
+        Track.event(wasEditing ? "calendar_event_edited" : "calendar_event_new", [
+            "emoji": emoji,
+            "has_note": !trimmedNote.isEmpty,
+            "multi_day": !Calendar.current.isDate(startDate, inSameDayAs: endDate),
+            "duration_hours": Int(endDate.timeIntervalSince(startDate) / 3600),
+            "days_ahead": Calendar.current.dateComponents([.day], from: .now, to: startDate).day ?? 0
+        ])
 
         let event: FamilyEvent
         if let existing = eventToEdit {

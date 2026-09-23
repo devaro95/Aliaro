@@ -38,6 +38,11 @@ struct HistorialSheet: View {
     }()
 
     var body: some View {
+        trackedBody.trackScreen("history")
+    }
+
+    @ViewBuilder
+    private var trackedBody: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 16) {
@@ -63,7 +68,7 @@ struct HistorialSheet: View {
                 .padding(20)
                 .aliPremiumPreview(isLocked)
             }
-            .aliPremiumPreviewBanner(isLocked, buttonTitle: "Unlock history") { showPaywall = true }
+            .aliPremiumPreviewBanner(isLocked, buttonTitle: "Unlock history") { showPaywall = Track.paywall("history_banner") }
             .background(ALIColors.background)
             .navigationTitle("History")
             .navigationBarTitleDisplayMode(.inline)

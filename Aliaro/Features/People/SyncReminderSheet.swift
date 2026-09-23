@@ -16,6 +16,11 @@ struct SyncReminderSheet: View {
     private var isCloudBackupLocked: Bool { premium.isLocked(.cloudBackup) }
 
     var body: some View {
+        trackedBody.trackScreen("sync_reminder")
+    }
+
+    @ViewBuilder
+    private var trackedBody: some View {
         VStack(spacing: 20) {
             Image(systemName: "icloud.and.arrow.up")
                 .font(.system(size: 40, weight: .semibold))

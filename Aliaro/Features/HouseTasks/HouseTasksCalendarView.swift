@@ -44,6 +44,11 @@ struct HouseTasksCalendarView: View {
     }
 
     var body: some View {
+        trackedBody.trackScreen("house_tasks_calendar")
+    }
+
+    @ViewBuilder
+    private var trackedBody: some View {
         VStack(spacing: 16) {
             ALICard {
                 VStack(spacing: 16) {
@@ -111,6 +116,7 @@ struct HouseTasksCalendarView: View {
         let inMonth = isInDisplayedMonth(day)
 
         return Button {
+            Track.event("calendar_day_tap", ["screen": "house_tasks_calendar", "has_items": !dayLogs.isEmpty, "is_today": isToday])
             withAnimation(.easeInOut(duration: 0.15)) { selectedDay = day }
         } label: {
             VStack(spacing: 4) {
@@ -184,6 +190,7 @@ struct HouseTasksCalendarView: View {
     }
 
     private func shiftMonth(by value: Int) {
+        Track.event("calendar_month_change", ["screen": "house_tasks_calendar", "direction": value > 0 ? "next" : "prev"])
         if let newMonth = calendar.date(byAdding: .month, value: value, to: displayedMonth) {
             withAnimation(.easeInOut(duration: 0.2)) { displayedMonth = newMonth }
         }

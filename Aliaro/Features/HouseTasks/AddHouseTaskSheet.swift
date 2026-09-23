@@ -23,6 +23,11 @@ struct AddHouseTaskSheet: View {
     }
 
     var body: some View {
+        trackedBody.trackScreen("house_task_editor")
+    }
+
+    @ViewBuilder
+    private var trackedBody: some View {
         NavigationStack {
             VStack(spacing: 20) {
                 ALITextField(placeholder: "Task name", text: $name)
@@ -97,6 +102,11 @@ struct AddHouseTaskSheet: View {
         guard !trimmedName.isEmpty else { return }
         let task: HouseTask
         let wasEditing = isEditing
+        Track.event(wasEditing ? "house_task_edited" : "house_task_new", [
+            "task_name": trimmedName,
+            "has_interval": reminderEnabled,
+            "interval_days": reminderEnabled ? totalIntervalDays : nil
+        ])
         if let existing = taskToEdit {
             existing.name = trimmedName
             existing.intervalDays = reminderEnabled ? totalIntervalDays : nil

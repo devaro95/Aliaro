@@ -16,6 +16,11 @@ struct NameEntrySheet: View {
     @State private var errorMessage: String?
 
     var body: some View {
+        trackedBody.trackScreen("name_entry")
+    }
+
+    @ViewBuilder
+    private var trackedBody: some View {
         NavigationStack {
             VStack(spacing: 20) {
                 Text(title)

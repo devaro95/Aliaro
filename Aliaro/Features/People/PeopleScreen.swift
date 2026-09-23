@@ -1,4 +1,5 @@
 import SwiftUI
+import StoreKit
 import SwiftData
 
 /// "People" tab: who's in the family group, the button to invite
@@ -23,6 +24,7 @@ struct PeopleScreen: View {
     @State private var showFeaturesSheet = false
     @State private var showHistorialSheet = false
     @State private var showPaywall = false
+    @State private var showManageSubscription = false
     @State private var showLeaveConfirmation = false
     @State private var isLeaving = false
     @State private var leaveError: String?
@@ -36,26 +38,16 @@ struct PeopleScreen: View {
     #endif
 
     var body: some View {
+        trackedBody.trackScreen("people")
+    }
+
+    @ViewBuilder
+    private var trackedBody: some View {
         ScrollView {
             Color.clear.frame(height: 0).trackBottomBarScroll(bottomBarScrollTracker)
 
             VStack(spacing: 16) {
-                ALITopBar(title: "People", accent: ALIColors.peopleAccent) {
-                    ALIFloatingButton(accent: ALIColors.peopleAccent) {
-                        if isInviteLocked { showPaywall = true } else { showInviteSheet = true }
-                    }
-                    .scaleEffect(0.72)
-                    .aliPremiumLockOverlay(isInviteLocked)
-                }
-
-                if let familyName = familySession.familyName {
-                    Text(familyName)
-                        .font(ALITypography.bodyMedium)
-                        .foregroundStyle(ALIColors.mutedInk)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-
-                loginBanner
+                ALITopBar(title: "People", accent: ALIColors.peopleAccent)
 
                 membersSection
 
@@ -63,17 +55,26 @@ struct PeopleScreen: View {
 
                 historialCard
 
+                if premium.subscriptions.isSubscribed {
+                    subscriptionCard
+                }
+
                 #if DEBUG
                 debugCard
                 #endif
-
-                leaveGroupSection
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 100)
         }
         .background(ALIColors.background)
         .task { await familyService.refreshMembers(modelContext: modelContext) }
+        .onChange(of: members.count, initial: true) { _, count in
+            let me = members.first(where: { $0.isCurrentDevice })
+            Track.refreshUserProperties(
+                memberCount: count,
+                role: me.map { $0.isCreator ? "creator" : ($0.isAdmin ? "admin" : "member") }
+            )
+        }
         .refreshable { await familyService.refreshMembers(modelContext: modelContext) }
         .sheet(isPresented: $showInviteSheet) {
             InviteQRSheet()
@@ -182,32 +183,51 @@ struct PeopleScreen: View {
 
     @ViewBuilder
     private var loginBanner: some View {
+        // Footer row of the members card: no second background, just a
+        // divider like between members, with a compact action on the right.
         if !authSession.isLinked {
-            ALICard(containerColor: ALIColors.surfaceVariant) {
-                HStack(alignment: .top, spacing: 12) {
-                    Image(systemName: "icloud.and.arrow.up")
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundStyle(ALIColors.peopleAccent)
-                        .aliPremiumLockOverlay(isCloudBackupLocked)
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Don't lose this group")
-                            .font(ALITypography.bodyLarge)
-                            .foregroundStyle(ALIColors.ink)
-                        Text(isCloudBackupLocked
-                             ? "Aliaro Premium feature: sign in so you can always get your group back, even after reinstalling the app."
-                             : "Sign in so you can always get it back, even after reinstalling the app.")
-                            .font(ALITypography.labelLarge)
-                            .foregroundStyle(ALIColors.mutedInk)
-                        Button(isCloudBackupLocked ? "Unlock with Premium" : "Sign in") {
-                            if isCloudBackupLocked { showPaywall = true } else { showLoginSheet = true }
-                        }
-                            .font(ALITypography.labelLarge)
-                            .foregroundStyle(ALIColors.peopleAccent)
-                            .padding(.top, 2)
-                    }
-                    Spacer(minLength: 0)
+            Divider().overlay(ALIColors.outline)
+                .padding(.top, 8)
+            HStack(spacing: 12) {
+                Image(systemName: "icloud.and.arrow.up")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(ALIColors.peopleAccent)
+                    .frame(width: 24)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Don't lose this group")
+                        .font(ALITypography.bodyLarge)
+                        .foregroundStyle(ALIColors.ink)
+                    Text(isCloudBackupLocked
+                         ? "Aliaro Premium feature: sign in so you can always get your group back, even after reinstalling the app."
+                         : "Sign in so you can always get it back, even after reinstalling the app.")
+                        .font(ALITypography.labelLarge)
+                        .foregroundStyle(ALIColors.mutedInk)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
+                Spacer(minLength: 4)
+                Button {
+                    if isCloudBackupLocked { showPaywall = Track.paywall("cloud_backup_banner") } else {
+                        Track.event("login_banner_tap")
+                        showLoginSheet = true
+                    }
+                } label: {
+                    HStack(spacing: 4) {
+                        if isCloudBackupLocked {
+                            Image(systemName: "crown.fill").font(.system(size: 11, weight: .bold))
+                        }
+                        Text(isCloudBackupLocked ? "Unlock" : "Sign in")
+                    }
+                    .font(ALITypography.labelLarge)
+                    .foregroundStyle(ALIColors.onAccent)
+                    .padding(.horizontal, 14)
+                    .frame(height: 34)
+                    .background(isCloudBackupLocked ? ALIColors.sun : ALIColors.peopleAccent)
+                    .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
             }
+            .padding(.top, 20)
+            .padding(.bottom, 8)
         }
     }
 
@@ -220,13 +240,24 @@ struct PeopleScreen: View {
                 subtitle: "Tap the + to invite your family with a QR code."
             )
         } else {
-            ALICard {
-                VStack(spacing: 0) {
-                    ForEach(Array(members.enumerated()), id: \.element.id) { index, member in
-                        memberRow(member)
-                        if index < members.count - 1 {
-                            Divider().overlay(ALIColors.outline)
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Family group (\(members.count))")
+                    .font(ALITypography.labelLarge)
+                    .foregroundStyle(ALIColors.mutedInk)
+                    .padding(.leading, 4)
+                ALICard {
+                    VStack(spacing: 0) {
+                        familyHeader
+                            .padding(.bottom, 12)
+                        Divider().overlay(ALIColors.outline)
+                            .padding(.bottom, 8) // same gap as above the "Don't lose" divider
+                        ForEach(Array(members.enumerated()), id: \.element.id) { index, member in
+                            memberRow(member)
+                            if index < members.count - 1 {
+                                Divider().overlay(ALIColors.outline)
+                            }
                         }
+                        loginBanner
                     }
                 }
             }
@@ -249,6 +280,7 @@ struct PeopleScreen: View {
             Spacer()
             if canManagePermissions(member) {
                 Button {
+                    Track.event("member_permissions_open", ["target_is_admin": member.isAdmin])
                     memberForPermissions = member
                 } label: {
                     Image(systemName: "lock.shield")
@@ -258,6 +290,7 @@ struct PeopleScreen: View {
             }
             if canRemove(member) {
                 Button {
+                    Track.event("member_remove_tap")
                     memberPendingRemoval = member
                 } label: {
                     Image(systemName: "person.crop.circle.badge.minus")
@@ -281,8 +314,41 @@ struct PeopleScreen: View {
 
     /// Entry point into `AppFeaturesSheet`. Open to everyone — the sheet
     /// itself is what locks the controls for non-admins.
+    /// Only on the device that holds the subscription (the payer): it's
+    /// the only one that can manage/cancel it — Apple's own sheet, which
+    /// also works for TestFlight/Sandbox purchases.
+    private var subscriptionCard: some View {
+        Button {
+            Track.event("manage_subscription_open")
+            showManageSubscription = true
+        } label: {
+            ALICard {
+                HStack(spacing: 12) {
+                    Image(systemName: "crown.fill")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(ALIColors.sun)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Aliaro Premium")
+                            .font(ALITypography.bodyLarge)
+                            .foregroundStyle(ALIColors.ink)
+                        Text("Manage or cancel your subscription")
+                            .font(ALITypography.labelLarge)
+                            .foregroundStyle(ALIColors.mutedInk)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(ALIColors.mutedInk)
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .manageSubscriptionsSheet(isPresented: $showManageSubscription)
+    }
+
     private var appFeaturesCard: some View {
         Button {
+            Track.event("app_features_open")
             showFeaturesSheet = true
         } label: {
             ALICard {
@@ -314,6 +380,7 @@ struct PeopleScreen: View {
     private var historialCard: some View {
         let isLocked = premium.isLocked(.historial)
         return Button {
+            Track.event("history_open", ["locked": premium.isLocked(.historial)])
             showHistorialSheet = true
         } label: {
             ALICard {
@@ -375,18 +442,60 @@ struct PeopleScreen: View {
     }
     #endif
 
-    private var leaveGroupSection: some View {
-        ALICard {
-            VStack(alignment: .leading, spacing: 12) {
-                ALIPrimaryButton(
-                    text: isLeaving ? "Leaving…" : "Leave family group",
-                    accent: ALIColors.error
-                ) {
-                    showLeaveConfirmation = true
-                }
-                .disabled(isLeaving)
-            }
+    /// First row of the members card: the group's name, and its two
+    /// actions — leave (asks first) and invite someone new.
+    private var familyHeader: some View {
+        HStack(spacing: 10) {
+            Text(familySession.familyName ?? String(localized: "Family group"))
+                .font(ALITypography.titleLarge)
+                .foregroundStyle(ALIColors.ink)
+                .lineLimit(1)
+            Spacer(minLength: 8)
+            leaveGroupButton
+            inviteButton
         }
+    }
+
+    private var leaveGroupButton: some View {
+        Button {
+            Track.event("leave_group_tap", ["members": members.count])
+            showLeaveConfirmation = true
+        } label: {
+            Group {
+                if isLeaving {
+                    ProgressView()
+                } else {
+                    Image(systemName: "rectangle.portrait.and.arrow.right")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(ALIColors.error)
+                }
+            }
+            .frame(width: 38, height: 38)
+            .background(ALIColors.error.opacity(0.12))
+            .clipShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .disabled(isLeaving)
+        .accessibilityLabel("Leave family group")
+    }
+
+    private var inviteButton: some View {
+        Button {
+            if isInviteLocked { showPaywall = Track.paywall("invite_member") } else {
+                Track.event("invite_tap", ["members": members.count])
+                showInviteSheet = true
+            }
+        } label: {
+            Image(systemName: "person.badge.plus")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(ALIColors.onAccent)
+                .frame(width: 38, height: 38)
+                .background(ALIColors.peopleAccent)
+                .clipShape(Circle())
+                .aliPremiumLockOverlay(isInviteLocked)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Invite")
     }
 
 }

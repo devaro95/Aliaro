@@ -102,6 +102,11 @@ struct HouseTasksStatsScreen: View {
     ]
 
     var body: some View {
+        trackedBody.trackScreen("house_tasks_stats")
+    }
+
+    @ViewBuilder
+    private var trackedBody: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
@@ -111,6 +116,9 @@ struct HouseTasksStatsScreen: View {
                         }
                     }
                     .pickerStyle(.segmented)
+                    .onChange(of: period) { _, p in
+                        Track.event("stats_period_changed", ["screen": "house_tasks_stats", "period": p.rawValue, "locked": isLocked])
+                    }
 
                     summaryCard
                     participationCard
@@ -122,7 +130,7 @@ struct HouseTasksStatsScreen: View {
                 .padding(20)
                 .aliPremiumPreview(isLocked)
             }
-            .aliPremiumPreviewBanner(isLocked, buttonTitle: "Unlock statistics") { showPaywall = true }
+            .aliPremiumPreviewBanner(isLocked, buttonTitle: "Unlock statistics") { showPaywall = Track.paywall("task_stats_banner") }
             .background(ALIColors.background)
             .navigationTitle("Task statistics")
             .navigationBarTitleDisplayMode(.inline)

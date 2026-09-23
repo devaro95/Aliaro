@@ -37,6 +37,11 @@ struct AddToShoppingListSheet: View {
     }
 
     var body: some View {
+        trackedBody.trackScreen("shopping_add_items")
+    }
+
+    @ViewBuilder
+    private var trackedBody: some View {
         NavigationStack {
             VStack(spacing: 14) {
                 ALITextField(placeholder: "Search or create item…", text: $searchText, onSubmit: createFromSearchIfNeeded)
@@ -76,6 +81,7 @@ struct AddToShoppingListSheet: View {
                                     isPending: pendingItemIDs.contains(item.id),
                                     onAdd: { addToShoppingList(item) },
                                     onEdit: {
+                                        Track.event("grocery_item_edit_tap")
                                         renamingItem = item
                                         renameText = item.name
                                     },
@@ -101,6 +107,7 @@ struct AddToShoppingListSheet: View {
                 Button("Cancel", role: .cancel) { renamingItem = nil }
                 Button("Save") {
                     if let item = renamingItem, !renameText.trimmed.isEmpty {
+                        Track.event("grocery_item_renamed", ["item_name": renameText.trimmed])
                         item.name = renameText.trimmed
                         if let familyID = familySession.familyID { dataSync.pushGroceryItem(item, familyID: familyID) }
                     }
@@ -113,6 +120,7 @@ struct AddToShoppingListSheet: View {
             ) {
                 if let item = itemPendingDelete {
                     let itemID = item.id
+                    Track.event("grocery_item_deleted", ["item_name": item.name])
                     modelContext.delete(item)
                     dataSync.deleteGroceryItem(id: itemID)
                 }
@@ -121,7 +129,13 @@ struct AddToShoppingListSheet: View {
         .presentationDetents([.medium, .large])
     }
 
-    private func addToShoppingList(_ item: GroceryItem) {
+    private func addToShoppingList(_ item: GroceryItem, source: String = "catalog") {
+        Track.event("shopping_item_added", [
+            "item_name": item.name,
+            "source": source,
+            "searching": !searchText.trimmed.isEmpty,
+            "catalog_size": catalog.count
+        ])
         let entry = ShoppingListEntry(itemID: item.id, listID: listID, name: item.name)
         modelContext.insert(entry)
         if let familyID = familySession.familyID { dataSync.pushShoppingListEntry(entry, familyID: familyID) }
@@ -133,7 +147,8 @@ struct AddToShoppingListSheet: View {
         let item = GroceryItem(name: name)
         modelContext.insert(item)
         if let familyID = familySession.familyID { dataSync.pushGroceryItem(item, familyID: familyID) }
-        addToShoppingList(item)
+        Track.event("grocery_item_created", ["item_name": name, "catalog_size": catalog.count + 1])
+        addToShoppingList(item, source: "new_item")
         searchText = ""
     }
 }

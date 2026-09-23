@@ -87,10 +87,14 @@ final class FamilyService: ObservableObject {
     func startCreatingFamily(familyName: String, myName: String, modelContext: ModelContext, dataSync: AppDataSyncCoordinator) {
         isCreatingFamily = true
         createFamilyError = nil
+        Track.event("family_create_start")
         Task {
             do {
                 try await createFamily(familyName: familyName, myName: myName, modelContext: modelContext, dataSync: dataSync)
+                Track.event("family_created")
+                Track.refreshUserProperties(memberCount: 1, role: "creator")
             } catch {
+                Track.event("family_create_error", ["error": String(describing: error)])
                 isCreatingFamily = false
                 createFamilyError = error.localizedDescription
             }
@@ -151,9 +155,13 @@ final class FamilyService: ObservableObject {
         isJoiningFamily = true
         joinFamilyError = nil
         Task {
+            Track.event("family_join_start", ["method": "qr_or_link"])
             do {
                 try await joinFamily(token: token, myName: myName, modelContext: modelContext, dataSync: dataSync)
+                Track.event("family_joined", ["method": "qr_or_link"])
+                Track.refreshUserProperties(role: "member")
             } catch {
+                Track.event("family_join_error", ["method": "qr_or_link", "error": String(describing: error)])
                 isJoiningFamily = false
                 joinFamilyError = error.localizedDescription
             }
@@ -166,9 +174,13 @@ final class FamilyService: ObservableObject {
         isJoiningFamily = true
         joinFamilyError = nil
         Task {
+            Track.event("family_join_start", ["method": "code"])
             do {
                 try await joinFamily(code: code, myName: myName, modelContext: modelContext, dataSync: dataSync)
+                Track.event("family_joined", ["method": "code"])
+                Track.refreshUserProperties(role: "member")
             } catch {
+                Track.event("family_join_error", ["method": "code", "error": String(describing: error)])
                 isJoiningFamily = false
                 joinFamilyError = error.localizedDescription
             }
@@ -247,8 +259,10 @@ final class FamilyService: ObservableObject {
               let familyName = response.familyName,
               let memberId = response.memberId,
               let memberName = response.memberName else {
+            Track.event("family_restore_result", ["found": false])
             return false
         }
+        Track.event("family_restore_result", ["found": true])
         session.setMembership(familyID: familyId, memberID: memberId, familyName: familyName)
         PremiumManager.shared.syncFamilyPremiumStatus()
         upsertLocalMember(
@@ -334,6 +348,7 @@ final class FamilyService: ObservableObject {
             throw NSError(domain: "Aliaro", code: 0, userInfo: [NSLocalizedDescriptionKey: "You don't belong to a family group yet"])
         }
         struct Body: Encodable { let familyId: UUID; let memberId: UUID }
+        Track.event("invite_created")
         return try await invokeEdgeFunction(
             "create-invite",
             options: FunctionInvokeOptions(body: Body(familyId: familyID, memberId: memberID))
@@ -465,6 +480,7 @@ final class FamilyService: ObservableObject {
             "remove-family-member",
             options: FunctionInvokeOptions(body: Body(familyId: familyID, requesterMemberId: requesterID, targetMemberId: memberID))
         )
+        Track.event("member_removed")
     }
 
     // MARK: - Permissions (creator, or an admin, only — never the creator's own)
@@ -493,6 +509,11 @@ final class FamilyService: ObservableObject {
                 restrictedPermissions: Array(restrictedPermissions), isAdmin: isAdmin
             ))
         )
+        Track.event("member_permissions_saved", [
+            "restricted_count": restrictedPermissions.count,
+            "restricted": restrictedPermissions.sorted().joined(separator: ","),
+            "is_admin": isAdmin
+        ])
     }
 
     // MARK: - We've been removed (detected in real time)
@@ -506,6 +527,8 @@ final class FamilyService: ObservableObject {
         clearAllLocalData(modelContext: modelContext)
         session.clearMembership()
         dataSync.wasRemovedFromFamily = false
+        Track.event("family_removed_by_admin")
+        Track.refreshUserProperties()
     }
 
     // MARK: - Leave the group
@@ -521,6 +544,7 @@ final class FamilyService: ObservableObject {
             "leave-family",
             options: FunctionInvokeOptions(body: Body(familyId: familyID, memberId: memberID))
         )
+        Track.event("family_left")
         await dataSync.stopAll()
         await stopSettingsSync()
         clearAllLocalData(modelContext: modelContext)
@@ -573,6 +597,7 @@ final class FamilyService: ObservableObject {
     /// family group. `tabs` is the full set of `AppTab.settingsKey`
     /// values that should be hidden.
     func updateDisabledTabs(_ tabs: Set<String>) async throws {
+        Track.event("family_tabs_changed", ["hidden": tabs.sorted().joined(separator: ","), "hidden_count": tabs.count])
         try await updateFamilySettings(disabledTabs: tabs, startTab: session.startTab)
     }
 
@@ -580,6 +605,7 @@ final class FamilyService: ObservableObject {
     /// the group. `nil` means no preference (falls back to the first
     /// visible tab).
     func updateStartTab(_ tab: String?) async throws {
+        Track.event("family_start_tab_changed", ["tab": tab ?? "default"])
         try await updateFamilySettings(disabledTabs: session.disabledTabs, startTab: tab)
     }
 
@@ -595,6 +621,7 @@ final class FamilyService: ObservableObject {
         )
         session.setDisabledTabs(Set(response.disabledTabs))
         session.setStartTab(response.startTab)
+        Track.refreshUserProperties()
     }
 
     /// Keeps `FamilySession.disabledTabs`/`startTab` live-updated when the
