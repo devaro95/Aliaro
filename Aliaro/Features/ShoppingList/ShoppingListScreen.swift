@@ -36,12 +36,20 @@ struct ShoppingListScreen: View {
     }
 
     var body: some View {
+        trackedBody.trackScreen("shopping_list")
+    }
+
+    @ViewBuilder
+    private var trackedBody: some View {
         ScrollView {
             Color.clear.frame(height: 0).trackBottomBarScroll(bottomBarScrollTracker)
 
             VStack(spacing: 16) {
                 ALITopBar(title: "Shopping list", accent: ALIColors.shoppingAccent) {
-                    ALIFloatingButton(accent: ALIColors.shoppingAccent) { showAddSheet = true }
+                    ALIFloatingButton(accent: ALIColors.shoppingAccent) {
+                        Track.event("shopping_add_tap", ["pending": pending.count, "lists": lists.count])
+                        showAddSheet = true
+                    }
                         .scaleEffect(0.72)
                 }
 
@@ -59,7 +67,10 @@ struct ShoppingListScreen: View {
                     }
                     if !checked.isEmpty {
                         sectionCard(title: "Bought (\(checked.count))", rows: checked, dimmed: true)
-                        ALITextButton(text: "Clear bought") { clearChecked() }
+                        ALITextButton(text: "Clear bought") {
+                            Track.event("shopping_clear_bought", ["count": checked.count])
+                            clearChecked()
+                        }
                     }
                 }
             }
@@ -139,7 +150,7 @@ struct ShoppingListScreen: View {
                 }
                 Button {
                     if isNewListLocked {
-                        showPaywall = true
+                        showPaywall = Track.paywall("new_shopping_list")
                     } else {
                         newListName = ""
                         showNewListAlert = true
@@ -167,8 +178,11 @@ struct ShoppingListScreen: View {
         let locked = isListLocked(list)
         Button {
             if locked {
-                showPaywall = true
+                showPaywall = Track.paywall("locked_shopping_list_tab")
             } else {
+                if list.id != selectedListID {
+                    Track.event("shopping_list_switch", ["position": list.position, "lists": lists.count])
+                }
                 withAnimation(.easeInOut(duration: 0.2)) { selectedListID = list.id }
             }
         } label: {
@@ -185,6 +199,7 @@ struct ShoppingListScreen: View {
         .buttonStyle(.plain)
         .contextMenu {
             Button {
+                Track.event("shopping_list_menu", ["action": "rename"])
                 renameListText = list.name
                 renamingList = list
             } label: {
@@ -232,11 +247,16 @@ struct ShoppingListScreen: View {
             entry.isChecked.toggle()
             entry.checkedAt = entry.isChecked ? .now : nil
         }
+        Track.event(entry.isChecked ? "shopping_item_checked" : "shopping_item_unchecked", [
+            "item_name": entry.name,
+            "minutes_in_list": Int(Date.now.timeIntervalSince(entry.addedAt) / 60)
+        ])
         if let familyID = familySession.familyID { dataSync.pushShoppingListEntry(entry, familyID: familyID) }
     }
 
     private func delete(_ entry: ShoppingListEntry) {
         let entryID = entry.id
+        Track.event("shopping_item_removed", ["item_name": entry.name, "was_checked": entry.isChecked])
         withAnimation { modelContext.delete(entry) }
         dataSync.deleteShoppingListEntry(id: entryID)
     }
@@ -270,6 +290,7 @@ struct ShoppingListScreen: View {
         let list = ShoppingList(name: name, position: (lists.map(\.position).max() ?? -1) + 1)
         modelContext.insert(list)
         if let familyID = familySession.familyID { dataSync.pushShoppingList(list, familyID: familyID) }
+        Track.event("shopping_list_created", ["lists_total": lists.count + 1])
         selectedListID = list.id
     }
 
@@ -277,12 +298,14 @@ struct ShoppingListScreen: View {
         defer { renamingList = nil }
         guard let list = renamingList, !renameListText.trimmed.isEmpty else { return }
         list.name = renameListText.trimmed
+        Track.event("shopping_list_renamed")
         if let familyID = familySession.familyID { dataSync.pushShoppingList(list, familyID: familyID) }
     }
 
     private func deleteList(_ list: ShoppingList) {
         let listID = list.id
         let entriesToDelete = allEntries.filter { $0.listID == listID }
+        Track.event("shopping_list_deleted", ["entries": entriesToDelete.count, "lists_total": lists.count - 1])
         withAnimation {
             for entry in entriesToDelete {
                 let entryID = entry.id

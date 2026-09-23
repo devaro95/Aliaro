@@ -73,6 +73,11 @@ struct EconomiaStatsScreen: View {
     @State private var period: Period = .week
 
     var body: some View {
+        trackedBody.trackScreen("finances_stats")
+    }
+
+    @ViewBuilder
+    private var trackedBody: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
@@ -82,6 +87,9 @@ struct EconomiaStatsScreen: View {
                         }
                     }
                     .pickerStyle(.segmented)
+                    .onChange(of: period) { _, p in
+                        Track.event("stats_period_changed", ["screen": "finances_stats", "period": String(describing: p), "locked": isLocked])
+                    }
 
                     summaryCard
                     chartCard
@@ -90,7 +98,7 @@ struct EconomiaStatsScreen: View {
                 .padding(20)
                 .aliPremiumPreview(isLocked)
             }
-            .aliPremiumPreviewBanner(isLocked, buttonTitle: "Unlock statistics") { showPaywall = true }
+            .aliPremiumPreviewBanner(isLocked, buttonTitle: "Unlock statistics") { showPaywall = Track.paywall("finance_stats_banner") }
             .background(ALIColors.background)
             .navigationTitle("Statistics")
             .navigationBarTitleDisplayMode(.inline)

@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import StoreKit
 #if canImport(FirebaseCore)
 import FirebaseCore
 #endif
@@ -12,8 +13,8 @@ import FirebaseAnalytics
 /// `.trackScreen(...)` and never import Firebase themselves.
 ///
 /// Config file: `GoogleService-Info.plist` in `Aliaro/` (production).
-/// Debug builds prefer `GoogleService-Info-Dev.plist` if present, so dev
-/// events don't pollute production data. Without any plist, every call
+/// Only Release builds send anything: in DEBUG Firebase is never
+/// configured and events are just printed. Without the plist, every call
 /// here is a silent no-op (the app keeps working, just untracked).
 ///
 /// Privacy: no free text typed by the user is ever sent (titles, notes,
@@ -25,22 +26,20 @@ enum Track {
     // MARK: Setup
 
     static func configure() {
-        #if canImport(FirebaseCore)
-        guard FirebaseApp.app() == nil else { isEnabled = true; return }
         #if DEBUG
-        let candidates = ["GoogleService-Info-Dev", "GoogleService-Info"]
-        #else
-        let candidates = ["GoogleService-Info"]
-        #endif
-        for name in candidates {
-            if let path = Bundle.main.path(forResource: name, ofType: "plist"),
-               let options = FirebaseOptions(contentsOfFile: path) {
-                FirebaseApp.configure(options: options)
-                isEnabled = true
-                return
-            }
+        // Debug builds never send analytics: Firebase isn't even started,
+        // events are only printed to the console (📊) for checking.
+        isEnabled = false
+        print("ℹ️ Analytics off in DEBUG (events only printed)")
+        #elseif canImport(FirebaseCore)
+        guard FirebaseApp.app() == nil else { isEnabled = true; return }
+        guard let path = Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist"),
+              let options = FirebaseOptions(contentsOfFile: path) else {
+            print("ℹ️ Analytics disabled: no GoogleService-Info.plist in the bundle")
+            return
         }
-        print("ℹ️ Analytics disabled: no GoogleService-Info.plist in the bundle")
+        FirebaseApp.configure(options: options)
+        isEnabled = true
         #endif
     }
 
@@ -139,20 +138,13 @@ enum Track {
 
     /// StoreKit 2 transactions aren't picked up automatically by Firebase:
     /// forward each verified one so revenue shows up in the console.
-    static func logTransaction(_ transaction: Any) {
+    static func logTransaction(_ transaction: StoreKit.Transaction) {
         #if canImport(FirebaseAnalytics)
         guard isEnabled else { return }
-        if #available(iOS 15.0, *), let transaction = transaction as? StoreKitTransaction {
-            Analytics.logTransaction(transaction)
-        }
+        Analytics.logTransaction(transaction)
         #endif
     }
 }
-
-#if canImport(StoreKit)
-import StoreKit
-typealias StoreKitTransaction = StoreKit.Transaction
-#endif
 
 // MARK: - Screen tracking modifier
 

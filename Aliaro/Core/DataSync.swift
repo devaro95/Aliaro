@@ -991,6 +991,13 @@ final class AppDataSyncCoordinator: ObservableObject {
         familyID: UUID,
         modelContext: ModelContext
     ) {
+        // Analytics: every create/update/delete that goes through History
+        // (tasks, task logs, events, reminders, expenses, archives) is
+        // also an event, e.g. `expense_created`, `house_task_log_deleted`.
+        // Names only for chores (product data), never for personal items.
+        let chore = entityType == "house_task" || entityType == "house_task_log"
+        Track.event("\(entityType)_\(action)", ["task_name": chore ? entityName : nil])
+
         let entry = ActivityLogEntry(
             entityType: entityType, entityName: entityName, action: action,
             actorID: actorID, actorName: actorName

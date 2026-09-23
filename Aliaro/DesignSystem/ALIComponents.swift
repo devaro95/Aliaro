@@ -134,11 +134,12 @@ struct ALITextField: View {
 /// Round floating primary action button ("+").
 struct ALIFloatingButton: View {
     var accent: Color = ALIColors.primary
+    var systemImage: String = "plus"
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            Image(systemName: "plus")
+            Image(systemName: systemImage)
                 .font(.system(size: 22, weight: .bold))
                 .foregroundStyle(ALIColors.onAccent)
                 .frame(width: 58, height: 58)

@@ -92,6 +92,11 @@ struct ExpenseArchivesSheet: View {
     }
 
     var body: some View {
+        trackedBody.trackScreen("finances_archives")
+    }
+
+    @ViewBuilder
+    private var trackedBody: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
@@ -128,7 +133,7 @@ struct ExpenseArchivesSheet: View {
                 .padding(20)
                 .aliPremiumPreview(isArchiveLocked)
             }
-            .aliPremiumPreviewBanner(isArchiveLocked, buttonTitle: "Unlock archive") { showPaywall = true }
+            .aliPremiumPreviewBanner(isArchiveLocked, buttonTitle: "Unlock archive") { showPaywall = Track.paywall("finance_archive_banner") }
             .background(ALIColors.background)
             .navigationTitle("Archive")
             .navigationBarTitleDisplayMode(.inline)
@@ -195,12 +200,14 @@ struct ExpenseArchivesSheet: View {
                 } else {
                     if canArchive {
                         ALIPrimaryButton(text: "Archive and start over", enabled: !shownExpenses.isEmpty, accent: ALIColors.economiaAccent) {
+                            Track.event("finance_archive_tap", ["transactions": shownExpenses.count])
                             archiveName = defaultName
                             showNamePrompt = true
                         }
                     }
                     if !shownExpenses.isEmpty {
                         ALISecondaryButton(text: "View PDF without archiving") {
+                            Track.event("finance_pdf_view", ["source": "current", "transactions": shownExpenses.count])
                             previewURL = try? ExpenseArchivePDF.makeCurrent(
                                 expenses: expenses, categories: categories, members: members
                             )
@@ -299,6 +306,7 @@ struct ExpenseArchivesSheet: View {
             .buttonStyle(.plain)
 
             Button {
+                Track.event("finance_pdf_view", ["source": "archive_row"])
                 let id = row.id
                 if let archive = try? modelContext.fetch(FetchDescriptor<ExpenseArchive>(predicate: #Predicate { $0.id == id })).first {
                     previewURL = try? ExpenseArchivePDF.make(for: archive)
@@ -334,6 +342,11 @@ struct ExpenseArchiveDetailView: View {
     @State private var showDeleteConfirm = false
 
     var body: some View {
+        trackedBody.trackScreen("finances_archive_detail")
+    }
+
+    @ViewBuilder
+    private var trackedBody: some View {
         let snapshot = archive.snapshot
         ScrollView {
             VStack(spacing: 16) {
@@ -397,6 +410,7 @@ struct ExpenseArchiveDetailView: View {
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {
                 Button {
+                    Track.event("finance_pdf_view", ["source": "archive_detail"])
                     previewURL = try? ExpenseArchivePDF.make(for: archive)
                 } label: {
                     Image(systemName: "doc.text")

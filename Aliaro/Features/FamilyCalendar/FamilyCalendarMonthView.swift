@@ -138,6 +138,7 @@ struct FamilyCalendarMonthView: View {
         let isRangeEnd = spanning != nil && (columnIndex == 6 || spanningIDs[index + 1] != spanning)
 
         return Button {
+            Track.event("calendar_day_tap", ["screen": "calendar", "is_today": Calendar.current.isDateInToday(day)])
             withAnimation(.easeInOut(duration: 0.15)) { selectedDay = day }
         } label: {
             VStack(spacing: 4) {
@@ -199,6 +200,7 @@ struct FamilyCalendarMonthView: View {
     }
 
     private func shiftMonth(by value: Int) {
+        Track.event("calendar_month_change", ["screen": "calendar", "direction": value > 0 ? "next" : "prev"])
         if let newMonth = calendar.date(byAdding: .month, value: value, to: displayedMonth) {
             withAnimation(.easeInOut(duration: 0.2)) { displayedMonth = newMonth }
         }

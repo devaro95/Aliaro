@@ -48,6 +48,11 @@ struct EconomiaScreen: View {
     @State private var filterEndDate: Date?
 
     var body: some View {
+        trackedBody.trackScreen("finances")
+    }
+
+    @ViewBuilder
+    private var trackedBody: some View {
         ScrollView {
             Color.clear.frame(height: 0).trackBottomBarScroll(bottomBarScrollTracker)
 
@@ -55,6 +60,7 @@ struct EconomiaScreen: View {
                 ALITopBar(title: "Finances", accent: ALIColors.economiaAccent) {
                     HStack(spacing: 10) {
                         Button {
+                            Track.event("finances_archives_tap", ["locked": premium.isLocked(.financeArchive)])
                             showArchives = true
                         } label: {
                             Image(systemName: "archivebox.fill")
@@ -67,6 +73,7 @@ struct EconomiaScreen: View {
                         }
                         .accessibilityLabel("Archive")
                         Button {
+                            Track.event("finances_stats_tap", ["locked": isStatsLocked])
                             showStats = true
                         } label: {
                             Image(systemName: "chart.pie.fill")
@@ -78,7 +85,10 @@ struct EconomiaScreen: View {
                                 .aliPremiumPreviewOverlay(isStatsLocked)
                         }
                         if canAdd {
-                            ALIFloatingButton(accent: ALIColors.economiaAccent) { showAddSheet = true }
+                            ALIFloatingButton(accent: ALIColors.economiaAccent) {
+                                Track.event("expense_add_tap", ["transactions": expenses.count, "members": members.count])
+                                showAddSheet = true
+                            }
                                 .scaleEffect(0.72)
                         }
                     }
@@ -129,6 +139,9 @@ struct EconomiaScreen: View {
         }
         .sheet(isPresented: $showDateFilterSheet) {
             EconomiaDateFilterSheet(startDate: filterStartDate, endDate: filterEndDate) { start, end in
+                Track.event(start == nil ? "finances_date_filter_removed" : "finances_date_filter_applied", [
+                    "days": start.flatMap { s in end.flatMap { Calendar.current.dateComponents([.day], from: s, to: $0).day } }.map { $0 + 1 }
+                ])
                 filterStartDate = start
                 filterEndDate = end
             }
@@ -189,8 +202,14 @@ struct EconomiaScreen: View {
                         row: row,
                         canEdit: canEdit,
                         canDelete: canDelete,
-                        onEdit: { expenseToEdit = liveExpense(id: row.id) },
-                        onDelete: { expensePendingDelete = liveExpense(id: row.id) }
+                        onEdit: {
+                            Track.event("expense_open", ["is_income": row.isIncome, "categories": row.categoryNames.count])
+                            expenseToEdit = liveExpense(id: row.id)
+                        },
+                        onDelete: {
+                            Track.event("expense_delete_tap", ["is_income": row.isIncome])
+                            expensePendingDelete = liveExpense(id: row.id)
+                        }
                     )
                     if index < rows.count - 1 {
                         Divider().overlay(ALIColors.outline)
@@ -232,6 +251,12 @@ struct EconomiaScreen: View {
                         .foregroundStyle(ALIColors.mutedInk)
                     TextField("Search by name or amount", text: $searchText)
                         .foregroundStyle(ALIColors.ink)
+                        .onSubmit {
+                            Track.event("finances_search", ["results": filteredExpenses.count, "query_length": searchText.trimmed.count])
+                        }
+                        .onChange(of: searchText.isEmpty) { _, isEmpty in
+                            if !isEmpty { Track.event("finances_search_started") }
+                        }
                     if !searchText.isEmpty {
                         Button {
                             searchText = ""
@@ -252,6 +277,7 @@ struct EconomiaScreen: View {
                 )
 
                 Button {
+                    Track.event("finances_date_filter_tap", ["active": filterStartDate != nil])
                     showDateFilterSheet = true
                 } label: {
                     Image(systemName: filterStartDate != nil ? "calendar.badge.checkmark" : "calendar")
@@ -438,6 +464,11 @@ private struct EconomiaDateFilterSheet: View {
     }
 
     var body: some View {
+        trackedBody.trackScreen("finances_date_filter")
+    }
+
+    @ViewBuilder
+    private var trackedBody: some View {
         NavigationStack {
             VStack(spacing: 20) {
                 EconomiaRangeCalendar(startDate: $startDate, endDate: $endDate, accent: ALIColors.economiaAccent)

@@ -44,6 +44,11 @@ struct HouseTasksScreen: View {
     }
 
     var body: some View {
+        trackedBody.trackScreen("house_tasks")
+    }
+
+    @ViewBuilder
+    private var trackedBody: some View {
         ScrollView {
             Color.clear.frame(height: 0).trackBottomBarScroll(bottomBarScrollTracker)
 
@@ -53,7 +58,10 @@ struct HouseTasksScreen: View {
                         statsButton
                         viewModeToggleButton
                         ALIFloatingButton(accent: ALIColors.houseTasksAccent) {
-                            if isNewTaskLocked { showPaywall = true } else { showAddSheet = true }
+                            if isNewTaskLocked { showPaywall = Track.paywall("new_house_task") } else {
+                                Track.event("house_task_add_tap", ["tasks": tasks.count])
+                                showAddSheet = true
+                            }
                         }
                         .scaleEffect(0.72)
                         .aliPremiumLockOverlay(isNewTaskLocked)
@@ -78,10 +86,13 @@ struct HouseTasksScreen: View {
                                         lastLog: lastLog(for: task),
                                         locked: isLocked,
                                         onToggleToday: {
-                                            if isLocked { showPaywall = true } else { toggleToday(task) }
+                                            if isLocked { showPaywall = Track.paywall("locked_task_toggle") } else { toggleToday(task) }
                                         },
                                         onOpenDetail: {
-                                            if isLocked { showPaywall = true } else { selectedTask = task }
+                                            if isLocked { showPaywall = Track.paywall("locked_task_detail") } else {
+                                                Track.event("house_task_open", ["task_name": task.name])
+                                                selectedTask = task
+                                            }
                                         }
                                     )
                                     if index < tasks.count - 1 {
@@ -112,7 +123,7 @@ struct HouseTasksScreen: View {
                 ALIPremiumPreviewBanner(
                     message: .tasksCalendar,
                     buttonTitle: "Unlock calendar"
-                ) { showPaywall = true }
+                ) { showPaywall = Track.paywall("tasks_calendar_banner") }
                 .padding(.horizontal, 16)
                 // Bottom bar: 56pt tall + 8pt below it, measured from the
                 // safe-area bottom — plus a 12pt gap above it.
@@ -139,6 +150,7 @@ struct HouseTasksScreen: View {
     /// locked it shows as a premium preview with sample data.
     private var statsButton: some View {
         Button {
+            Track.event("house_tasks_stats_tap", ["locked": isStatsLocked])
             showStats = true
         } label: {
             Image(systemName: "chart.bar.fill")
@@ -161,6 +173,7 @@ struct HouseTasksScreen: View {
             withAnimation(.easeInOut(duration: 0.15)) {
                 viewMode = (viewMode == .list) ? .calendar : .list
             }
+            Track.event("house_tasks_view_mode", ["mode": viewMode == .list ? "list" : "calendar", "locked": isCalendarViewLocked])
         } label: {
             Image(systemName: viewMode == .list ? "calendar" : "list.bullet")
                 .font(.system(size: 16, weight: .semibold))
@@ -184,6 +197,7 @@ struct HouseTasksScreen: View {
         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
             if let todayLog = lastLog(for: task), Calendar.current.isDateInToday(todayLog.completedAt) {
                 let logID = todayLog.id
+                Track.event("house_task_undone_today", ["task_name": task.name, "source": "list_checkbox"])
                 modelContext.delete(todayLog)
                 dataSync.deleteHouseTaskLog(id: logID)
             } else {
@@ -191,6 +205,7 @@ struct HouseTasksScreen: View {
                 let actorID = familySession.memberID
                 let actorName = actorID.flatMap { modelContext.familyMemberName(id: $0) }
                 let log = HouseTaskLog(taskID: task.id, taskName: task.name, createdByID: actorID, createdByName: actorName)
+                Track.event("house_task_done_today", ["task_name": task.name, "source": "list_checkbox"])
                 modelContext.insert(log)
                 if let familyID = familySession.familyID {
                     dataSync.pushHouseTaskLog(log, familyID: familyID)

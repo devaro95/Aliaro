@@ -22,6 +22,11 @@ struct MemberPermissionsSheet: View {
     }
 
     var body: some View {
+        trackedBody.trackScreen("member_permissions")
+    }
+
+    @ViewBuilder
+    private var trackedBody: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 16) {

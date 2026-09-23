@@ -34,13 +34,21 @@ struct FamilyCalendarScreen: View {
     }
 
     var body: some View {
+        trackedBody.trackScreen("calendar")
+    }
+
+    @ViewBuilder
+    private var trackedBody: some View {
         ScrollView {
             Color.clear.frame(height: 0).trackBottomBarScroll(bottomBarScrollTracker)
 
             VStack(spacing: 16) {
                 ALITopBar(title: "Family calendar", accent: ALIColors.familyAccent) {
                     if canAdd {
-                        ALIFloatingButton(accent: ALIColors.familyAccent) { showAddSheet = true }
+                        ALIFloatingButton(accent: ALIColors.familyAccent) {
+                            Track.event("calendar_event_add_tap", ["events": events.count])
+                            showAddSheet = true
+                        }
                             .scaleEffect(0.72)
                     }
                 }
@@ -106,7 +114,13 @@ struct FamilyCalendarScreen: View {
                 } else {
                     VStack(spacing: 0) {
                         ForEach(Array(dayEvents.enumerated()), id: \.element.id) { index, event in
-                            EventRow(event: event, canDelete: canDelete, onTap: { selectedEvent = event }, onDelete: { eventPendingDelete = event })
+                            EventRow(event: event, canDelete: canDelete, onTap: {
+                                Track.event("calendar_event_open", ["source": "selected_day"])
+                                selectedEvent = event
+                            }, onDelete: {
+                                Track.event("calendar_event_delete_tap", ["source": "selected_day"])
+                                eventPendingDelete = event
+                            })
                             if index < dayEvents.count - 1 {
                                 Divider().overlay(ALIColors.outline)
                             }
@@ -129,7 +143,13 @@ struct FamilyCalendarScreen: View {
                     ALICard {
                         VStack(spacing: 0) {
                             ForEach(Array(upcoming.enumerated()), id: \.element.id) { index, event in
-                                EventRow(event: event, canDelete: canDelete, onTap: { selectedEvent = event }, onDelete: { eventPendingDelete = event })
+                                EventRow(event: event, canDelete: canDelete, onTap: {
+                                    Track.event("calendar_event_open", ["source": "upcoming"])
+                                    selectedEvent = event
+                                }, onDelete: {
+                                    Track.event("calendar_event_delete_tap", ["source": "upcoming"])
+                                    eventPendingDelete = event
+                                })
                                 if index < upcoming.count - 1 {
                                     Divider().overlay(ALIColors.outline)
                                 }
