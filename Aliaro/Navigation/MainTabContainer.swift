@@ -31,13 +31,19 @@ struct MainTabContainer: View {
     /// What the bottom bar shows, in order.
     private var barTabs: [AppTab] { [.home] + favorites }
 
-    /// Where the app opens, from the admin's start tab: a favorite is
+    /// Where the app opens, from the admin's start tab (except right after
+    /// the group was loaded on this device, which always opens on Home): a favorite is
     /// selected in the bar; any other visible feature is pushed on top of
     /// Home; hidden/unset falls back to Home. Read directly from the
     /// singleton since it feeds `@State` initial values, evaluated before
     /// environment objects are injected.
     private static func initialNavigation() -> (selected: AppTab, homePath: [AppTab]) {
         let session = FamilySession.shared
+        // First time in after creating/joining/restoring the group: Home.
+        if session.opensOnHomeNext {
+            session.opensOnHomeNext = false
+            return (.home, [])
+        }
         let start = AppTab.start(stored: session.startTab, excluding: session.disabledTabs)
         guard start != .home else { return (.home, []) }
         let favorites = AppTab.favorites(stored: session.favoriteTabs, excluding: session.disabledTabs)
@@ -84,6 +90,9 @@ struct MainTabContainer: View {
         }
         .onChange(of: selected) { old, new in
             bottomBarScrollTracker.reset()
+            // Leaving Home for another tab drops whatever was pushed on it,
+            // so tapping Home in the bar always lands on the Home root.
+            if old == .home, new != .home, !homePath.isEmpty { homePath.removeAll() }
             Track.event("tab_selected", ["tab": new.settingsKey, "from": old.settingsKey])
         }
         .onChange(of: homePath) { _, _ in

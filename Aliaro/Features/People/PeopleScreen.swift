@@ -34,6 +34,7 @@ struct PeopleScreen: View {
 
     #if DEBUG
     @State private var isSeedingMockData = false
+    @State private var hasMockData = DebugMockData.hasSeededData
     #endif
 
     var body: some View {
@@ -58,13 +59,13 @@ struct PeopleScreen: View {
                     subscriptionCard
                 }
 
-                #if DEBUG
-                debugCard
-                #endif
-
                 notificationsCard
 
                 accountCard
+
+                #if DEBUG
+                debugCard
+                #endif
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 100)
@@ -442,8 +443,16 @@ struct PeopleScreen: View {
                     isSeedingMockData = true
                     DebugMockData.seed(modelContext: modelContext)
                     isSeedingMockData = false
+                    hasMockData = DebugMockData.hasSeededData
                 }
                 .disabled(isSeedingMockData)
+
+                ALISecondaryButton(text: "Delete all mock data") {
+                    DebugMockData.clear(modelContext: modelContext)
+                    hasMockData = DebugMockData.hasSeededData
+                }
+                .disabled(!hasMockData)
+                .opacity(hasMockData ? 1 : 0.5)
             }
         }
     }

@@ -46,6 +46,7 @@
 		495277006C9F41AABCFA1836 /* FinanceBalances.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A98C682B2C848FF92F15E02 /* FinanceBalances.swift */; };
 		B80F6E372E3A4B86ACFC367C /* AddFamilyEventSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C4A3FF6A66C4D95B7146FA6 /* AddFamilyEventSheet.swift */; };
 		DD8F15CB3B4C4FA3B3D490CF /* FamilyCalendarMonthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AF8CDC29510419F82BB3283 /* FamilyCalendarMonthView.swift */; };
+		14461A355A9E485FB45A4D43 /* FamilyCalendarPeopleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B68361698E7647359DF6C1EE /* FamilyCalendarPeopleView.swift */; };
 		FC91409E6D68481785D7B29F /* FamilyCalendarScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0535BC7EFF5A484FBC7DEF96 /* FamilyCalendarScreen.swift */; };
 		A5B0509D8B9B41EC8FFA9478 /* HomeScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 800B9C4B219B4F22B4E21205 /* HomeScreen.swift */; };
 		BF6E78A61F224303B4A07357 /* AddHouseTaskSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 006C0CE378F4499685433009 /* AddHouseTaskSheet.swift */; };
@@ -191,6 +192,7 @@
 		4A98C682B2C848FF92F15E02 /* FinanceBalances.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinanceBalances.swift; sourceTree = "<group>"; };
 		0C4A3FF6A66C4D95B7146FA6 /* AddFamilyEventSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddFamilyEventSheet.swift; sourceTree = "<group>"; };
 		9AF8CDC29510419F82BB3283 /* FamilyCalendarMonthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilyCalendarMonthView.swift; sourceTree = "<group>"; };
+		B68361698E7647359DF6C1EE /* FamilyCalendarPeopleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilyCalendarPeopleView.swift; sourceTree = "<group>"; };
 		0535BC7EFF5A484FBC7DEF96 /* FamilyCalendarScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilyCalendarScreen.swift; sourceTree = "<group>"; };
 		800B9C4B219B4F22B4E21205 /* HomeScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeScreen.swift; sourceTree = "<group>"; };
 		006C0CE378F4499685433009 /* AddHouseTaskSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddHouseTaskSheet.swift; sourceTree = "<group>"; };
@@ -375,6 +377,7 @@
 			children = (
 				0C4A3FF6A66C4D95B7146FA6,
 				9AF8CDC29510419F82BB3283,
+				B68361698E7647359DF6C1EE,
 				0535BC7EFF5A484FBC7DEF96
 			);
 			path = FamilyCalendar;
@@ -744,6 +747,7 @@
 				495277006C9F41AABCFA1836 /* FinanceBalances.swift in Sources */,
 				B80F6E372E3A4B86ACFC367C /* AddFamilyEventSheet.swift in Sources */,
 				DD8F15CB3B4C4FA3B3D490CF /* FamilyCalendarMonthView.swift in Sources */,
+				14461A355A9E485FB45A4D43 /* FamilyCalendarPeopleView.swift in Sources */,
 				FC91409E6D68481785D7B29F /* FamilyCalendarScreen.swift in Sources */,
 				A5B0509D8B9B41EC8FFA9478 /* HomeScreen.swift in Sources */,
 				BF6E78A61F224303B4A07357 /* AddHouseTaskSheet.swift in Sources */,

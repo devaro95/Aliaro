@@ -46,6 +46,11 @@ struct HomeScreen: View {
     @Query private var allExpenses: [Expense]
 
     @State private var showPaywall = false
+    /// Entrance animation, played every time Home is loaded (app launch,
+    /// switching back to the Home tab): sections and cards start hidden
+    /// and pop in one by one once `entranceRevealed`. Not replayed when
+    /// coming back from a screen pushed on top (same view instance).
+    @State private var entranceRevealed = false
     /// Placeholder notes for the locked Board preview.
     @State private var sampleBoardNotes = BoardNote.samples()
     /// Virtual slot currently shown by the infinite carousel.
@@ -122,27 +127,39 @@ struct HomeScreen: View {
                 .padding(.horizontal, 20)
                 // Pull "Today" closer to the title (only on Home).
                 .padding(.bottom, -12)
+                .homeEntrance(hidden: isEntranceHidden, revealed: entranceRevealed, step: 0)
 
                 let cards = summaryCards
                 if !cards.isEmpty {
-                    sectionTitle("Today")
-                    VStack(spacing: 10) {
-                        carousel(cards)
-                        carouselDots(cards)
+                    VStack(alignment: .leading, spacing: 16) {
+                        sectionTitle("Today")
+                        VStack(spacing: 10) {
+                            carousel(cards)
+                            carouselDots(cards)
+                        }
                     }
+                    .homeEntrance(hidden: isEntranceHidden, revealed: entranceRevealed, step: 1)
                 }
 
                 if visibleFeatures.contains(.board) {
-                    if premium.isLocked(.board) {
-                        sectionTitle("Board")
-                        boardLockedPreview
-                    } else if !myBoardNotes.isEmpty {
-                        sectionTitle("Board")
-                        boardSection
+                    Group {
+                        if premium.isLocked(.board) {
+                            VStack(alignment: .leading, spacing: 16) {
+                                sectionTitle("Board")
+                                boardLockedPreview
+                            }
+                        } else if !myBoardNotes.isEmpty {
+                            VStack(alignment: .leading, spacing: 16) {
+                                sectionTitle("Board")
+                                boardSection
+                            }
+                        }
                     }
+                    .homeEntrance(hidden: isEntranceHidden, revealed: entranceRevealed, step: 2)
                 }
 
                 featuresHeader
+                    .homeEntrance(hidden: isEntranceHidden, revealed: entranceRevealed, step: 3)
                 if isReordering {
                     Label {
                         Text("Drag a card by its handle to reorder it. Only you see this order.")
@@ -164,8 +181,24 @@ struct HomeScreen: View {
         .sensoryFeedback(.impact(weight: .medium), trigger: draggingTab) { _, new in new != nil }
         .sensoryFeedback(.selection, trigger: dragOrder)
         .onDisappear { isReordering = false }
+        .onAppear(perform: startEntranceIfNeeded)
+        .sensoryFeedback(.impact(weight: .light), trigger: entranceRevealed) { _, new in new }
         .sheet(isPresented: $showPaywall) {
             PaywallView()
+        }
+    }
+
+    // MARK: Entrance
+
+    /// Hidden from the very first frame until the entrance plays.
+    private var isEntranceHidden: Bool { !entranceRevealed }
+
+    private func startEntranceIfNeeded() {
+        guard !entranceRevealed else { return }
+        Task { @MainActor in
+            // Short beat so the screen transition lands before the pop.
+            try? await Task.sleep(for: .milliseconds(120))
+            entranceRevealed = true
         }
     }
 
@@ -387,6 +420,11 @@ struct HomeScreen: View {
         LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
             ForEach(displayedFeatures) { tab in
                 featureTile(tab)
+                    .homeEntrance(
+                        hidden: isEntranceHidden,
+                        revealed: entranceRevealed,
+                        step: 4 + (displayedFeatures.firstIndex(of: tab) ?? 0)
+                    )
             }
         }
         .coordinateSpace(.named(Self.gridSpace))
@@ -689,4 +727,29 @@ private struct HomeSummary: Identifiable {
     let detail: String?
 
     var id: AppTab { tab }
+}
+
+/// Home's one-off entrance: each section/card starts small, low and
+/// transparent, then pops in with a springy bounce, staggered by `step`.
+private struct HomeEntranceModifier: ViewModifier {
+    let hidden: Bool
+    let revealed: Bool
+    let step: Int
+
+    func body(content: Content) -> some View {
+        content
+            .opacity(hidden ? 0 : 1)
+            .scaleEffect(hidden ? 0.7 : 1)
+            .offset(y: hidden ? 30 : 0)
+            .animation(
+                .spring(response: 0.5, dampingFraction: 0.6).delay(Double(min(step, 14)) * 0.07),
+                value: revealed
+            )
+    }
+}
+
+private extension View {
+    func homeEntrance(hidden: Bool, revealed: Bool, step: Int) -> some View {
+        modifier(HomeEntranceModifier(hidden: hidden, revealed: revealed, step: step))
+    }
 }
