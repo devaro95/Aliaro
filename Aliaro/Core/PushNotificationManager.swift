@@ -9,6 +9,10 @@ final class PushNotificationManager: NSObject, ObservableObject {
     static let shared = PushNotificationManager()
 
     private var pendingToken: String?
+
+    /// Screen to open after tapping a push (`tab` in the payload, an
+    /// `AppTab.settingsKey`). Consumed — and reset — by `MainTabContainer`.
+    @Published var pendingTab: AppTab?
     private weak var familyService: FamilyService?
 
     func attach(familyService: FamilyService) {
@@ -28,6 +32,30 @@ final class PushNotificationManager: NSObject, ObservableObject {
             Track.setProperty(granted ? "yes" : "no", for: "push_enabled")
             guard granted else { return }
             DispatchQueue.main.async {
+                UIApplication.shared.registerForRemoteNotifications()
+            }
+        }
+    }
+
+    /// Re-registers with APNs if permission was already granted, so the
+    /// token reaches Supabase once there IS a member. Needed because the
+    /// permission prompt runs at the end of the intro — before login and
+    /// before creating/joining a group — when `registerPushToken` has no
+    /// `memberID` yet and drops the token. Called whenever the member
+    /// changes (join/create/restore) and at every launch with a group
+    /// (tokens can rotate, or be cleared server-side if APNs rejects them).
+    func refreshRegistrationIfAuthorized() {
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+            let status = settings.authorizationStatus
+            if status == .notDetermined {
+                // Never asked on this device (e.g. intro seen on an older
+                // build): ask now that there's a group to get pushes from.
+                DispatchQueue.main.async { PushNotificationManager.shared.requestAuthorizationAndRegister() }
+                return
+            }
+            guard status == .authorized || status == .provisional || status == .ephemeral else { return }
+            DispatchQueue.main.async {
+                UNUserNotificationCenter.current().delegate = PushNotificationManager.shared
                 UIApplication.shared.registerForRemoteNotifications()
             }
         }
@@ -61,6 +89,12 @@ extension PushNotificationManager: UNUserNotificationCenterDelegate {
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
         Track.event("push_opened", ["kind": Self.kind(of: response.notification)])
+        let tabKey = response.notification.request.content.userInfo["tab"] as? String
+        Task { @MainActor in
+            if let tabKey, let tab = AppTab.from(settingsKey: tabKey) {
+                PushNotificationManager.shared.pendingTab = tab
+            }
+        }
         completionHandler()
     }
 
@@ -80,6 +114,7 @@ final class AliaroAppDelegate: NSObject, UIApplicationDelegate {
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
         Track.configure()
+        KeyboardDismisser.shared.install()
         // So taps on notifications are tracked from the very first launch
         // (not only after the onboarding permission prompt set it).
         UNUserNotificationCenter.current().delegate = PushNotificationManager.shared

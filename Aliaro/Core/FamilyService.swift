@@ -22,11 +22,12 @@ final class FamilyService: ObservableObject {
     /// back to `FamilyOnboardingView`.
     @Published var createFamilyError: String?
 
-    /// Flips to `true` right after this device creates OR joins a family
-    /// group, if it isn't linked to a real account yet, so the UI can
-    /// nudge it once to sync via People (so the group survives a
-    /// reinstall or a new phone). Reset by whoever consumes it.
-    @Published var showSyncReminder = false
+    /// True right after this device creates a brand-new family group, until
+    /// the admin finishes (or skips) `FamilySetupView`: picking which
+    /// features the group uses and the (up to 5) favorites in the bottom bar.
+    /// In-memory on purpose — if the app is killed mid-setup the group
+    /// simply keeps the defaults, editable later from People → App features.
+    @Published private(set) var needsInitialSetup = false
 
     /// Minimum time the "creating your group" screen stays up, regardless
     /// of how fast the setup above actually finishes.
@@ -131,12 +132,27 @@ final class FamilyService: ObservableObject {
         }
         try? modelContext.save()
         try? await minimumWait
+        needsInitialSetup = true
         isCreatingFamily = false
-        // Only worth asking to save the group if this device isn't
-        // already linked to a real account — e.g. it left a previous
-        // group and created a new one, so the same email already covers
-        // it (see AuthSession).
-        showSyncReminder = !AuthSession.shared.isLinked
+    }
+
+    /// Saves the choices made in `FamilySetupView` (features + bottom-bar
+    /// favorites) in one call and leaves the setup flow.
+    func completeInitialSetup(disabledTabs: Set<String>, favoriteTabs: [String]) async throws {
+        Track.event("family_initial_setup_done", [
+            "hidden": disabledTabs.sorted().joined(separator: ","),
+            "hidden_count": disabledTabs.count,
+            "favorites": favoriteTabs.joined(separator: ","),
+        ])
+        try await updateFamilySettings(disabledTabs: disabledTabs, startTab: session.startTab, favoriteTabs: favoriteTabs)
+        needsInitialSetup = false
+    }
+
+    /// Leaves `FamilySetupView` keeping the defaults (every feature on,
+    /// first 3 as favorites).
+    func skipInitialSetup() {
+        Track.event("family_initial_setup_skipped")
+        needsInitialSetup = false
     }
 
     private struct JoinFamilyResponse: Decodable {
@@ -225,9 +241,6 @@ final class FamilyService: ObservableObject {
         await dataSync.startAll(familyID: response.familyId, currentMemberID: response.memberId, modelContext: modelContext)
         try? await minimumWait
         isJoiningFamily = false
-        // Same nudge as creating a group: joining one is just as much at
-        // risk of being lost on this device alone if it isn't linked yet.
-        showSyncReminder = !AuthSession.shared.isLinked
     }
 
     // MARK: - Restore (signing in on a new/reinstalled device)
@@ -411,7 +424,7 @@ final class FamilyService: ObservableObject {
     private func upsertLocalMember(
         id: UUID,
         name: String,
-        emoji: String = "🙂",
+        emoji: String = ALIIcon.user,
         joinedAt: Date = .now,
         isCurrentDevice: Bool,
         isCreator: Bool,
@@ -438,7 +451,7 @@ final class FamilyService: ObservableObject {
 
     // MARK: - RLS self-heal (link this device's auth_user_id)
 
-    /// Called once per launch, right after `AuthSession.ensureSession()`,
+    /// Called once per launch, each time the account is signed in (see ContentView),
     /// whenever this device already belongs to a family group. Supabase
     /// RLS now scopes every table read/write to `family_members.auth_user_id
     /// = auth.uid()`, but that column is only stamped at create/join time
@@ -481,6 +494,26 @@ final class FamilyService: ObservableObject {
             options: FunctionInvokeOptions(body: Body(familyId: familyID, requesterMemberId: requesterID, targetMemberId: memberID))
         )
         Track.event("member_removed")
+    }
+
+    // MARK: - Rename myself
+
+    /// Changes the name this person shows with in the family group. Goes
+    /// through the `update_my_member_name` RPC (security definer, only
+    /// touches the row whose `auth_user_id = auth.uid()`); other devices
+    /// get it in real time (`family_members` UPDATE).
+    func updateMyName(_ name: String, modelContext: ModelContext) async throws {
+        guard let memberID = session.memberID else {
+            throw NSError(domain: "Aliaro", code: 0, userInfo: [NSLocalizedDescriptionKey: "You don't belong to a family group yet"])
+        }
+        struct Params: Encodable { let p_member_id: UUID; let p_name: String }
+        try await supabase
+            .rpc("update_my_member_name", params: Params(p_member_id: memberID, p_name: name))
+            .execute()
+        let descriptor = FetchDescriptor<FamilyMember>(predicate: #Predicate { $0.id == memberID })
+        if let me = try? modelContext.fetch(descriptor).first { me.name = name }
+        try? await AuthSession.shared.updateDisplayName(name)
+        Track.event("member_name_changed")
     }
 
     // MARK: - Permissions (creator, or an admin, only — never the creator's own)
@@ -551,11 +584,46 @@ final class FamilyService: ObservableObject {
         session.clearMembership()
     }
 
+    // MARK: - Log out
+
+    /// Logs out of the account on this device: stops sync and clears the
+    /// local session and cached data, WITHOUT leaving the family group —
+    /// logging back in (here or on any device) restores it.
+    func signOut(modelContext: ModelContext, dataSync: AppDataSyncCoordinator) async {
+        Track.event("auth_logout")
+        await clearLocalFamily(modelContext: modelContext, dataSync: dataSync)
+        await AuthSession.shared.signOut()
+        Track.refreshUserProperties()
+    }
+
+    // MARK: - Delete account
+
+    /// Deletes the account for good (see `AuthSession.deleteAccount`) and
+    /// wipes everything cached on this device, like a fresh install.
+    func deleteAccount(password: String, modelContext: ModelContext, dataSync: AppDataSyncCoordinator) async throws {
+        try await AuthSession.shared.deleteAccount(password: password)
+        Track.event("account_deleted")
+        await clearLocalFamily(modelContext: modelContext, dataSync: dataSync)
+        Track.refreshUserProperties()
+    }
+
+    /// Drops the family group cached on this device (session + synced data)
+    /// without touching the account or the backend. Used at launch when a
+    /// group is cached but nobody is signed in: otherwise the next login
+    /// would briefly land on that stale group's Home (and link it to the
+    /// new account) before bouncing to create/join.
+    func clearLocalFamily(modelContext: ModelContext, dataSync: AppDataSyncCoordinator) async {
+        await dataSync.stopAll()
+        await stopSettingsSync()
+        clearAllLocalData(modelContext: modelContext)
+        session.clearMembership()
+    }
+
     private func clearAllLocalData(modelContext: ModelContext) {
         let types: [any PersistentModel.Type] = [
             FamilyMember.self, Dish.self, MealPlanEntry.self, GroceryItem.self,
             ShoppingList.self, ShoppingListEntry.self, HouseTask.self, HouseTaskLog.self,
-            FamilyEvent.self, Reminder.self, Expense.self, ExpenseCategory.self, ActivityLogEntry.self,
+            FamilyEvent.self, Reminder.self, BoardNote.self, Expense.self, ExpenseCategory.self, ActivityLogEntry.self,
             ExpenseArchive.self,
         ]
         for type in types {
@@ -570,6 +638,8 @@ final class FamilyService: ObservableObject {
         let disabled_tabs: [String]
         let start_tab: String?
         let is_premium: Bool
+        /// Optional so a row without the column (older backend) still decodes.
+        let favorite_tabs: [String]?
     }
 
     /// Fetches which tabs the admin has turned off (and which one is the
@@ -580,13 +650,14 @@ final class FamilyService: ObservableObject {
         do {
             let row: RemoteFamilySettings = try await supabase
                 .from("families")
-                .select("disabled_tabs,start_tab,is_premium")
+                .select("disabled_tabs,start_tab,is_premium,favorite_tabs")
                 .eq("id", value: familyID)
                 .single()
                 .execute()
                 .value
             session.setDisabledTabs(Set(row.disabled_tabs))
             session.setStartTab(row.start_tab)
+            session.setFavoriteTabs(row.favorite_tabs ?? [])
             session.setFamilyPremium(row.is_premium)
         } catch {
             lastError = error.localizedDescription
@@ -598,7 +669,7 @@ final class FamilyService: ObservableObject {
     /// values that should be hidden.
     func updateDisabledTabs(_ tabs: Set<String>) async throws {
         Track.event("family_tabs_changed", ["hidden": tabs.sorted().joined(separator: ","), "hidden_count": tabs.count])
-        try await updateFamilySettings(disabledTabs: tabs, startTab: session.startTab)
+        try await updateFamilySettings(disabledTabs: tabs, startTab: session.startTab, favoriteTabs: session.favoriteTabs)
     }
 
     /// Admin-only: picks which tab the app opens on for every device in
@@ -606,21 +677,29 @@ final class FamilyService: ObservableObject {
     /// visible tab).
     func updateStartTab(_ tab: String?) async throws {
         Track.event("family_start_tab_changed", ["tab": tab ?? "default"])
-        try await updateFamilySettings(disabledTabs: session.disabledTabs, startTab: tab)
+        try await updateFamilySettings(disabledTabs: session.disabledTabs, startTab: tab, favoriteTabs: session.favoriteTabs)
     }
 
-    private func updateFamilySettings(disabledTabs: Set<String>, startTab: String?) async throws {
+    /// Admin-only: picks the (up to `AppTab.maxFavorites`) features shown
+    /// in everyone's bottom bar next to Home, in order.
+    func updateFavoriteTabs(_ tabs: [String]) async throws {
+        Track.event("family_favorite_tabs_changed", ["favorites": tabs.joined(separator: ","), "count": tabs.count])
+        try await updateFamilySettings(disabledTabs: session.disabledTabs, startTab: session.startTab, favoriteTabs: tabs)
+    }
+
+    private func updateFamilySettings(disabledTabs: Set<String>, startTab: String?, favoriteTabs: [String]) async throws {
         guard let familyID = session.familyID, let memberID = session.memberID else {
             throw NSError(domain: "Aliaro", code: 0, userInfo: [NSLocalizedDescriptionKey: "You don't belong to a family group yet"])
         }
-        struct Body: Encodable { let familyId: UUID; let requesterMemberId: UUID; let disabledTabs: [String]; let startTab: String? }
-        struct SettingsResponse: Decodable { let ok: Bool; let disabledTabs: [String]; let startTab: String? }
+        struct Body: Encodable { let familyId: UUID; let requesterMemberId: UUID; let disabledTabs: [String]; let startTab: String?; let favoriteTabs: [String] }
+        struct SettingsResponse: Decodable { let ok: Bool; let disabledTabs: [String]; let startTab: String?; let favoriteTabs: [String]? }
         let response: SettingsResponse = try await invokeEdgeFunction(
             "update-family-settings",
-            options: FunctionInvokeOptions(body: Body(familyId: familyID, requesterMemberId: memberID, disabledTabs: Array(disabledTabs), startTab: startTab))
+            options: FunctionInvokeOptions(body: Body(familyId: familyID, requesterMemberId: memberID, disabledTabs: Array(disabledTabs), startTab: startTab, favoriteTabs: favoriteTabs))
         )
         session.setDisabledTabs(Set(response.disabledTabs))
         session.setStartTab(response.startTab)
+        if let favorites = response.favoriteTabs { session.setFavoriteTabs(favorites) }
         Track.refreshUserProperties()
     }
 
@@ -642,6 +721,7 @@ final class FamilyService: ObservableObject {
                 await MainActor.run {
                     self?.session.setDisabledTabs(Set(row.disabled_tabs))
                     self?.session.setStartTab(row.start_tab)
+                    self?.session.setFavoriteTabs(row.favorite_tabs ?? [])
                     self?.session.setFamilyPremium(row.is_premium)
                 }
             }

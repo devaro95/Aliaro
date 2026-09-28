@@ -104,13 +104,13 @@ struct EconomiaScreen: View {
 
                 if expenses.isEmpty {
                     ALIEmptyState(
-                        emoji: "💶",
+                        icon: ALIIcon.euro,
                         title: "No transactions",
                         subtitle: "Add the group's first expense or income."
                     )
                 } else if filteredExpenses.isEmpty {
                     ALIEmptyState(
-                        emoji: "🔍",
+                        icon: ALIIcon.search,
                         title: "No results",
                         subtitle: "Try another name, amount, or date."
                     )
@@ -188,7 +188,7 @@ struct EconomiaScreen: View {
                 isIncome: expense.isIncome,
                 personName: expense.personName,
                 occurredAt: expense.occurredAt,
-                emoji: cats.first?.emoji ?? (expense.isIncome ? "💰" : "🧾"),
+                emoji: cats.first?.emoji ?? (expense.isIncome ? ALIIcon.coins : ALIIcon.receipt),
                 categoryNames: cats.map(\.name)
             )
         }
@@ -381,8 +381,7 @@ private struct ExpenseRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Text(row.emoji)
-                .font(.system(size: 17))
+            ALIIconView(icon: row.emoji, size: 20)
                 .frame(width: 24)
             VStack(alignment: .leading, spacing: 3) {
                 Text(row.name)

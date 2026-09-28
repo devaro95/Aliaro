@@ -67,7 +67,7 @@ struct AddToShoppingListSheet: View {
 
                 if filteredCatalog.isEmpty {
                     ALIEmptyState(
-                        emoji: "✨",
+                        icon: ALIIcon.sparkles,
                         title: catalog.isEmpty ? "No items yet" : "No results",
                         subtitle: catalog.isEmpty ? "Type above to create the first one." : "Try another search or create it."
                     )

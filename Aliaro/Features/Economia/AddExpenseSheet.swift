@@ -192,8 +192,7 @@ struct AddExpenseSheet: View {
             }
         } label: {
             HStack(spacing: 12) {
-                Text(category.emoji)
-                    .font(.system(size: 20))
+                ALIIconView(icon: category.emoji, size: 20)
                 Text(category.name)
                     .font(ALITypography.bodyMedium)
                     .foregroundStyle(ALIColors.ink)
@@ -313,11 +312,12 @@ private struct AddCategorySheet: View {
     let onCreate: (ExpenseCategory) -> Void
 
     @State private var name = ""
-    @State private var emoji = "🏷️"
+    @State private var emoji = ALIIcon.tag
 
     private let emojiOptions = [
-        "🏷️", "🛒", "🏠", "💡", "🚗", "🍽️", "💊", "🎬",
-        "🛍️", "📚", "🐾", "✈️", "🎁", "💻", "🧾", "🏋️"
+        ALIIcon.tag, ALIIcon.cart, ALIIcon.home, ALIIcon.bulb, ALIIcon.car, ALIIcon.dining,
+        ALIIcon.pill, ALIIcon.film, ALIIcon.shopping, ALIIcon.book, ALIIcon.pet, ALIIcon.plane,
+        ALIIcon.gift, ALIIcon.laptop, ALIIcon.receipt, ALIIcon.gym,
     ]
 
     private var canSave: Bool { !name.trimmed.isEmpty }
@@ -362,8 +362,7 @@ private struct AddCategorySheet: View {
         return Button {
             emoji = option
         } label: {
-            Text(option)
-                .font(.system(size: 22))
+            ALIIconView(icon: option, size: 22)
                 .frame(width: 48, height: 48)
                 .background(isSelected ? ALIColors.economiaAccent.opacity(0.3) : ALIColors.surfaceVariant)
                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))

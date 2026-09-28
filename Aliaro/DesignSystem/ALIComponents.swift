@@ -131,6 +131,51 @@ struct ALITextField: View {
     }
 }
 
+/// Password field matching `ALITextField`, with a show/hide toggle.
+struct ALISecureField: View {
+    let placeholder: LocalizedStringKey
+    @Binding var text: String
+    var isNewPassword: Bool = false
+    var onSubmit: (() -> Void)? = nil
+
+    @State private var isRevealed = false
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Group {
+                if isRevealed {
+                    TextField(placeholder, text: $text)
+                } else {
+                    SecureField(placeholder, text: $text)
+                }
+            }
+            .textContentType(isNewPassword ? .newPassword : .password)
+            .textInputAutocapitalization(.never)
+            .autocorrectionDisabled()
+            .submitLabel(.done)
+            .onSubmit { onSubmit?() }
+
+            Button {
+                isRevealed.toggle()
+            } label: {
+                Image(systemName: isRevealed ? "eye.slash" : "eye")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(ALIColors.mutedInk)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 16)
+        .frame(minHeight: 52)
+        .foregroundStyle(ALIColors.ink)
+        .background(ALIColors.surface)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(ALIColors.outline, lineWidth: 1)
+        )
+    }
+}
+
 /// Round floating primary action button ("+").
 struct ALIFloatingButton: View {
     var accent: Color = ALIColors.primary
@@ -152,14 +197,14 @@ struct ALIFloatingButton: View {
 
 /// Friendly empty state, reusable across any tab.
 struct ALIEmptyState: View {
-    let emoji: String
+    let icon: String
     let title: LocalizedStringKey
     let subtitle: LocalizedStringKey
 
     var body: some View {
         VStack(spacing: 10) {
-            Text(emoji)
-                .font(.system(size: 44))
+            ALIIconView(icon: icon, size: 42, color: ALIColors.mutedInk)
+                .padding(.bottom, 4)
             Text(title)
                 .font(ALITypography.titleLarge)
                 .foregroundStyle(ALIColors.ink)
@@ -324,5 +369,145 @@ extension View {
                     .padding(.bottom, 8)
             }
         }
+    }
+}
+
+// MARK: - Home
+
+/// Summary card for the Home carousel: a feature's icon + name on top, the
+/// headline fact of the day, and an optional supporting line. Tapping it
+/// opens the feature (the action is handled by the caller's `Button`).
+struct ALIHomeSummaryCard: View {
+    let title: LocalizedStringKey
+    let systemImage: String
+    let accent: Color
+    let headline: String
+    var detail: String? = nil
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 8) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(ALIColors.onAccent)
+                    .frame(width: 28, height: 28)
+                    .background(accent)
+                    .clipShape(Circle())
+                Text(title)
+                    .font(ALITypography.labelLarge)
+                    .foregroundStyle(ALIColors.mutedInk)
+                Spacer(minLength: 4)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(ALIColors.mutedInk)
+            }
+
+            Spacer(minLength: 0)
+
+            Text(headline)
+                .font(ALITypography.headlineMedium)
+                .foregroundStyle(ALIColors.ink)
+                .lineLimit(2)
+                .minimumScaleFactor(0.85)
+                .multilineTextAlignment(.leading)
+
+            if let detail {
+                Text(detail)
+                    .font(ALITypography.bodyMedium)
+                    .foregroundStyle(ALIColors.mutedInk)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.leading)
+            }
+        }
+        .padding(18)
+        .frame(maxWidth: .infinity, minHeight: 150, maxHeight: .infinity, alignment: .topLeading)
+        .background(
+            LinearGradient(
+                colors: [accent.opacity(0.28), ALIColors.surface],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
+        .background(ALIColors.surface)
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .stroke(ALIColors.outline, lineWidth: 1)
+        )
+        .contentShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+    }
+}
+
+/// Square-ish shortcut tile for the Home feature grid: icon + name + a
+/// short stat line ("12 recipes"). The stat line always takes its space so
+/// every tile in the grid keeps the same height.
+struct ALIFeatureTile: View {
+    let title: LocalizedStringKey
+    let systemImage: String
+    let accent: Color
+    var detail: String? = nil
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Image(systemName: systemImage)
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundStyle(ALIColors.onAccent)
+                .frame(width: 44, height: 44)
+                .background(accent)
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(ALITypography.titleLarge)
+                    .foregroundStyle(ALIColors.ink)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                Text(detail ?? " ")
+                    .font(ALITypography.labelLarge)
+                    .foregroundStyle(ALIColors.mutedInk)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(ALIColors.surface)
+        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .stroke(ALIColors.outline, lineWidth: 1)
+        )
+        .contentShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+    }
+}
+
+/// Round avatar button used on the Home top bar to open People: the
+/// first letter of the member's name, or a generic icon if there's no name.
+struct ALIAvatarButton: View {
+    let name: String?
+    var accent: Color = ALIColors.peopleAccent
+    let action: () -> Void
+
+    private var initial: String? {
+        guard let first = name?.trimmingCharacters(in: .whitespacesAndNewlines).first else { return nil }
+        return String(first).uppercased()
+    }
+
+    var body: some View {
+        Button(action: action) {
+            Group {
+                if let initial {
+                    Text(initial)
+                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                        .foregroundStyle(ALIColors.onAccent)
+                } else {
+                    ALIIconView(icon: ALIIcon.user, size: 20, color: ALIColors.onAccent, fallback: ALIIcon.user)
+                }
+            }
+                .frame(width: 44, height: 44)
+                .background(accent.opacity(0.55))
+                .clipShape(Circle())
+                .overlay(Circle().stroke(ALIColors.outline, lineWidth: 1))
+        }
+        .buttonStyle(.plain)
     }
 }

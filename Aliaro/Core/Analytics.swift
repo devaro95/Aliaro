@@ -129,9 +129,10 @@ enum Track {
         setProperty(session.hasJoinedFamily ? "yes" : "no", for: "in_family")
         setProperty(session.isFamilyPremium ? "yes" : "no", for: "family_premium")
         setProperty(premium.subscriptions.isSubscribed ? "yes" : "no", for: "is_subscriber")
-        setProperty(AuthSession.shared.isLinked ? "yes" : "no", for: "email_linked")
+        setProperty(AuthSession.shared.isSignedIn ? "yes" : "no", for: "signed_in")
         setProperty(session.disabledTabs.isEmpty ? "none" : session.disabledTabs.sorted().joined(separator: ","), for: "hidden_tabs")
         setProperty(session.startTab ?? "default", for: "start_tab")
+        setProperty(session.favoriteTabs.isEmpty ? "default" : session.favoriteTabs.joined(separator: ","), for: "favorite_tabs")
         if let memberCount { setProperty(String(memberCount), for: "family_size") }
         if let role { setProperty(role, for: "family_role") }
     }

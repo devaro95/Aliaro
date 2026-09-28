@@ -52,18 +52,20 @@ struct ExpenseArchiveSnapshot: Codable, Equatable {
         var amount: Double
         var isIncome: Bool
         var personName: String
-        /// "🛒 Groceries"-style labels, already resolved.
+        /// Category names, already resolved (archives made before the SVG
+        /// icons stored "<emoji> Name" labels instead).
         var categories: [String]
         var emoji: String
         var occurredAt: Double
 
         var date: Date { Date(timeIntervalSince1970: occurredAt) }
 
-        /// Category names without their leading emoji.
+        /// Category names, dropping the leading emoji of legacy labels.
         var categoryNames: [String] {
             categories.map { label in
                 let parts = label.split(separator: " ", maxSplits: 1)
-                return parts.count == 2 ? String(parts[1]) : label
+                guard parts.count == 2, parts[0].unicodeScalars.contains(where: { $0.properties.isEmojiPresentation || $0.value == 0xFE0F }) else { return label }
+                return String(parts[1])
             }
         }
     }
@@ -102,8 +104,8 @@ struct ExpenseArchiveSnapshot: Codable, Equatable {
                     amount: expense.amount,
                     isIncome: expense.isIncome,
                     personName: expense.personName,
-                    categories: cats.map { "\($0.emoji) \($0.name)" },
-                    emoji: cats.first?.emoji ?? (expense.isIncome ? "💰" : "🧾"),
+                    categories: cats.map(\.name),
+                    emoji: cats.first?.emoji ?? (expense.isIncome ? ALIIcon.coins : ALIIcon.receipt),
                     occurredAt: expense.occurredAt.timeIntervalSince1970
                 )
             }

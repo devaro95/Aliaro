@@ -1,130 +1,185 @@
 import Foundation
 import Supabase
 
-/// Wraps Supabase Auth so the app always has a session — anonymous by
-/// default, "linked" once the person actually signs in with their email.
+/// Wraps Supabase Auth (email + password). Signing in is required to use
+/// the app: `ContentView` shows `AuthWelcomeView` until `isSignedIn`.
 ///
-/// The trick that makes login optional while still recoverable: an
-/// anonymous session already has a stable user id from the moment the app
-/// is installed, and `family_members.auth_user_id` is stamped with it as
-/// soon as a group is created or joined (see `create-family`/`join-family`).
-/// Linking an email to that SAME session (instead of creating a new one)
-/// means the id never changes — so if the person later reinstalls and
-/// signs back in with that email, the backend can find the family group
-/// that id already belongs to (`restore-membership`) and hand it right
-/// back. Someone who never taps "sign in" is unaffected: everything still
-/// works exactly as before, just tied to an anonymous id instead of a
-/// device id de-facto.
+/// The person's name is stored in the account's `user_metadata.name` at
+/// sign-up, so it doesn't have to be asked again when creating or joining
+/// a family group (`displayName`).
 ///
-/// Confirmation happens by typing the 6-digit code Supabase emails (its
-/// default OTP template), not by tapping a link: `requestLink`/`requestSignIn`
-/// send the code, and `confirmLink`/`confirmSignIn` exchange it for a
-/// session via `verifyOTP`.
+/// `family_members.auth_user_id` is stamped with the account id when a
+/// group is created or joined (see `create-family`/`join-family`), so
+/// signing in on a new or reinstalled device recovers that group
+/// (`FamilyService.restoreMembership`).
 ///
-/// Privacy note: the Supabase session (anonymous or linked) lives in the
-/// Keychain, which — unlike `UserDefaults` — survives an app delete/
-/// reinstall by design. Left alone, that would let someone who buys or
-/// is given a phone (without a factory reset) inherit the previous
-/// owner's session and family group. `wipeStaleSessionIfFreshInstall`
-/// closes that: it detects a real fresh install (no `UserDefaults` flag
-/// set — reinstalling wipes `UserDefaults` too) and clears any leftover
-/// Keychain session before `ensureSession` would otherwise pick it back
-/// up. Trade-off: this also means the SAME owner reinstalling the app
-/// has to sign back in with their email to recover their group, instead
-/// of it happening automatically — chosen deliberately over the privacy
-/// risk.
+/// Privacy note: the Supabase session lives in the Keychain, which —
+/// unlike `UserDefaults` — survives an app delete/reinstall.
+/// `prepareSession` clears it on a real fresh install so
+/// a second-hand phone never inherits the previous owner's account.
 @MainActor
 final class AuthSession: ObservableObject {
     static let shared = AuthSession()
 
     private static let hasLaunchedBeforeKey = "aliaro.hasLaunchedBefore"
 
-    @Published private(set) var isAnonymous = true
+    /// `false` until the stored session (if any) has been read at launch —
+    /// lets `ContentView` avoid flashing the welcome screen for someone
+    /// who is already signed in.
+    @Published private(set) var hasResolvedSession = false
+    @Published private(set) var isSignedIn = false
     @Published private(set) var email: String?
-
-    /// Whether this device is signed in with a real (non-anonymous) account.
-    var isLinked: Bool { !isAnonymous }
+    @Published private(set) var displayName: String?
 
     private var listenTask: Task<Void, Never>?
 
     private init() {
         listenTask = Task { [weak self] in
-            for await (_, session) in supabase.auth.authStateChanges {
+            for await (event, session) in supabase.auth.authStateChanges {
+                // The launch state is set by `prepareSession` (from the
+                // stored session, even if expired and offline), so the
+                // initial event is ignored to avoid logging out offline.
+                if event == .initialSession { continue }
                 await self?.apply(session)
             }
         }
     }
 
     private func apply(_ session: Session?) {
-        isAnonymous = session?.user.isAnonymous ?? true
-        email = session?.user.email
+        // Anonymous sessions (from the old optional-login model) don't
+        // count as signed in — see `prepareSession`.
+        let user = session.flatMap { $0.user.isAnonymous ? nil : $0.user }
+        isSignedIn = user != nil
+        email = user?.email
+        displayName = user.flatMap { Self.name(from: $0) }
     }
 
-    /// Called once at launch, before `ensureSession()`. Wipes any Keychain
-    /// session left over from a previous install — see the type doc above
-    /// for why. No-ops on every launch except the first one after a real
-    /// install (fresh device, or a genuine reinstall), detected via a
-    /// `UserDefaults` flag that a reinstall clears just like the Keychain
-    /// item would otherwise survive.
-    func wipeStaleSessionIfFreshInstall() async {
-        let defaults = UserDefaults.standard
-        guard !defaults.bool(forKey: Self.hasLaunchedBeforeKey) else { return }
-        // .local: clears the on-device session without needing network,
-        // so this can't get stuck offline right after a fresh install.
-        try? await supabase.auth.signOut(scope: .local)
-        defaults.set(true, forKey: Self.hasLaunchedBeforeKey)
-    }
-
-    /// Called once at launch: makes sure there is always a session, so
-    /// every family group always has an owner id to attach to — even
-    /// before the person ever taps "sign in". Safe to call repeatedly.
-    func ensureSession() async {
-        if (try? await supabase.auth.session) != nil { return }
-        do {
-            _ = try await supabase.auth.signInAnonymously()
-        } catch {
-            print("⚠️ Could not start anonymous session: \(error)")
+    private static func name(from user: User) -> String? {
+        if case let .string(name)? = user.userMetadata["name"] {
+            let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.isEmpty ? nil : trimmed
         }
+        return nil
     }
 
-    // MARK: - Linking (turning this device's anonymous id into a real account)
+    // MARK: - Launch
 
-    /// Sends a 6-digit confirmation code to `email`, without losing the
-    /// current session — the family group already attached to it stays
-    /// attached. Throws if that email already belongs to another account
-    /// (manual linking refuses duplicates); the caller should offer "sign
-    /// in" instead in that case. `confirmLink` finishes this.
-    func requestLink(email: String) async throws {
-        try await supabase.auth.update(user: UserAttributes(email: email))
+    /// Called once at launch. Wipes a Keychain session left over from a
+    /// previous install, drops any leftover anonymous session, then marks
+    /// the session as resolved.
+    func prepareSession() async {
+        let defaults = UserDefaults.standard
+        if !defaults.bool(forKey: Self.hasLaunchedBeforeKey) {
+            // .local: clears the on-device session without needing network.
+            try? await supabase.auth.signOut(scope: .local)
+            defaults.set(true, forKey: Self.hasLaunchedBeforeKey)
+        }
+        // Stored session, even if its access token expired: it's refreshed
+        // on the first request, so offline launches stay signed in.
+        let current = supabase.auth.currentSession
+        if let current, current.user.isAnonymous {
+            try? await supabase.auth.signOut(scope: .local)
+            apply(nil)
+        } else {
+            apply(current)
+        }
+        hasResolvedSession = true
     }
 
-    /// Exchanges the code sent by `requestLink` for the linked email.
-    func confirmLink(email: String, code: String) async throws {
-        try await supabase.auth.verifyOTP(email: email, token: code, type: .emailChange)
+    // MARK: - Register
+
+    enum SignUpResult {
+        /// Signed in straight away (email confirmation disabled in Supabase).
+        case signedIn
+        /// Supabase emailed a confirmation code — finish with `confirmSignUp`.
+        case needsConfirmation
     }
 
-    // MARK: - Signing in (recovering an account on a new/reinstalled device)
-
-    /// Sends a 6-digit sign-in code to an existing account. `confirmSignIn`
-    /// finishes this, switching this device over to that account's
-    /// identity (replacing the local anonymous session).
-    func requestSignIn(email: String) async throws {
-        try await supabase.auth.signInWithOTP(email: email)
+    func signUp(name: String, email: String, password: String) async throws -> SignUpResult {
+        let response = try await supabase.auth.signUp(
+            email: email,
+            password: password,
+            data: ["name": .string(name)]
+        )
+        if let session = response.session {
+            apply(session)
+            return .signedIn
+        }
+        return .needsConfirmation
     }
 
-    /// Exchanges the code sent by `requestSignIn` for a session.
-    func confirmSignIn(email: String, code: String) async throws {
-        try await supabase.auth.verifyOTP(email: email, token: code, type: .email)
+    func confirmSignUp(email: String, code: String) async throws {
+        let response = try await supabase.auth.verifyOTP(email: email, token: code, type: .signup)
+        if let session = response.session { apply(session) }
     }
 
-    #if DEBUG
-    /// Debug-only: signs out and starts a brand-new anonymous session, so
-    /// the "save your group" flow can be tested repeatedly. Reinstalling
-    /// the app is NOT enough for this on its own — Supabase's session
-    /// lives in the Keychain, which survives an app delete/reinstall.
-    func debugResetSession() async {
+    func resendSignUpCode(email: String) async throws {
+        try await supabase.auth.resend(email: email, type: .signup)
+    }
+
+    // MARK: - Log in / out
+
+    func signIn(email: String, password: String) async throws {
+        let session = try await supabase.auth.signIn(email: email, password: password)
+        apply(session)
+    }
+
+    func signOut() async {
         try? await supabase.auth.signOut()
-        await ensureSession()
+        // Make sure the UI flips even if the network call failed.
+        try? await supabase.auth.signOut(scope: .local)
+        apply(nil)
     }
-    #endif
+
+    // MARK: - Password recovery (code by email, no deep link needed)
+
+    /// Emails a recovery code. Requires the "Reset Password" email
+    /// template in Supabase to include `{{ .Token }}`.
+    func sendPasswordReset(email: String) async throws {
+        try await supabase.auth.resetPasswordForEmail(email)
+    }
+
+    /// Verifies the recovery code (which signs the person in) and sets the
+    /// new password on the account.
+    func resetPassword(email: String, code: String, newPassword: String) async throws {
+        try await supabase.auth.verifyOTP(email: email, token: code, type: .recovery)
+        _ = try await supabase.auth.update(user: UserAttributes(password: newPassword))
+        apply(try? await supabase.auth.session)
+    }
+
+    // MARK: - Account (change password / name)
+
+    /// Re-checks the current password (signing in again) before setting
+    /// the new one, so an unlocked phone alone can't change it.
+    func changePassword(currentPassword: String, newPassword: String) async throws {
+        guard let email else {
+            throw NSError(domain: "Aliaro", code: 0, userInfo: [NSLocalizedDescriptionKey: String(localized: "You're not logged in")])
+        }
+        _ = try await supabase.auth.signIn(email: email, password: currentPassword)
+        _ = try await supabase.auth.update(user: UserAttributes(password: newPassword))
+        apply(try? await supabase.auth.session)
+    }
+
+    /// Permanently deletes the account (App Store 5.1.1(v)). Re-checks the
+    /// password first, then `delete-account` (identity taken from the JWT)
+    /// leaves every family group — deleting the group if this was the
+    /// last member — and removes the Supabase Auth user. Finally drops the
+    /// local session.
+    func deleteAccount(password: String) async throws {
+        guard let email else {
+            throw NSError(domain: "Aliaro", code: 0, userInfo: [NSLocalizedDescriptionKey: String(localized: "You're not logged in")])
+        }
+        _ = try await supabase.auth.signIn(email: email, password: password)
+        struct OKResponse: Decodable { let ok: Bool }
+        let _: OKResponse = try await invokeEdgeFunction("delete-account")
+        try? await supabase.auth.signOut(scope: .local)
+        apply(nil)
+    }
+
+    /// Keeps `user_metadata.name` in sync with the name shown in the
+    /// family group (used as default when creating/joining a group).
+    func updateDisplayName(_ name: String) async throws {
+        let user = try await supabase.auth.update(user: UserAttributes(data: ["name": .string(name)]))
+        displayName = Self.name(from: user)
+    }
 }

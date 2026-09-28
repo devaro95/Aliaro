@@ -15,7 +15,7 @@ enum DebugMockData {
         // for screenshots that show who did what.
         var members = (try? modelContext.fetch(FetchDescriptor<FamilyMember>())) ?? []
         if members.count <= 1 {
-            let extras: [(String, String)] = [("Lucía", "👩"), ("Marcos", "🧑"), ("Nora", "👧")]
+            let extras: [(String, String)] = [("Lucía", ALIIcon.user), ("Marcos", ALIIcon.user), ("Nora", ALIIcon.user)]
             for (name, emoji) in extras {
                 let member = FamilyMember(name: name, emoji: emoji, isCurrentDevice: false)
                 modelContext.insert(member)
@@ -80,13 +80,26 @@ enum DebugMockData {
             }
         }
 
+        // One-off task scheduled in 2 days at 20:00, assigned to one person.
+        if let assignee = members.randomElement() {
+            let inTwoDays = calendar.date(byAdding: .day, value: 2, to: .now) ?? .now
+            modelContext.insert(HouseTask(
+                name: "Water the plants",
+                scheduledAt: calendar.date(bySettingHour: 20, minute: 0, second: 0, of: inTwoDays),
+                forEveryone: false,
+                memberIDs: [assignee.id],
+                createdByID: members.first?.id,
+                createdByName: members.first?.name
+            ))
+        }
+
         // Calendar events.
         let eventDefs: [(String, String, Int, Int, Int)] = [
-            ("Dentist appointment", "🦷", 1, 9, 10),
-            ("Family dinner", "🍽️", 3, 20, 22),
-            ("Mia's birthday", "🎂", 6, 0, 24),
-            ("Weekend trip", "🚗", 10, 0, 48),
-            ("Parent-teacher meeting", "🏫", 14, 17, 18)
+            ("Dentist appointment", ALIIcon.doctor, 1, 9, 10),
+            ("Family dinner", ALIIcon.dining, 3, 20, 22),
+            ("Mia's birthday", ALIIcon.cake, 6, 0, 24),
+            ("Weekend trip", ALIIcon.car, 10, 0, 48),
+            ("Parent-teacher meeting", ALIIcon.school, 14, 17, 18)
         ]
         for (title, emoji, daysFromNow, startHourOffset, durationHours) in eventDefs {
             let baseDay = calendar.date(byAdding: .day, value: daysFromNow, to: calendar.startOfDay(for: .now)) ?? .now
@@ -102,6 +115,13 @@ enum DebugMockData {
             let fireDate = calendar.date(byAdding: .day, value: daysFromNow, to: .now) ?? .now
             let creator = members.randomElement()
             modelContext.insert(Reminder(title: title, fireDate: fireDate, notifyEveryone: true, createdByID: creator?.id, createdByName: creator?.name))
+        }
+
+        // Board notes.
+        let boardDefs: [(String, Int)] = [("Wi-Fi: Aliaro-Home / pastel2026", 0), ("The plumber comes on Thursday morning", 1)]
+        for (text, color) in boardDefs {
+            let creator = members.randomElement()
+            modelContext.insert(BoardNote(text: text, colorIndex: color, createdByID: creator?.id, createdByName: creator?.name))
         }
 
         // Expense categories (defaults, if missing) + a handful of expenses.
