@@ -12,7 +12,7 @@ final class FamilySession: ObservableObject {
     @Published private(set) var memberID: UUID?
     @Published private(set) var familyName: String?
     /// `AppTab.settingsKey` values the admin has turned off for this
-    /// family group — everything not in here shows in the bottom bar.
+    /// family group — hidden from the Home grid/carousel and the bottom bar.
     /// Cached locally so the bar renders correctly before the network
     /// catches up, kept live via `FamilyService.startSettingsSync`.
     @Published private(set) var disabledTabs: Set<String>
@@ -20,6 +20,16 @@ final class FamilySession: ObservableObject {
     /// device in the group, chosen by the admin. `nil` means no
     /// preference (falls back to the first visible tab).
     @Published private(set) var startTab: String?
+    /// `AppTab.settingsKey` of the (up to 5) features the admin picked for
+    /// the bottom bar next to Home, in order. Empty means "not chosen yet"
+    /// (the first 3 visible features are used) — resolve with
+    /// `AppTab.favorites(stored:excluding:)`.
+    @Published private(set) var favoriteTabs: [String]
+    /// This member's own order for the Home feature cards (`settingsKey`s).
+    /// Personal and device-local — not a family setting: every member can
+    /// arrange their Home as they like. Empty = canonical order. Resolve
+    /// with `AppTab.ordered(_:by:)`.
+    @Published private(set) var homeFeatureOrder: [String]
     /// Whether this family group has an active Aliaro Premium
     /// subscription (from *any* member's device, not just this one) —
     /// `families.is_premium`, synced by `FamilyService` the same way as
@@ -38,6 +48,8 @@ final class FamilySession: ObservableObject {
         static let familyName = "aliaro.familyName"
         static let disabledTabs = "aliaro.disabledTabs"
         static let startTab = "aliaro.startTab"
+        static let favoriteTabs = "aliaro.favoriteTabs"
+        static let homeFeatureOrder = "aliaro.homeFeatureOrder"
         static let isFamilyPremium = "aliaro.isFamilyPremium"
         static let hasSeenAppIntro = "aliaro.hasSeenAppIntro"
     }
@@ -63,6 +75,8 @@ final class FamilySession: ObservableObject {
         familyName = defaults.string(forKey: Keys.familyName)
         disabledTabs = Set(defaults.stringArray(forKey: Keys.disabledTabs) ?? [])
         startTab = defaults.string(forKey: Keys.startTab)
+        favoriteTabs = defaults.stringArray(forKey: Keys.favoriteTabs) ?? []
+        homeFeatureOrder = defaults.stringArray(forKey: Keys.homeFeatureOrder) ?? []
         isFamilyPremium = defaults.bool(forKey: Keys.isFamilyPremium)
         hasSeenAppIntro = defaults.bool(forKey: Keys.hasSeenAppIntro)
     }
@@ -96,6 +110,19 @@ final class FamilySession: ObservableObject {
         }
     }
 
+    /// Updates the group's bottom-bar favorites (called by `FamilyService`
+    /// after fetching/pushing/receiving — real time — the family's settings).
+    func setFavoriteTabs(_ tabs: [String]) {
+        favoriteTabs = tabs
+        defaults.set(tabs, forKey: Keys.favoriteTabs)
+    }
+
+    /// Saves this member's personal order of the Home feature cards.
+    func setHomeFeatureOrder(_ keys: [String]) {
+        homeFeatureOrder = keys
+        defaults.set(keys, forKey: Keys.homeFeatureOrder)
+    }
+
     /// Updates whether this family group currently has an active Aliaro
     /// Premium subscription (called by `FamilyService` after
     /// fetching/pushing/receiving — real time — the family's settings).
@@ -117,12 +144,16 @@ final class FamilySession: ObservableObject {
         familyName = nil
         disabledTabs = []
         startTab = nil
+        favoriteTabs = []
+        homeFeatureOrder = []
         isFamilyPremium = false
         defaults.removeObject(forKey: Keys.familyID)
         defaults.removeObject(forKey: Keys.memberID)
         defaults.removeObject(forKey: Keys.familyName)
         defaults.removeObject(forKey: Keys.disabledTabs)
         defaults.removeObject(forKey: Keys.startTab)
+        defaults.removeObject(forKey: Keys.favoriteTabs)
+        defaults.removeObject(forKey: Keys.homeFeatureOrder)
         defaults.removeObject(forKey: Keys.isFamilyPremium)
     }
 }

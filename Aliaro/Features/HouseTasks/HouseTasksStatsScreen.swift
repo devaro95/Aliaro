@@ -181,8 +181,8 @@ struct HouseTasksStatsScreen: View {
 
     private func displayName(forKey key: String, fallback: String?) -> (String, String) {
         if let member = members.first(where: { $0.id.uuidString == key }) { return (member.name, member.emoji) }
-        if let fallback, !fallback.isEmpty { return (fallback, "👤") }
-        return (String(localized: "Unknown"), "❔")
+        if let fallback, !fallback.isEmpty { return (fallback, ALIIcon.user) }
+        return (String(localized: "Unknown"), ALIIcon.user)
     }
 
     /// Every current member (even with 0 tasks) plus anyone else who
@@ -506,9 +506,12 @@ struct HouseTasksStatsScreen: View {
                     .foregroundStyle(ALIColors.mutedInk)
 
                 if items.isEmpty {
-                    Text("Everything is up to date 🎉")
-                        .font(ALITypography.bodyMedium)
-                        .foregroundStyle(ALIColors.mutedInk)
+                    HStack(spacing: 6) {
+                        ALIIconView(icon: ALIIcon.check, size: 16, color: ALIColors.mutedInk)
+                        Text("Everything is up to date")
+                            .font(ALITypography.bodyMedium)
+                            .foregroundStyle(ALIColors.mutedInk)
+                    }
                 } else {
                     ForEach(items) { item in
                         HStack(spacing: 8) {
@@ -545,9 +548,9 @@ enum HouseTasksDemoData {
     static let members: [FamilyMember] = {
         let now = Date.now
         return [
-            FamilyMember(name: "Ana", emoji: "👩", createdAt: now.addingTimeInterval(-3)),
-            FamilyMember(name: "Luis", emoji: "👨", createdAt: now.addingTimeInterval(-2)),
-            FamilyMember(name: "Marta", emoji: "👧", createdAt: now.addingTimeInterval(-1))
+            FamilyMember(name: "Ana", emoji: ALIIcon.user, createdAt: now.addingTimeInterval(-3)),
+            FamilyMember(name: "Luis", emoji: ALIIcon.user, createdAt: now.addingTimeInterval(-2)),
+            FamilyMember(name: "Marta", emoji: ALIIcon.user, createdAt: now.addingTimeInterval(-1))
         ]
     }()
 

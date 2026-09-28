@@ -2,19 +2,21 @@ import SwiftUI
 import SwiftData
 
 /// Visual root of the app: shows the one-time welcome carousel on first
-/// launch, then prompts to create/join a family group before showing the
-/// tabs if this device does not yet belong to one.
+/// launch, then log in / create account (skipped when already signed in),
+/// then prompts to create/join a family group before showing the tabs if
+/// this account does not yet belong to one.
 struct ContentView: View {
     @EnvironmentObject private var familySession: FamilySession
     @EnvironmentObject private var familyService: FamilyService
     @EnvironmentObject private var dataSync: AppDataSyncCoordinator
+    @EnvironmentObject private var authSession: AuthSession
     @Environment(\.modelContext) private var modelContext
 
     @State private var showSplash = true
 
     var body: some View {
         Group {
-            if showSplash {
+            if showSplash || !authSession.hasResolvedSession {
                 SplashView { showSplash = false }
             } else if dataSync.wasRemovedFromFamily {
                 RemovedFromFamilyLoadingView()
@@ -29,6 +31,10 @@ struct ContentView: View {
                 // — or right after asking to join one by QR/code — see
                 // `startJoiningFamily`.
                 RestoringFamilyGroupView()
+            } else if familyService.needsInitialSetup && familySession.hasJoinedFamily {
+                // Right after creating a group: the admin picks features
+                // and bottom-bar favorites before landing on Home.
+                FamilySetupView()
             } else if !familySession.hasSeenAppIntro {
                 AppIntroView {
                     familySession.markAppIntroSeen()
@@ -36,6 +42,8 @@ struct ContentView: View {
                     // ends (skip or last page), not at cold launch.
                     PushNotificationManager.shared.requestAuthorizationAndRegister()
                 }
+            } else if !authSession.isSignedIn {
+                AuthWelcomeView()
             } else if familySession.hasJoinedFamily {
                 MainTabContainer()
             } else {
@@ -47,14 +55,37 @@ struct ContentView: View {
             guard removed else { return }
             Task { await familyService.handleRemovedFromFamily(modelContext: modelContext, dataSync: dataSync) }
         }
-        // Non-blocking, one-time nudge right after creating or joining a
-        // group (if not already linked): explains why syncing matters and
-        // points to People, rather than asking for the email right here.
-        .sheet(isPresented: Binding(
-            get: { familyService.showSyncReminder },
-            set: { if !$0 { familyService.showSyncReminder = false } }
-        )) {
-            SyncReminderSheet()
+        // RLS is scoped to family_members.auth_user_id — this self-heals
+        // that column for a group this device already had locally (see
+        // FamilyService.linkAuthIfNeeded doc comment).
+        .onChange(of: authSession.isSignedIn, initial: true) { _, signedIn in
+            guard authSession.hasResolvedSession else { return }
+            if signedIn {
+                Task { await familyService.linkAuthIfNeeded() }
+                Track.refreshUserProperties()
+            } else if familySession.hasJoinedFamily {
+                // Session ended outside the app's own "Log out" (expired or
+                // revoked): don't leave the previous account's group cached
+                // for whoever logs in next on this device.
+                Task { await familyService.signOut(modelContext: modelContext, dataSync: dataSync) }
+            }
+        }
+        // Push token → Supabase: re-register each time this device's member
+        // changes (created/joined/restored a group) and at launch.
+        .onChange(of: familySession.memberID, initial: true) { _, memberID in
+            guard memberID != nil else { return }
+            PushNotificationManager.shared.refreshRegistrationIfAuthorized()
+        }
+        .onChange(of: authSession.hasResolvedSession) { _, resolved in
+            guard resolved else { return }
+            if authSession.isSignedIn {
+                Task { await familyService.linkAuthIfNeeded() }
+            } else if familySession.hasJoinedFamily {
+                // Group cached from a previous session but nobody signed in:
+                // clear it now so logging in goes straight to the right
+                // screen (Home or create/join) with no flash in between.
+                Task { await familyService.clearLocalFamily(modelContext: modelContext, dataSync: dataSync) }
+            }
         }
         .alert("Couldn't create family group", isPresented: Binding(
             get: { familyService.createFamilyError != nil },
@@ -104,8 +135,7 @@ private struct RestoringFamilyGroupView: View {
         VStack(spacing: 20) {
             Spacer()
 
-            Text("🏡")
-                .font(.system(size: 64))
+            ALIIconView(icon: ALIIcon.home, size: 60)
                 .scaleEffect(isAnimating ? 1.08 : 0.96)
                 .animation(.easeInOut(duration: 1.1).repeatForever(autoreverses: true), value: isAnimating)
 
@@ -143,8 +173,7 @@ private struct CreatingFamilyGroupView: View {
         VStack(spacing: 20) {
             Spacer()
 
-            Text("🏡")
-                .font(.system(size: 64))
+            ALIIconView(icon: ALIIcon.home, size: 60)
                 .scaleEffect(isAnimating ? 1.08 : 0.96)
                 .animation(.easeInOut(duration: 1.1).repeatForever(autoreverses: true), value: isAnimating)
 

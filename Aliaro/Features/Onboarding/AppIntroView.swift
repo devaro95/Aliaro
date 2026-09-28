@@ -12,25 +12,25 @@ struct AppIntroView: View {
 
     private let pages: [IntroPage] = [
         IntroPage(
-            emoji: "🏡",
+            emoji: ALIIcon.home,
             title: "Welcome to Aliaro",
             subtitle: "Organize your home life as a family, all in one shared space.",
             accent: ALIColors.familyAccent
         ),
         IntroPage(
-            emoji: "🛒",
+            emoji: ALIIcon.cart,
             title: "Shopping & tasks",
             subtitle: "Keep a shared shopping list and split house tasks, updated in real time for everyone.",
             accent: ALIColors.houseTasksAccent
         ),
         IntroPage(
-            emoji: "🍽️",
+            emoji: ALIIcon.dining,
             title: "Menu, calendar & reminders",
             subtitle: "Plan the weekly menu, family calendar and reminders together.",
             accent: ALIColors.weeklyMenuAccent
         ),
         IntroPage(
-            emoji: "💶",
+            emoji: ALIIcon.euro,
             title: "Economy & history",
             subtitle: "Track shared expenses by category, and see who did what with a full activity history.",
             accent: ALIColors.economiaAccent
@@ -115,7 +115,7 @@ private struct IntroPageView: View {
             Circle()
                 .fill(page.accent.opacity(0.25))
                 .frame(width: 140, height: 140)
-                .overlay(Text(page.emoji).font(.system(size: 64)))
+                .overlay(ALIIconView(icon: page.emoji, size: 60))
 
             VStack(spacing: 10) {
                 if showWordmark {

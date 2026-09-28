@@ -223,7 +223,7 @@ struct EconomiaStatsScreen: View {
         }
         var result = Array(totals.values)
         if uncategorizedAmount > 0 {
-            result.append(CategoryTotal(id: UUID(), name: "Uncategorized", emoji: "❔", amount: uncategorizedAmount))
+            result.append(CategoryTotal(id: UUID(), name: "Uncategorized", emoji: ALIIcon.unknown, amount: uncategorizedAmount))
         }
         return result.sorted { $0.amount > $1.amount }
     }
@@ -257,7 +257,8 @@ struct EconomiaStatsScreen: View {
         let share = categoryTotalSum > 0 ? total.amount / categoryTotalSum : 0
         return VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text("\(total.emoji) \(total.name)")
+                ALIIconView(icon: total.emoji, size: 16)
+                Text(total.name)
                     .font(ALITypography.bodyMedium)
                     .foregroundStyle(ALIColors.ink)
                     .lineLimit(1)

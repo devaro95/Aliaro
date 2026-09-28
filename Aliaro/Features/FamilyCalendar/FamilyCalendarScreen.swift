@@ -114,7 +114,7 @@ struct FamilyCalendarScreen: View {
                 } else {
                     VStack(spacing: 0) {
                         ForEach(Array(dayEvents.enumerated()), id: \.element.id) { index, event in
-                            EventRow(event: event, canDelete: canDelete, onTap: {
+                            EventRow(event: event, attendees: event.attendeesLabel(members: members), canDelete: canDelete, onTap: {
                                 Track.event("calendar_event_open", ["source": "selected_day"])
                                 selectedEvent = event
                             }, onDelete: {
@@ -143,7 +143,7 @@ struct FamilyCalendarScreen: View {
                     ALICard {
                         VStack(spacing: 0) {
                             ForEach(Array(upcoming.enumerated()), id: \.element.id) { index, event in
-                                EventRow(event: event, canDelete: canDelete, onTap: {
+                                EventRow(event: event, attendees: event.attendeesLabel(members: members), canDelete: canDelete, onTap: {
                                     Track.event("calendar_event_open", ["source": "upcoming"])
                                     selectedEvent = event
                                 }, onDelete: {
@@ -162,9 +162,10 @@ struct FamilyCalendarScreen: View {
     }
 }
 
-/// Row for an event: icon, title, date range and note.
+/// Row for an event: icon, title, date range and who it's for.
 private struct EventRow: View {
     let event: FamilyEvent
+    let attendees: String
     var canDelete: Bool = true
     let onTap: () -> Void
     let onDelete: () -> Void
@@ -173,6 +174,13 @@ private struct EventRow: View {
         let calendar = Calendar.current
         let sameDay = calendar.isDate(event.startDate, inSameDayAs: event.endDate)
         let formatter = DateFormatter()
+        if event.isAllDay {
+            formatter.dateFormat = "d MMM"
+            let allDay = String(localized: "All day")
+            return sameDay
+                ? "\(formatter.string(from: event.startDate)) · \(allDay)"
+                : "\(formatter.string(from: event.startDate)) – \(formatter.string(from: event.endDate)) · \(allDay)"
+        }
         if sameDay {
             formatter.dateFormat = "d MMM, HH:mm"
             return "\(formatter.string(from: event.startDate)) – \(timeOnly(event.endDate))"
@@ -188,21 +196,16 @@ private struct EventRow: View {
         return formatter.string(from: date)
     }
 
-    private func authorLabel(_ base: String) -> String {
-        guard let name = event.createdByName, !name.isEmpty else { return base }
-        return "\(base) · \(name)"
-    }
 
     var body: some View {
         Button(action: onTap) {
             HStack(spacing: 12) {
-                Text(event.emoji)
-                    .font(.system(size: 22))
+                ALIIconView(icon: event.emoji, size: 22, fallback: ALIIcon.calendar)
                 VStack(alignment: .leading, spacing: 3) {
                     Text(event.title)
                         .font(ALITypography.bodyLarge)
                         .foregroundStyle(ALIColors.ink)
-                    Text(authorLabel(rangeLabel))
+                    Text("\(rangeLabel) · \(attendees)")
                         .font(ALITypography.labelLarge)
                         .foregroundStyle(ALIColors.mutedInk)
                         .lineLimit(1)

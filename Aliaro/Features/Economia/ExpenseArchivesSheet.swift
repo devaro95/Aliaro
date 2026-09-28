@@ -47,7 +47,7 @@ struct ExpenseArchivesSheet: View {
     private var currentMember: FamilyMember? { members.first(where: \.isCurrentDevice) }
     /// Archiving removes every transaction from the live list, so it
     /// needs the same permission as deleting one.
-    private var canArchive: Bool { currentMember?.can(.financesDelete) ?? true }
+    private var canArchive: Bool { currentMember?.can(.financesArchive) ?? true }
     /// Premium (`financeArchive`): when locked, the sheet still opens as a
     /// preview — sample data (never the group's real finances or
     /// archives), blurred and non-interactive, with a banner leading to
@@ -108,7 +108,7 @@ struct ExpenseArchivesSheet: View {
 
                     if archiveRows.isEmpty {
                         ALIEmptyState(
-                            emoji: "🗂️",
+                            icon: ALIIcon.archive,
                             title: "Nothing archived yet",
                             subtitle: "Archived finances will show up here, ready to review or download as PDF."
                         )
@@ -288,7 +288,7 @@ struct ExpenseArchivesSheet: View {
         HStack(spacing: 12) {
             NavigationLink(value: row.id) {
                 HStack(spacing: 12) {
-                    Text("🗂️").font(.system(size: 22))
+                    ALIIconView(icon: ALIIcon.archive, size: 22)
                     VStack(alignment: .leading, spacing: 3) {
                         Text(row.name)
                             .font(ALITypography.bodyLarge)
@@ -480,8 +480,7 @@ struct ExpenseArchiveDetailView: View {
 
     private func itemRow(_ item: ExpenseArchiveSnapshot.Item) -> some View {
         HStack(spacing: 12) {
-            Text(item.emoji)
-                .font(.system(size: 17))
+            ALIIconView(icon: item.emoji, size: 20)
                 .frame(width: 24)
             VStack(alignment: .leading, spacing: 3) {
                 Text(item.name)

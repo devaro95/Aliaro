@@ -17,9 +17,6 @@ struct PeopleScreen: View {
     @Environment(\.modelContext) private var modelContext
 
     @Query(sort: \FamilyMember.createdAt) private var members: [FamilyMember]
-    /// Dismissing the "save your group" banner is per-device, not tied to
-    /// the family group — reappears if they ever leave and join another.
-    @State private var showLoginSheet = false
     @State private var showInviteSheet = false
     @State private var showFeaturesSheet = false
     @State private var showHistorialSheet = false
@@ -32,6 +29,8 @@ struct PeopleScreen: View {
     @State private var isRemovingMember = false
     @State private var removeMemberError: String?
     @State private var memberForPermissions: FamilyMember?
+    @State private var showAccountScreen = false
+    @State private var showNotificationsScreen = false
 
     #if DEBUG
     @State private var isSeedingMockData = false
@@ -62,6 +61,10 @@ struct PeopleScreen: View {
                 #if DEBUG
                 debugCard
                 #endif
+
+                notificationsCard
+
+                accountCard
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 100)
@@ -79,9 +82,6 @@ struct PeopleScreen: View {
         .sheet(isPresented: $showInviteSheet) {
             InviteQRSheet()
         }
-        .sheet(isPresented: $showLoginSheet) {
-            LoginSheet(mode: .link)
-        }
         .sheet(isPresented: $showFeaturesSheet) {
             AppFeaturesSheet()
         }
@@ -93,6 +93,12 @@ struct PeopleScreen: View {
         }
         .sheet(item: $memberForPermissions) { member in
             MemberPermissionsSheet(member: member)
+        }
+        .sheet(isPresented: $showAccountScreen) {
+            AccountScreen()
+        }
+        .sheet(isPresented: $showNotificationsScreen) {
+            NotificationsScreen()
         }
         .alert(
             "Remove \(memberPendingRemoval?.name ?? String(localized: "this person")) from the group?",
@@ -173,69 +179,72 @@ struct PeopleScreen: View {
         }
     }
 
-    /// Nudge to link an email: without it, this group only lives on this
-    /// device, tied to an anonymous id that a reinstall would lose.
-    /// Can't be dismissed — only hidden once the device is actually
-    /// linked, since losing the group is permanent otherwise. Linking
-    /// itself is an Aliaro Premium feature (`cloudBackup`) — tapping
-    /// "Sign in" opens the paywall instead when it's locked.
-    private var isCloudBackupLocked: Bool { premium.isLocked(.cloudBackup) }
-
-    @ViewBuilder
-    private var loginBanner: some View {
-        // Footer row of the members card: no second background, just a
-        // divider like between members, with a compact action on the right.
-        if !authSession.isLinked {
-            Divider().overlay(ALIColors.outline)
-                .padding(.top, 8)
-            HStack(spacing: 12) {
-                Image(systemName: "icloud.and.arrow.up")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(ALIColors.peopleAccent)
-                    .frame(width: 24)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Don't lose this group")
-                        .font(ALITypography.bodyLarge)
-                        .foregroundStyle(ALIColors.ink)
-                    Text(isCloudBackupLocked
-                         ? "Aliaro Premium feature: sign in so you can always get your group back, even after reinstalling the app."
-                         : "Sign in so you can always get it back, even after reinstalling the app.")
-                        .font(ALITypography.labelLarge)
+    /// Entry point into `NotificationsScreen`: turn each kind of push on/off.
+    private var notificationsCard: some View {
+        Button {
+            Track.event("notifications_settings_open")
+            showNotificationsScreen = true
+        } label: {
+            ALICard {
+                HStack(spacing: 12) {
+                    Image(systemName: "bell")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(ALIColors.peopleAccent)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Notifications")
+                            .font(ALITypography.bodyLarge)
+                            .foregroundStyle(ALIColors.ink)
+                        Text("Choose which ones you get")
+                            .font(ALITypography.labelLarge)
+                            .foregroundStyle(ALIColors.mutedInk)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(ALIColors.mutedInk)
-                        .fixedSize(horizontal: false, vertical: true)
                 }
-                Spacer(minLength: 4)
-                Button {
-                    if isCloudBackupLocked { showPaywall = Track.paywall("cloud_backup_banner") } else {
-                        Track.event("login_banner_tap")
-                        showLoginSheet = true
-                    }
-                } label: {
-                    HStack(spacing: 4) {
-                        if isCloudBackupLocked {
-                            Image(systemName: "crown.fill").font(.system(size: 11, weight: .bold))
-                        }
-                        Text(isCloudBackupLocked ? "Unlock" : "Sign in")
-                    }
-                    .font(ALITypography.labelLarge)
-                    .foregroundStyle(ALIColors.onAccent)
-                    .padding(.horizontal, 14)
-                    .frame(height: 34)
-                    .background(isCloudBackupLocked ? ALIColors.sun : ALIColors.peopleAccent)
-                    .clipShape(Capsule())
-                }
-                .buttonStyle(.plain)
             }
-            .padding(.top, 20)
-            .padding(.bottom, 8)
         }
+        .buttonStyle(.plain)
+    }
+
+    /// Entry point into `AccountScreen`: name, password and log out.
+    private var accountCard: some View {
+        Button {
+            Track.event("account_open")
+            showAccountScreen = true
+        } label: {
+            ALICard {
+                HStack(spacing: 12) {
+                    Image(systemName: "person.crop.circle")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(ALIColors.peopleAccent)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Account")
+                            .font(ALITypography.bodyLarge)
+                            .foregroundStyle(ALIColors.ink)
+                        if let email = authSession.email {
+                            Text(verbatim: email)
+                                .font(ALITypography.labelLarge)
+                                .foregroundStyle(ALIColors.mutedInk)
+                                .lineLimit(1)
+                        }
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(ALIColors.mutedInk)
+                }
+            }
+        }
+        .buttonStyle(.plain)
     }
 
     @ViewBuilder
     private var membersSection: some View {
         if members.isEmpty {
             ALIEmptyState(
-                emoji: "👋",
+                icon: ALIIcon.wave,
                 title: "No one else here yet",
                 subtitle: "Tap the + to invite your family with a QR code."
             )
@@ -250,14 +259,13 @@ struct PeopleScreen: View {
                         familyHeader
                             .padding(.bottom, 12)
                         Divider().overlay(ALIColors.outline)
-                            .padding(.bottom, 8) // same gap as above the "Don't lose" divider
+                            .padding(.bottom, 8)
                         ForEach(Array(members.enumerated()), id: \.element.id) { index, member in
                             memberRow(member)
                             if index < members.count - 1 {
                                 Divider().overlay(ALIColors.outline)
                             }
                         }
-                        loginBanner
                     }
                 }
             }
@@ -284,7 +292,10 @@ struct PeopleScreen: View {
                     memberForPermissions = member
                 } label: {
                     Image(systemName: "lock.shield")
+                        .font(.system(size: 20, weight: .medium))
                         .foregroundStyle(ALIColors.mutedInk)
+                        .frame(width: 36, height: 36)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
             }
@@ -294,7 +305,10 @@ struct PeopleScreen: View {
                     memberPendingRemoval = member
                 } label: {
                     Image(systemName: "person.crop.circle.badge.minus")
+                        .font(.system(size: 20, weight: .medium))
                         .foregroundStyle(ALIColors.error)
+                        .frame(width: 36, height: 36)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
             }
@@ -360,7 +374,7 @@ struct PeopleScreen: View {
                         Text("App features")
                             .font(ALITypography.bodyLarge)
                             .foregroundStyle(ALIColors.ink)
-                        Text("Choose what shows up in the bottom bar")
+                        Text("Features, favorites and start screen")
                             .font(ALITypography.labelLarge)
                             .foregroundStyle(ALIColors.mutedInk)
                     }
@@ -430,13 +444,6 @@ struct PeopleScreen: View {
                     isSeedingMockData = false
                 }
                 .disabled(isSeedingMockData)
-
-                ALIPrimaryButton(
-                    text: "Reset session (sign out, new anonymous id)",
-                    accent: ALIColors.error
-                ) {
-                    Task { await authSession.debugResetSession() }
-                }
             }
         }
     }

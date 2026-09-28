@@ -565,7 +565,7 @@ pbxproj = f"""// !$*UTF8*$!
 \t\t\t\t\t\t);
 \t\t\t\t\t}},
 \t\t\t\t);
-\t\t\t\tINFOPLIST_KEY_NSCameraUsageDescription = "Aliaro necesita la cámara para escanear el código QR de invitación al grupo familiar.";
+\t\t\t\tINFOPLIST_KEY_NSCameraUsageDescription = "Aliaro necesita la cámara para escanear el código QR de invitación al grupo familiar y para hacer fotos de tus recetas.";
 \t\t\t\tINFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 \t\t\t\tINFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 \t\t\t\tINFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -578,6 +578,10 @@ pbxproj = f"""// !$*UTF8*$!
 \t\t\t\tMARKETING_VERSION = {MARKETING_VERSION};
 \t\t\t\tPRODUCT_BUNDLE_IDENTIFIER = {BUNDLE_ID_DEV};
 \t\t\t\tPRODUCT_NAME = "$(TARGET_NAME)";
+\t\t\t\tSUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+\t\t\t\tSUPPORTS_MACCATALYST = NO;
+\t\t\t\tSUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+\t\t\t\tSUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 \t\t\t\tSWIFT_EMIT_LOC_STRINGS = YES;
 \t\t\t\tSWIFT_VERSION = 5.0;
 \t\t\t\tTARGETED_DEVICE_FAMILY = "1";
@@ -610,7 +614,7 @@ pbxproj = f"""// !$*UTF8*$!
 \t\t\t\t\t\t);
 \t\t\t\t\t}},
 \t\t\t\t);
-\t\t\t\tINFOPLIST_KEY_NSCameraUsageDescription = "Aliaro necesita la cámara para escanear el código QR de invitación al grupo familiar.";
+\t\t\t\tINFOPLIST_KEY_NSCameraUsageDescription = "Aliaro necesita la cámara para escanear el código QR de invitación al grupo familiar y para hacer fotos de tus recetas.";
 \t\t\t\tINFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 \t\t\t\tINFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 \t\t\t\tINFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -623,6 +627,10 @@ pbxproj = f"""// !$*UTF8*$!
 \t\t\t\tMARKETING_VERSION = {MARKETING_VERSION};
 \t\t\t\tPRODUCT_BUNDLE_IDENTIFIER = {BUNDLE_ID};
 \t\t\t\tPRODUCT_NAME = "$(TARGET_NAME)";
+\t\t\t\tSUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+\t\t\t\tSUPPORTS_MACCATALYST = NO;
+\t\t\t\tSUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+\t\t\t\tSUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 \t\t\t\tSWIFT_EMIT_LOC_STRINGS = YES;
 \t\t\t\tSWIFT_VERSION = 5.0;
 \t\t\t\tTARGETED_DEVICE_FAMILY = "1";

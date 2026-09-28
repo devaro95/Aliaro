@@ -1,8 +1,9 @@
 import SwiftUI
 import SwiftData
 
-/// Lets the family group choose which tabs show up in everyone's bottom
-/// bar, and which one the app opens on. Anyone in the group can open
+/// Lets the family group choose which features are available to
+/// everyone, which (up to 5) are favorites in the bottom bar (next to Home), and
+/// which screen the app opens on. Anyone in the group can open
 /// this to see the current setup, but only the group's creator (admin)
 /// can actually change it — everyone else gets every control locked,
 /// with a banner explaining why.
@@ -15,6 +16,7 @@ struct AppFeaturesSheet: View {
 
     @State private var disabledTabsDraft: Set<String> = []
     @State private var startTabDraft: String?
+    @State private var favoriteTabsDraft: [String] = []
     @State private var isSaving = false
     @State private var errorMessage: String?
 
@@ -22,17 +24,21 @@ struct AppFeaturesSheet: View {
         members.first(where: { $0.isCurrentDevice })?.isCreator ?? false
     }
 
-    /// Tabs that can be picked as the group's start screen: never
-    /// "People" (that's where this setting lives, so it can
-    /// never be the first thing people see) and never one that's
-    /// currently hidden.
+    /// Screens that can be picked as the group's start screen: Home or
+    /// any visible feature — never "People" (that's where this setting
+    /// lives) and never one that's currently hidden.
     private var availableStartTabs: [AppTab] {
-        AppTab.allCases.filter { $0.isConfigurable && !disabledTabsDraft.contains($0.settingsKey) }
+        [.home] + AppTab.visibleFeatures(excluding: disabledTabsDraft)
     }
 
     private var selectedStartTab: AppTab {
-        let key = startTabDraft ?? AppTab.firstAvailable(excluding: disabledTabsDraft).settingsKey
-        return AppTab.from(settingsKey: key) ?? .weeklyMenu
+        AppTab.start(stored: startTabDraft, excluding: disabledTabsDraft)
+    }
+
+    /// Favorites currently in effect (the stored choice, or the default
+    /// first 3 visible features when nothing is stored yet).
+    private var effectiveFavorites: [AppTab] {
+        AppTab.favorites(stored: favoriteTabsDraft, excluding: disabledTabsDraft)
     }
 
     var body: some View {
@@ -58,12 +64,12 @@ struct AppFeaturesSheet: View {
 
                     ALICard {
                         VStack(alignment: .leading, spacing: 14) {
-                            Text("Choose what everyone in the group sees in the bottom bar.")
+                            Text("Choose which features everyone in the group can use.")
                                 .font(ALITypography.bodyMedium)
                                 .foregroundStyle(ALIColors.mutedInk)
 
                             VStack(spacing: 10) {
-                                ForEach(AppTab.allCases.filter(\.isConfigurable)) { tab in
+                                ForEach(AppTab.features) { tab in
                                     Toggle(isOn: Binding(
                                         get: { !disabledTabsDraft.contains(tab.settingsKey) },
                                         set: { isOn in toggleFeature(tab, isOn: isOn) }
@@ -78,6 +84,8 @@ struct AppFeaturesSheet: View {
                             }
                         }
                     }
+
+                    favoritesCard
 
                     ALICard {
                         VStack(alignment: .leading, spacing: 14) {
@@ -123,6 +131,7 @@ struct AppFeaturesSheet: View {
         .task {
             disabledTabsDraft = familySession.disabledTabs
             startTabDraft = familySession.startTab
+            favoriteTabsDraft = familySession.favoriteTabs
         }
         .onChange(of: familySession.disabledTabs) { _, newValue in
             disabledTabsDraft = newValue
@@ -130,10 +139,86 @@ struct AppFeaturesSheet: View {
         .onChange(of: familySession.startTab) { _, newValue in
             startTabDraft = newValue
         }
+        .onChange(of: familySession.favoriteTabs) { _, newValue in
+            favoriteTabsDraft = newValue
+        }
         .alert("Couldn't save", isPresented: .constant(errorMessage != nil)) {
             Button("OK", role: .cancel) { errorMessage = nil }
         } message: {
             Text(errorMessage ?? "")
+        }
+    }
+
+    /// Pick up to `AppTab.maxFavorites` features for the bottom bar; Home
+    /// is always there first. Order = the order they were picked.
+    private var favoritesCard: some View {
+        let favorites = effectiveFavorites
+        let isFull = favorites.count >= AppTab.maxFavorites
+        return ALICard {
+            VStack(alignment: .leading, spacing: 14) {
+                Text("Pick up to 5 favorites for the bottom bar. Home is always first; everything else is on Home.")
+                    .font(ALITypography.bodyMedium)
+                    .foregroundStyle(ALIColors.mutedInk)
+
+                VStack(spacing: 4) {
+                    ForEach(AppTab.visibleFeatures(excluding: disabledTabsDraft)) { tab in
+                        let position = favorites.firstIndex(of: tab)
+                        // At least one favorite always stays (clearing them all would
+                        // silently bring back the defaults).
+                        let canPick = position != nil ? favorites.count > 1 : !isFull
+                        Button {
+                            toggleFavorite(tab)
+                        } label: {
+                            HStack(spacing: 10) {
+                                Label(tab.label, systemImage: tab.systemImage)
+                                    .font(ALITypography.bodyLarge)
+                                    .foregroundStyle(isAdmin && canPick ? ALIColors.ink : ALIColors.mutedInk)
+                                Spacer(minLength: 4)
+                                if let position {
+                                    Text("\(position + 1)")
+                                        .font(ALITypography.labelLarge.weight(.bold))
+                                        .foregroundStyle(ALIColors.onAccent)
+                                        .frame(width: 24, height: 24)
+                                        .background(tab.accent)
+                                        .clipShape(Circle())
+                                } else {
+                                    Circle()
+                                        .stroke(ALIColors.outline, lineWidth: 1.5)
+                                        .frame(width: 24, height: 24)
+                                }
+                            }
+                            .padding(.vertical, 6)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(!isAdmin || isSaving || !canPick)
+                    }
+                }
+            }
+        }
+    }
+
+    private func toggleFavorite(_ tab: AppTab) {
+        let previous = favoriteTabsDraft
+        var updated = effectiveFavorites.map(\.settingsKey)
+        if let index = updated.firstIndex(of: tab.settingsKey) {
+            guard updated.count > 1 else { return }
+            updated.remove(at: index)
+        } else if updated.count < AppTab.maxFavorites {
+            updated.append(tab.settingsKey)
+        } else {
+            return
+        }
+        favoriteTabsDraft = updated
+        Task {
+            isSaving = true
+            defer { isSaving = false }
+            do {
+                try await familyService.updateFavoriteTabs(updated)
+            } catch {
+                errorMessage = error.localizedDescription
+                favoriteTabsDraft = previous // revert on failure
+            }
         }
     }
 

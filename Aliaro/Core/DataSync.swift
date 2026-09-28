@@ -25,6 +25,24 @@ struct RemoteDish: FamilySynced {
     var created_at: Date
 }
 
+struct RemoteRecipe: FamilySynced {
+    static let tableName = "recipes"
+    var id: UUID
+    var family_id: UUID
+    var name: String
+    var categories: [String]
+    var ingredients: [RecipeIngredient]
+    var steps: String
+    var servings: Int
+    var prep_minutes: Int?
+    var cook_minutes: Int?
+    var photo_path: String?
+    var created_at: Date
+    var updated_at: Date
+    var created_by: UUID?
+    var created_by_name: String?
+}
+
 struct RemoteMealPlanEntry: FamilySynced {
     static let tableName = "meal_plan_entries"
     var id: UUID
@@ -71,8 +89,27 @@ struct RemoteHouseTask: FamilySynced {
     var family_id: UUID
     var name: String
     var interval_days: Int?
+    var scheduled_at: Date?
+    var for_everyone: Bool
+    var member_ids: [UUID]
     var created_by: UUID?
     var created_by_name: String?
+
+    /// Explicit nulls for `interval_days`/`scheduled_at`, so removing the
+    /// cadence or the schedule when editing also clears it in Supabase
+    /// (the synthesized encoder would just omit them).
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(id, forKey: .id)
+        try c.encode(family_id, forKey: .family_id)
+        try c.encode(name, forKey: .name)
+        try c.encode(interval_days, forKey: .interval_days)
+        try c.encode(scheduled_at, forKey: .scheduled_at)
+        try c.encode(for_everyone, forKey: .for_everyone)
+        try c.encode(member_ids, forKey: .member_ids)
+        try c.encode(created_by, forKey: .created_by)
+        try c.encode(created_by_name, forKey: .created_by_name)
+    }
 }
 
 struct RemoteHouseTaskLog: FamilySynced {
@@ -99,6 +136,9 @@ struct RemoteFamilyEvent: FamilySynced {
     var created_at: Date
     var created_by: UUID?
     var created_by_name: String?
+    var for_everyone: Bool
+    var member_ids: [UUID]
+    var is_all_day: Bool
 }
 
 struct RemoteReminder: FamilySynced {
@@ -117,6 +157,21 @@ struct RemoteReminder: FamilySynced {
     /// server already sent. Only the server writes this; the client sends
     /// it empty on every save so delivery gets rescheduled.
     var notified_offsets: [Int]
+    var created_by: UUID?
+    var created_by_name: String?
+}
+
+struct RemoteBoardNote: FamilySynced {
+    static let tableName = "board_notes"
+    var id: UUID
+    var family_id: UUID
+    var text: String
+    var color_index: Int
+    var position: Int
+    var for_everyone: Bool
+    var member_ids: [UUID]
+    var created_at: Date
+    var updated_at: Date
     var created_by: UUID?
     var created_by_name: String?
 }
@@ -186,6 +241,7 @@ final class AppDataSyncCoordinator: ObservableObject {
 
     private let familyMembers = RemoteSync<RemoteFamilyMember>()
     private let dishes = RemoteSync<RemoteDish>()
+    private let recipes = RemoteSync<RemoteRecipe>()
     private let mealPlanEntries = RemoteSync<RemoteMealPlanEntry>()
     private let groceryItems = RemoteSync<RemoteGroceryItem>()
     private let shoppingLists = RemoteSync<RemoteShoppingList>()
@@ -194,6 +250,7 @@ final class AppDataSyncCoordinator: ObservableObject {
     private let houseTaskLogs = RemoteSync<RemoteHouseTaskLog>()
     private let familyEvents = RemoteSync<RemoteFamilyEvent>()
     private let reminders = RemoteSync<RemoteReminder>()
+    private let boardNotes = RemoteSync<RemoteBoardNote>()
     private let categories = RemoteSync<RemoteCategory>()
     private let expenses = RemoteSync<RemoteExpense>()
     private let activityLogEntries = RemoteSync<RemoteActivityLogEntry>()
@@ -223,6 +280,7 @@ final class AppDataSyncCoordinator: ObservableObject {
             return
         }
         await startDishes(familyID: familyID, modelContext: modelContext)
+        await startRecipes(familyID: familyID, modelContext: modelContext)
         await startMealPlanEntries(familyID: familyID, modelContext: modelContext)
         await startGroceryItems(familyID: familyID, modelContext: modelContext)
         await startShoppingLists(familyID: familyID, modelContext: modelContext)
@@ -231,6 +289,7 @@ final class AppDataSyncCoordinator: ObservableObject {
         await startHouseTaskLogs(familyID: familyID, modelContext: modelContext)
         await startFamilyEvents(familyID: familyID, modelContext: modelContext)
         await startReminders(familyID: familyID, modelContext: modelContext)
+        await startBoardNotes(familyID: familyID, modelContext: modelContext)
         await startCategories(familyID: familyID, modelContext: modelContext)
         await startExpenses(familyID: familyID, modelContext: modelContext)
         await startActivityLogEntries(familyID: familyID, modelContext: modelContext)
@@ -244,6 +303,7 @@ final class AppDataSyncCoordinator: ObservableObject {
         started = false
         await familyMembers.stop()
         await dishes.stop()
+        await recipes.stop()
         await mealPlanEntries.stop()
         await groceryItems.stop()
         await shoppingLists.stop()
@@ -252,6 +312,7 @@ final class AppDataSyncCoordinator: ObservableObject {
         await houseTaskLogs.stop()
         await familyEvents.stop()
         await reminders.stop()
+        await boardNotes.stop()
         await categories.stop()
         await expenses.stop()
         await activityLogEntries.stop()
@@ -362,6 +423,122 @@ final class AppDataSyncCoordinator: ObservableObject {
 
     func deleteDish(id: UUID) {
         Task { try? await dishes.remove(id: id) }
+    }
+
+    // MARK: Recipes
+
+    /// Storage bucket for recipe photos; objects live at `<family_id>/<recipe_id>-<random>.jpg`.
+    private static let recipePhotosBucket = "recipe-photos"
+
+    private func startRecipes(familyID: UUID, modelContext: ModelContext) async {
+        do {
+            let remote = try await recipes.fetchAll(familyID: familyID)
+            for r in remote { applyRecipe(r, modelContext: modelContext) }
+        } catch {
+            lastError = error.localizedDescription
+        }
+        await recipes.start(
+            familyID: familyID,
+            onUpsert: { [weak self] r in self?.applyRecipe(r, modelContext: modelContext) },
+            onDelete: { id in
+                let descriptor = FetchDescriptor<Recipe>(predicate: #Predicate { $0.id == id })
+                if let existing = try? modelContext.fetch(descriptor).first {
+                    modelContext.delete(existing)
+                }
+            }
+        )
+    }
+
+    private func applyRecipe(_ remote: RemoteRecipe, modelContext: ModelContext) {
+        let descriptor = FetchDescriptor<Recipe>(predicate: #Predicate { $0.id == remote.id })
+        let recipe: Recipe
+        if let existing = try? modelContext.fetch(descriptor).first {
+            existing.name = remote.name
+            existing.categories = remote.categories
+            existing.ingredients = remote.ingredients
+            existing.steps = remote.steps
+            existing.servings = remote.servings
+            existing.prepMinutes = remote.prep_minutes
+            existing.cookMinutes = remote.cook_minutes
+            existing.updatedAt = remote.updated_at
+            existing.createdByID = remote.created_by
+            existing.createdByName = remote.created_by_name
+            if existing.photoPath != remote.photo_path {
+                existing.photoPath = remote.photo_path
+                existing.photoData = nil
+            }
+            recipe = existing
+        } else {
+            recipe = Recipe(
+                id: remote.id, name: remote.name, categories: remote.categories,
+                ingredients: remote.ingredients, steps: remote.steps, servings: remote.servings,
+                prepMinutes: remote.prep_minutes, cookMinutes: remote.cook_minutes, photoPath: remote.photo_path,
+                createdAt: remote.created_at, updatedAt: remote.updated_at,
+                createdByID: remote.created_by, createdByName: remote.created_by_name
+            )
+            modelContext.insert(recipe)
+        }
+        if recipe.photoData == nil, let path = recipe.photoPath {
+            downloadRecipePhoto(recipe, path: path)
+        }
+    }
+
+    private func downloadRecipePhoto(_ recipe: Recipe, path: String) {
+        Task {
+            guard let data = try? await supabase.storage.from(Self.recipePhotosBucket).download(path: path) else { return }
+            // Skip if the photo changed again while downloading.
+            if recipe.photoPath == path { recipe.photoData = data }
+        }
+    }
+
+    /// Saves a recipe. With `newPhoto`, uploads it first (a fresh path per
+    /// upload, so other devices notice the change) and removes the old
+    /// file; with `removePhoto`, clears it.
+    func pushRecipe(_ recipe: Recipe, familyID: UUID, newPhoto: Data? = nil, removePhoto: Bool = false) {
+        let oldPath = recipe.photoPath
+        if let newPhoto {
+            let path = "\(familyID.uuidString.lowercased())/\(recipe.id.uuidString.lowercased())-\(UUID().uuidString.prefix(8).lowercased()).jpg"
+            recipe.photoData = newPhoto
+            recipe.photoPath = path
+            Task {
+                do {
+                    _ = try await supabase.storage.from(Self.recipePhotosBucket).upload(
+                        path, data: newPhoto, options: FileOptions(contentType: "image/jpeg", upsert: true)
+                    )
+                } catch {
+                    lastError = error.localizedDescription
+                }
+                try? await recipes.push(remoteRecipe(recipe, familyID: familyID))
+                if let oldPath { _ = try? await supabase.storage.from(Self.recipePhotosBucket).remove(paths: [oldPath]) }
+            }
+            return
+        }
+        if removePhoto {
+            recipe.photoData = nil
+            recipe.photoPath = nil
+        }
+        let record = remoteRecipe(recipe, familyID: familyID)
+        Task {
+            try? await recipes.push(record)
+            if removePhoto, let oldPath { _ = try? await supabase.storage.from(Self.recipePhotosBucket).remove(paths: [oldPath]) }
+        }
+    }
+
+    func deleteRecipe(id: UUID, photoPath: String?) {
+        Task {
+            try? await recipes.remove(id: id)
+            if let photoPath { _ = try? await supabase.storage.from(Self.recipePhotosBucket).remove(paths: [photoPath]) }
+        }
+    }
+
+    private func remoteRecipe(_ recipe: Recipe, familyID: UUID) -> RemoteRecipe {
+        RemoteRecipe(
+            id: recipe.id, family_id: familyID, name: recipe.name, categories: recipe.categories,
+            ingredients: recipe.ingredients, steps: recipe.steps, servings: recipe.servings,
+            prep_minutes: recipe.prepMinutes, cook_minutes: recipe.cookMinutes, photo_path: recipe.photoPath,
+            created_at: recipe.createdAt, updated_at: recipe.updatedAt,
+            created_by: recipe.createdByID, created_by_name: recipe.createdByName
+        )
     }
 
     // MARK: MealPlanEntries
@@ -576,11 +753,15 @@ final class AppDataSyncCoordinator: ObservableObject {
         if let existing = try? modelContext.fetch(descriptor).first {
             existing.name = remote.name
             existing.intervalDays = remote.interval_days
+            existing.scheduledAt = remote.scheduled_at
+            existing.forEveryone = remote.for_everyone
+            existing.memberIDs = remote.member_ids
             existing.createdByID = remote.created_by
             existing.createdByName = remote.created_by_name
         } else {
             modelContext.insert(HouseTask(
                 id: remote.id, name: remote.name, intervalDays: remote.interval_days,
+                scheduledAt: remote.scheduled_at, forEveryone: remote.for_everyone, memberIDs: remote.member_ids,
                 createdByID: remote.created_by, createdByName: remote.created_by_name
             ))
         }
@@ -589,6 +770,7 @@ final class AppDataSyncCoordinator: ObservableObject {
     func pushHouseTask(_ task: HouseTask, familyID: UUID) {
         let record = RemoteHouseTask(
             id: task.id, family_id: familyID, name: task.name, interval_days: task.intervalDays,
+            scheduled_at: task.scheduledAt, for_everyone: task.forEveryone, member_ids: task.memberIDs,
             created_by: task.createdByID, created_by_name: task.createdByName
         )
         Task { try? await houseTasks.push(record) }
@@ -682,12 +864,17 @@ final class AppDataSyncCoordinator: ObservableObject {
             existing.emoji = remote.emoji
             existing.createdByID = remote.created_by
             existing.createdByName = remote.created_by_name
+            existing.forEveryone = remote.for_everyone
+            existing.memberIDs = remote.member_ids
+            existing.isAllDay = remote.is_all_day
         } else {
             modelContext.insert(FamilyEvent(
                 id: remote.id, title: remote.title, note: remote.note,
                 startDate: remote.start_date, endDate: remote.end_date,
                 emoji: remote.emoji, createdAt: remote.created_at,
-                createdByID: remote.created_by, createdByName: remote.created_by_name
+                createdByID: remote.created_by, createdByName: remote.created_by_name,
+                forEveryone: remote.for_everyone, memberIDs: remote.member_ids,
+                isAllDay: remote.is_all_day
             ))
         }
         refreshWidgetSnapshot()
@@ -697,7 +884,9 @@ final class AppDataSyncCoordinator: ObservableObject {
         let record = RemoteFamilyEvent(
             id: event.id, family_id: familyID, title: event.title, note: event.note,
             start_date: event.startDate, end_date: event.endDate, emoji: event.emoji, created_at: event.createdAt,
-            created_by: event.createdByID, created_by_name: event.createdByName
+            created_by: event.createdByID, created_by_name: event.createdByName,
+            for_everyone: event.forEveryone, member_ids: event.memberIDs,
+            is_all_day: event.isAllDay
         )
         Task { try? await familyEvents.push(record) }
         refreshWidgetSnapshot()
@@ -772,6 +961,66 @@ final class AppDataSyncCoordinator: ObservableObject {
     func deleteReminder(id: UUID) {
         Task { try? await reminders.remove(id: id) }
         refreshWidgetSnapshot()
+    }
+
+    // MARK: BoardNotes
+
+    private func startBoardNotes(familyID: UUID, modelContext: ModelContext) async {
+        do {
+            let remote = try await boardNotes.fetchAll(familyID: familyID)
+            for r in remote { applyBoardNote(r, modelContext: modelContext) }
+            // Notes deleted from another device while this one was offline.
+            let remoteIDs = Set(remote.map(\.id))
+            let local = (try? modelContext.fetch(FetchDescriptor<BoardNote>())) ?? []
+            for note in local where !remoteIDs.contains(note.id) { modelContext.delete(note) }
+        } catch {
+            lastError = error.localizedDescription
+        }
+        await boardNotes.start(
+            familyID: familyID,
+            onUpsert: { [weak self] r in self?.applyBoardNote(r, modelContext: modelContext) },
+            onDelete: { id in
+                let descriptor = FetchDescriptor<BoardNote>(predicate: #Predicate { $0.id == id })
+                if let existing = try? modelContext.fetch(descriptor).first {
+                    modelContext.delete(existing)
+                }
+            }
+        )
+    }
+
+    private func applyBoardNote(_ remote: RemoteBoardNote, modelContext: ModelContext) {
+        let descriptor = FetchDescriptor<BoardNote>(predicate: #Predicate { $0.id == remote.id })
+        if let existing = try? modelContext.fetch(descriptor).first {
+            existing.text = remote.text
+            existing.colorIndex = remote.color_index
+            existing.position = remote.position
+            existing.forEveryone = remote.for_everyone
+            existing.memberIDs = remote.member_ids
+            existing.updatedAt = remote.updated_at
+            existing.createdByID = remote.created_by
+            existing.createdByName = remote.created_by_name
+        } else {
+            modelContext.insert(BoardNote(
+                id: remote.id, text: remote.text, colorIndex: remote.color_index, position: remote.position,
+                forEveryone: remote.for_everyone, memberIDs: remote.member_ids,
+                createdAt: remote.created_at, updatedAt: remote.updated_at,
+                createdByID: remote.created_by, createdByName: remote.created_by_name
+            ))
+        }
+    }
+
+    func pushBoardNote(_ note: BoardNote, familyID: UUID) {
+        let record = RemoteBoardNote(
+            id: note.id, family_id: familyID, text: note.text, color_index: note.colorIndex, position: note.position,
+            for_everyone: note.forEveryone, member_ids: note.memberIDs,
+            created_at: note.createdAt, updated_at: note.updatedAt,
+            created_by: note.createdByID, created_by_name: note.createdByName
+        )
+        Task { try? await boardNotes.push(record) }
+    }
+
+    func deleteBoardNote(id: UUID) {
+        Task { try? await boardNotes.remove(id: id) }
     }
 
     // MARK: Categories
