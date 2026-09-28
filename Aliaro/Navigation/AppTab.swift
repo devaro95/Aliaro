@@ -37,7 +37,7 @@ enum AppTab: Int, CaseIterable, Identifiable, Hashable {
         case .recipes: return "Recipes"
         case .shoppingList: return "Shopping"
         case .houseTasks: return "Tasks"
-        case .familyCalendar: return "Family"
+        case .familyCalendar: return "Calendar"
         case .reminders: return "Reminders"
         case .board: return "Board"
         case .economia: return "Finances"

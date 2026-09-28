@@ -27,7 +27,7 @@ struct ContentView: View {
                 CreatingFamilyGroupView()
             } else if familyService.isRestoringFamily || familyService.isJoiningFamily {
                 // Same idea, right after signing in with email and
-                // recovering an existing group — see `restoreMembershipShowingProgress`
+                // recovering an existing group — see `restoreMembership(showingProgress:)`
                 // — or right after asking to join one by QR/code — see
                 // `startJoiningFamily`.
                 RestoringFamilyGroupView()

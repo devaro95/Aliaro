@@ -10,6 +10,11 @@ enum DebugMockData {
     @MainActor
     static func seed(modelContext: ModelContext) {
         let calendar = Calendar.current
+        var seededIDs = Set(UserDefaults.standard.stringArray(forKey: seededIDsKey) ?? [])
+        func track<T: PersistentModel & DebugMockTrackable>(_ model: T) {
+            modelContext.insert(model)
+            seededIDs.insert(model.id.uuidString)
+        }
 
         // Extra family members, if there aren't any others yet — nicer
         // for screenshots that show who did what.
@@ -18,7 +23,7 @@ enum DebugMockData {
             let extras: [(String, String)] = [("Lucía", ALIIcon.user), ("Marcos", ALIIcon.user), ("Nora", ALIIcon.user)]
             for (name, emoji) in extras {
                 let member = FamilyMember(name: name, emoji: emoji, isCurrentDevice: false)
-                modelContext.insert(member)
+                track(member)
                 members.append(member)
             }
         }
@@ -28,7 +33,7 @@ enum DebugMockData {
         var dishes: [Dish] = []
         for name in dishNames {
             let dish = Dish(name: name)
-            modelContext.insert(dish)
+            track(dish)
             dishes.append(dish)
         }
         for weekday in 0...6 {
@@ -37,7 +42,7 @@ enum DebugMockData {
             // WeeklyMenu+Support.swift.
             for mealType in [MealType.lunch.rawValue, MealType.dinner.rawValue] {
                 guard let dish = dishes.randomElement() else { continue }
-                modelContext.insert(MealPlanEntry(weekday: weekday, mealType: mealType, dishID: dish.id, dishName: dish.name))
+                track(MealPlanEntry(weekday: weekday, mealType: mealType, dishID: dish.id, dishName: dish.name))
             }
         }
 
@@ -46,7 +51,7 @@ enum DebugMockData {
         var groceryItems: [GroceryItem] = []
         for name in groceryNames {
             let item = GroceryItem(name: name)
-            modelContext.insert(item)
+            track(item)
             groceryItems.append(item)
         }
         let existingLists = (try? modelContext.fetch(FetchDescriptor<ShoppingList>())) ?? []
@@ -55,11 +60,11 @@ enum DebugMockData {
             list = first
         } else {
             list = ShoppingList(name: "Shopping list", position: 0)
-            modelContext.insert(list)
+            track(list)
         }
         // 3 pending (unchecked) + 5 already bought (checked).
         for (index, item) in groceryItems.enumerated() {
-            modelContext.insert(ShoppingListEntry(itemID: item.id, listID: list.id, name: item.name, isChecked: index >= 3))
+            track(ShoppingListEntry(itemID: item.id, listID: list.id, name: item.name, isChecked: index >= 3))
         }
 
         // House tasks + a bit of "done" history.
@@ -67,10 +72,10 @@ enum DebugMockData {
         for (name, interval) in taskDefs {
             let creator = members.randomElement()
             let task = HouseTask(name: name, intervalDays: interval, createdByID: creator?.id, createdByName: creator?.name)
-            modelContext.insert(task)
+            track(task)
             for i in 0..<Int.random(in: 1...3) {
                 let logger = members.randomElement()
-                modelContext.insert(HouseTaskLog(
+                track(HouseTaskLog(
                     taskID: task.id,
                     taskName: task.name,
                     completedAt: calendar.date(byAdding: .day, value: -(i + 1) * (interval ?? 3), to: .now) ?? .now,
@@ -83,7 +88,7 @@ enum DebugMockData {
         // One-off task scheduled in 2 days at 20:00, assigned to one person.
         if let assignee = members.randomElement() {
             let inTwoDays = calendar.date(byAdding: .day, value: 2, to: .now) ?? .now
-            modelContext.insert(HouseTask(
+            track(HouseTask(
                 name: "Water the plants",
                 scheduledAt: calendar.date(bySettingHour: 20, minute: 0, second: 0, of: inTwoDays),
                 forEveryone: false,
@@ -106,7 +111,7 @@ enum DebugMockData {
             let start = calendar.date(byAdding: .hour, value: startHourOffset, to: baseDay) ?? baseDay
             let end = calendar.date(byAdding: .hour, value: durationHours, to: start) ?? start
             let creator = members.randomElement()
-            modelContext.insert(FamilyEvent(title: title, startDate: start, endDate: end, emoji: emoji, createdByID: creator?.id, createdByName: creator?.name))
+            track(FamilyEvent(title: title, startDate: start, endDate: end, emoji: emoji, createdByID: creator?.id, createdByName: creator?.name))
         }
 
         // Reminders.
@@ -114,14 +119,14 @@ enum DebugMockData {
         for (title, daysFromNow) in reminderDefs {
             let fireDate = calendar.date(byAdding: .day, value: daysFromNow, to: .now) ?? .now
             let creator = members.randomElement()
-            modelContext.insert(Reminder(title: title, fireDate: fireDate, notifyEveryone: true, createdByID: creator?.id, createdByName: creator?.name))
+            track(Reminder(title: title, fireDate: fireDate, notifyEveryone: true, createdByID: creator?.id, createdByName: creator?.name))
         }
 
         // Board notes.
         let boardDefs: [(String, Int)] = [("Wi-Fi: Aliaro-Home / pastel2026", 0), ("The plumber comes on Thursday morning", 1)]
         for (text, color) in boardDefs {
             let creator = members.randomElement()
-            modelContext.insert(BoardNote(text: text, colorIndex: color, createdByID: creator?.id, createdByName: creator?.name))
+            track(BoardNote(text: text, colorIndex: color, createdByID: creator?.id, createdByName: creator?.name))
         }
 
         // Expense categories (defaults, if missing) + a handful of expenses.
@@ -129,7 +134,7 @@ enum DebugMockData {
         if categories.isEmpty {
             for preset in ExpenseCategory.defaults {
                 let category = ExpenseCategory(name: preset.name, emoji: preset.emoji, isDefault: true)
-                modelContext.insert(category)
+                track(category)
                 categories.append(category)
             }
         }
@@ -143,7 +148,7 @@ enum DebugMockData {
         for (name, amount, isIncome, categoryCount) in expenseDefs {
             let payer = members.randomElement()
             let categoryIDs = Array(categories.shuffled().prefix(categoryCount)).map(\.id)
-            modelContext.insert(Expense(
+            track(Expense(
                 name: name,
                 amount: amount,
                 isIncome: isIncome,
@@ -155,6 +160,65 @@ enum DebugMockData {
         }
 
         try? modelContext.save()
+        UserDefaults.standard.set(Array(seededIDs), forKey: seededIDsKey)
+    }
+
+    /// IDs of everything `seed` inserted, so `clear` removes only mock
+    /// content and never real data.
+    private static let seededIDsKey = "aliaro.debugMockSeededIDs"
+
+    static var hasSeededData: Bool {
+        !(UserDefaults.standard.stringArray(forKey: seededIDsKey) ?? []).isEmpty
+    }
+
+    /// Deletes everything previously inserted by `seed`. Local only.
+    @MainActor
+    static func clear(modelContext: ModelContext) {
+        let ids = Set((UserDefaults.standard.stringArray(forKey: seededIDsKey) ?? []).compactMap(UUID.init))
+        guard !ids.isEmpty else { return }
+
+        func purge<T: PersistentModel & DebugMockTrackable>(_ type: T.Type) {
+            let all = (try? modelContext.fetch(FetchDescriptor<T>())) ?? []
+            for model in all where ids.contains(model.id) {
+                modelContext.delete(model)
+            }
+        }
+
+        purge(ShoppingListEntry.self)
+        purge(GroceryItem.self)
+        purge(ShoppingList.self)
+        purge(MealPlanEntry.self)
+        purge(Dish.self)
+        purge(HouseTaskLog.self)
+        purge(HouseTask.self)
+        purge(FamilyEvent.self)
+        purge(Reminder.self)
+        purge(BoardNote.self)
+        purge(Expense.self)
+        purge(ExpenseCategory.self)
+        purge(FamilyMember.self)
+
+        try? modelContext.save()
+        UserDefaults.standard.removeObject(forKey: seededIDsKey)
     }
 }
+
+/// Models `DebugMockData` can seed and later remove by `id`.
+protocol DebugMockTrackable {
+    var id: UUID { get }
+}
+
+extension FamilyMember: DebugMockTrackable {}
+extension Dish: DebugMockTrackable {}
+extension MealPlanEntry: DebugMockTrackable {}
+extension GroceryItem: DebugMockTrackable {}
+extension ShoppingList: DebugMockTrackable {}
+extension ShoppingListEntry: DebugMockTrackable {}
+extension HouseTask: DebugMockTrackable {}
+extension HouseTaskLog: DebugMockTrackable {}
+extension FamilyEvent: DebugMockTrackable {}
+extension Reminder: DebugMockTrackable {}
+extension BoardNote: DebugMockTrackable {}
+extension ExpenseCategory: DebugMockTrackable {}
+extension Expense: DebugMockTrackable {}
 #endif

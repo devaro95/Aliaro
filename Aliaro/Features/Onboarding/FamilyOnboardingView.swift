@@ -45,13 +45,18 @@ struct FamilyOnboardingView: View {
             }
         }
         .task {
-            // Silent, best-effort: if this account already belongs to a
-            // family group — the common case right after logging in on a
-            // new or reinstalled device — drop straight into it instead of
-            // showing "create/join". Any failure just falls through to the
-            // normal onboarding screen.
+            // If this account already belongs to a family group — the
+            // common case right after logging in — restore it behind the
+            // "loading your family group" screen, so Home appears with
+            // everything already loaded. No group (or any failure) just
+            // falls through to the normal create/join screen.
+            // Unstructured Task: this view is swapped out as soon as the
+            // loading screen appears, which would cancel `.task`'s work.
             defer { isCheckingForExistingGroup = false }
-            _ = try? await familyService.restoreMembership(modelContext: modelContext, dataSync: dataSync)
+            let familyService = familyService, modelContext = modelContext, dataSync = dataSync
+            _ = try? await Task {
+                try await familyService.restoreMembership(modelContext: modelContext, dataSync: dataSync, showingProgress: true)
+            }.value
         }
     }
 

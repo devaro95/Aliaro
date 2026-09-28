@@ -34,7 +34,7 @@ final class FamilyService: ObservableObject {
     private static let minimumCreatingDuration: Duration = .seconds(5)
 
     /// True while recovering an existing family group right after signing
-    /// in with email (`restoreMembershipShowingProgress`), so `ContentView`
+    /// in with email (`restoreMembership(showingProgress: true)`), so `ContentView`
     /// can show a "loading your family group" screen instead of flashing
     /// the onboarding buttons underneath.
     @Published private(set) var isRestoringFamily = false
@@ -133,6 +133,7 @@ final class FamilyService: ObservableObject {
         try? modelContext.save()
         try? await minimumWait
         needsInitialSetup = true
+        session.opensOnHomeNext = true
         isCreatingFamily = false
     }
 
@@ -240,6 +241,7 @@ final class FamilyService: ObservableObject {
         // with the data loaded right away.
         await dataSync.startAll(familyID: response.familyId, currentMemberID: response.memberId, modelContext: modelContext)
         try? await minimumWait
+        session.opensOnHomeNext = true
         isJoiningFamily = false
     }
 
@@ -261,7 +263,14 @@ final class FamilyService: ObservableObject {
     /// this device into it — same effect as joining, but recovering the
     /// existing group instead of creating/joining a new one. Returns
     /// `true` if a group was found and restored.
-    func restoreMembership(modelContext: ModelContext, dataSync: AppDataSyncCoordinator) async throws -> Bool {
+    ///
+    /// With `showingProgress`, once a group is found (never before, so an
+    /// account without a group goes straight to create/join with no
+    /// flash) `isRestoringFamily` is raised so `ContentView` shows the
+    /// "loading your family group" screen while everything is fetched —
+    /// kept up for at least `minimumRestoringDuration` — and Home then
+    /// appears fully populated in one go.
+    func restoreMembership(modelContext: ModelContext, dataSync: AppDataSyncCoordinator, showingProgress: Bool = false) async throws -> Bool {
         struct Body: Encodable { let deviceId: String }
         let response: RestoreMembershipResponse = try await supabase.functions.invoke(
             "restore-membership",
@@ -276,6 +285,10 @@ final class FamilyService: ObservableObject {
             return false
         }
         Track.event("family_restore_result", ["found": true])
+        // Raised before `setMembership`, which flips `hasJoinedFamily` —
+        // otherwise `ContentView` would show Home for a frame, empty.
+        if showingProgress { isRestoringFamily = true }
+        let loadingStartedAt = ContinuousClock.now
         session.setMembership(familyID: familyId, memberID: memberId, familyName: familyName)
         PremiumManager.shared.syncFamilyPremiumStatus()
         upsertLocalMember(
@@ -287,28 +300,15 @@ final class FamilyService: ObservableObject {
         await refreshFamilySettings()
         await startSettingsSync(familyID: familyId)
         await dataSync.startAll(familyID: familyId, currentMemberID: memberId, modelContext: modelContext)
-        return true
-    }
-
-    /// Same as `restoreMembership`, but drives `isRestoringFamily` around
-    /// it so `ContentView` can show a "loading your family group" screen
-    /// — kept up for at least `minimumRestoringDuration`, longer if the
-    /// restore itself takes more than that. Use this from UI flows (e.g.
-    /// right after signing in with email); `restoreMembership` alone is
-    /// for the silent, no-visible-loading check at cold launch.
-    func restoreMembershipShowingProgress(modelContext: ModelContext, dataSync: AppDataSyncCoordinator) async throws -> Bool {
-        isRestoringFamily = true
-        async let minimumWait: Void = Task.sleep(for: Self.minimumRestoringDuration)
-        do {
-            let found = try await restoreMembership(modelContext: modelContext, dataSync: dataSync)
-            try? await minimumWait
+        if showingProgress {
+            let elapsed = ContinuousClock.now - loadingStartedAt
+            if elapsed < Self.minimumRestoringDuration {
+                try? await Task.sleep(for: Self.minimumRestoringDuration - elapsed)
+            }
+            session.opensOnHomeNext = true
             isRestoringFamily = false
-            return found
-        } catch {
-            try? await minimumWait
-            isRestoringFamily = false
-            throw error
         }
+        return true
     }
 
     // MARK: - Invite (QR)

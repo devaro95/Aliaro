@@ -41,6 +41,12 @@ final class FamilySession: ObservableObject {
     /// `true` even after leaving a group, so it is only ever shown once.
     @Published private(set) var hasSeenAppIntro: Bool
 
+    /// Set when the family group has just been loaded on this device
+    /// (created, joined or restored after logging in): the first time the
+    /// tabs appear they open on Home, ignoring the admin's start tab.
+    /// In-memory on purpose — later launches honour the start tab.
+    var opensOnHomeNext = false
+
     private enum Keys {
         static let deviceID = "aliaro.deviceID"
         static let familyID = "aliaro.familyID"
