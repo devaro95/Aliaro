@@ -20,7 +20,7 @@ struct AccountScreen: View {
     @State private var isLoggingOut = false
 
     private var myName: String? {
-        members.first(where: { $0.isCurrentDevice })?.name ?? authSession.displayName
+        authSession.displayName ?? members.first(where: { $0.isCurrentDevice })?.name
     }
 
     var body: some View {

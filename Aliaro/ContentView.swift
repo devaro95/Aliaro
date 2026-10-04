@@ -10,9 +10,12 @@ struct ContentView: View {
     @EnvironmentObject private var familyService: FamilyService
     @EnvironmentObject private var dataSync: AppDataSyncCoordinator
     @EnvironmentObject private var authSession: AuthSession
+    @EnvironmentObject private var pendingInvite: PendingInvite
     @Environment(\.modelContext) private var modelContext
 
     @State private var showSplash = true
+    /// Invite link opened while this account already belongs to a group.
+    @State private var inviteForOtherGroup: String?
 
     var body: some View {
         Group {
@@ -44,6 +47,10 @@ struct ContentView: View {
                 }
             } else if !authSession.isSignedIn {
                 AuthWelcomeView()
+            } else if authSession.displayName == nil {
+                // The account name is mandatory and is the one used in the
+                // family group — never asked when creating/joining one.
+                CompleteNameView()
             } else if familySession.hasJoinedFamily {
                 MainTabContainer()
             } else {
@@ -87,6 +94,20 @@ struct ContentView: View {
                 Task { await familyService.clearLocalFamily(modelContext: modelContext, dataSync: dataSync) }
             }
         }
+        // An invite link (QR scanned with the iPhone Camera) is only for
+        // accounts without a group — FamilyOnboardingView consumes it. If
+        // this account already has one, drop it: silently when it's for
+        // that same group, with an explanation otherwise.
+        .onChange(of: pendingInvite.token, initial: true) { _, _ in discardInviteIfAlreadyInGroup() }
+        .onChange(of: familySession.hasJoinedFamily) { _, _ in discardInviteIfAlreadyInGroup() }
+        .alert("You already belong to a family group", isPresented: Binding(
+            get: { inviteForOtherGroup != nil },
+            set: { if !$0 { inviteForOtherGroup = nil } }
+        )) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("To join \"\(inviteForOtherGroup ?? "")\", first leave your current group from People.")
+        }
         .alert("Couldn't create family group", isPresented: Binding(
             get: { familyService.createFamilyError != nil },
             set: { if !$0 { familyService.createFamilyError = nil } }
@@ -102,6 +123,21 @@ struct ContentView: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text(familyService.joinFamilyError ?? "")
+        }
+    }
+}
+
+extension ContentView {
+    fileprivate func discardInviteIfAlreadyInGroup() {
+        guard let token = pendingInvite.token,
+              familySession.hasJoinedFamily,
+              !familyService.isJoiningFamily else { return }
+        pendingInvite.clear()
+        let currentFamilyName = familySession.familyName
+        Task {
+            guard let invitedFamilyName = try? await familyService.inviteInfo(token: token),
+                  invitedFamilyName != currentFamilyName else { return }
+            inviteForOtherGroup = invitedFamilyName
         }
     }
 }

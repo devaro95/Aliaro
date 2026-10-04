@@ -9,6 +9,9 @@ struct FamilyCalendarPeopleView: View {
     let events: [FamilyEvent]
     let members: [FamilyMember]
     @Binding var selectedDay: Date?
+    /// Static, purely visual render for the premium preview: no buttons,
+    /// no inner scroll, no live "now" line. Only the parent scrolls.
+    var isMock: Bool = false
     var onSelect: (FamilyEvent) -> Void
 
     @State private var availableWidth: CGFloat = 0
@@ -142,7 +145,15 @@ struct FamilyCalendarPeopleView: View {
         formatter.dateFormat = "EEEE, d MMMM"
         let isToday = calendar.isDateInToday(day)
 
-        return HStack {
+        if isMock {
+            return AnyView(
+                Text(formatter.string(from: day).capitalized)
+                    .font(ALITypography.titleLarge)
+                    .foregroundStyle(ALIColors.ink)
+                    .frame(maxWidth: .infinity, minHeight: 36)
+            )
+        }
+        return AnyView(HStack {
             chevron("chevron.left", value: -1)
             Spacer()
             Button {
@@ -162,7 +173,7 @@ struct FamilyCalendarPeopleView: View {
             .buttonStyle(.plain)
             Spacer()
             chevron("chevron.right", value: 1)
-        }
+        })
     }
 
     private func chevron(_ symbol: String, value: Int) -> some View {
@@ -193,16 +204,13 @@ struct FamilyCalendarPeopleView: View {
             }
             .frame(width: gutterWidth)
 
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(alignment: .top, spacing: 0) {
-                    ForEach(columns) { column in
-                        VStack(spacing: 0) {
-                            columnHeader(column)
-                            if hasAllDay { allDayCell(column) }
-                            timeColumn(column)
-                        }
-                        .frame(width: columnWidth)
-                    }
+            if isMock {
+                columnsRow(hasAllDay: hasAllDay)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .clipped()
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    columnsRow(hasAllDay: hasAllDay)
                 }
             }
         }
@@ -213,6 +221,29 @@ struct FamilyCalendarPeopleView: View {
                     .onChange(of: proxy.size.width) { _, width in availableWidth = width }
             }
         )
+    }
+
+    private func columnsRow(hasAllDay: Bool) -> some View {
+        HStack(alignment: .top, spacing: 0) {
+            ForEach(columns) { column in
+                VStack(spacing: 0) {
+                    columnHeader(column)
+                    if hasAllDay { allDayCell(column) }
+                    timeColumn(column)
+                }
+                .frame(width: columnWidth)
+            }
+        }
+    }
+
+    /// A button normally; just the label in mock mode.
+    @ViewBuilder
+    private func tappable<Label: View>(_ action: @escaping () -> Void, @ViewBuilder label: () -> Label) -> some View {
+        if isMock {
+            label()
+        } else {
+            Button(action: action, label: label).buttonStyle(.plain)
+        }
     }
 
     private func columnHeader(_ column: Column) -> some View {
@@ -253,7 +284,7 @@ struct FamilyCalendarPeopleView: View {
     private func allDayCell(_ column: Column) -> some View {
         VStack(spacing: 4) {
             ForEach(allDayEvents.filter { isFor($0, column) }, id: \.id) { event in
-                Button { onSelect(event) } label: {
+                tappable({ onSelect(event) }) {
                     Text(event.title)
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(ALIColors.onAccent)
@@ -263,7 +294,6 @@ struct FamilyCalendarPeopleView: View {
                         .background(color(for: event, in: column))
                         .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
                 }
-                .buttonStyle(.plain)
             }
             Spacer(minLength: 0)
         }
@@ -312,7 +342,7 @@ struct FamilyCalendarPeopleView: View {
                     .offset(x: 3 + CGFloat(item.lane) * laneWidth, y: top)
             }
 
-            if calendar.isDateInToday(day) {
+            if !isMock && calendar.isDateInToday(day) {
                 nowLine
             }
         }
@@ -328,10 +358,10 @@ struct FamilyCalendarPeopleView: View {
             return "\(f.string(from: max(event.startDate, day))) – \(f.string(from: min(event.endDate, dayEnd)))"
         }()
 
-        return Button {
+        return tappable({
             Track.event("calendar_event_open", ["source": "people_view"])
             onSelect(event)
-        } label: {
+        }) {
             HStack(alignment: .top, spacing: 5) {
                 Capsule().fill(tint).frame(width: 4)
                 VStack(alignment: .leading, spacing: 1) {
@@ -354,7 +384,6 @@ struct FamilyCalendarPeopleView: View {
             .background(tint.opacity(0.22))
             .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
         }
-        .buttonStyle(.plain)
     }
 
     /// Personal events take the person's color; shared ones the calendar accent.
@@ -379,6 +408,10 @@ struct FamilyCalendarPeopleView: View {
 /// preview: three people with a believable day of plans.
 enum FamilyCalendarPeopleDemoData {
     static let members: [FamilyMember] = HouseTasksDemoData.members
+
+    /// Built once: recreating the sample events on every render gave them
+    /// new ids each scroll frame, so the blocks kept re-animating.
+    static let today: [FamilyEvent] = events(on: .now)
 
     static func events(on day: Date) -> [FamilyEvent] {
         let calendar = Calendar.current

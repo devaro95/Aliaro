@@ -8,6 +8,8 @@ struct AuthWelcomeView: View {
         case register
         case login
         case forgotPassword(email: String)
+        case resetCode(email: String)
+        case newPassword
         case confirmEmail(email: String)
     }
 
@@ -23,7 +25,11 @@ struct AuthWelcomeView: View {
                     case .login:
                         LoginView(path: $path)
                     case .forgotPassword(let email):
-                        ForgotPasswordView(initialEmail: email)
+                        ForgotPasswordView(path: $path, initialEmail: email)
+                    case .resetCode(let email):
+                        ResetCodeView(path: $path, email: email)
+                    case .newPassword:
+                        NewPasswordView()
                     case .confirmEmail(let email):
                         ConfirmEmailView(email: email)
                     }
@@ -127,6 +133,9 @@ enum AuthValidation {
 /// Friendly messages for the Supabase Auth errors people actually hit.
 enum AuthErrorMessage {
     static func text(for error: Error) -> String {
+        if case AuthSession.SignUpError.emailAlreadyRegistered? = error as? AuthSession.SignUpError {
+            return String(localized: "There's already an account with this email. Log in instead.")
+        }
         if let authError = error as? AuthError {
             let code = authError.errorCode
             if code == .invalidCredentials {

@@ -96,6 +96,8 @@ def collect(dirpath):
             files.append(e)
         elif e.endswith('.storekit'):
             files.append(e)
+        elif e.endswith('.xcprivacy'):
+            files.append(e)
         elif e.endswith('.plist'):
             files.append(e)
     return files, dirs
@@ -132,6 +134,12 @@ def walk(dirpath, targets):
                 resource_build_files[t].append((bf, fref, rel_name))
         elif f.endswith('.xcstrings'):
             file_refs.append((fref, rel_name, q(rel_name), "text.json.xcstrings", "<group>"))
+            for t in targets:
+                bf = uid(f"res:{t}:" + full)
+                resource_build_files[t].append((bf, fref, rel_name))
+        elif f.endswith('.xcprivacy'):
+            # Privacy manifest: must be copied into the bundle as a resource.
+            file_refs.append((fref, rel_name, q(rel_name), "text.xml", "<group>"))
             for t in targets:
                 bf = uid(f"res:{t}:" + full)
                 resource_build_files[t].append((bf, fref, rel_name))
@@ -252,6 +260,9 @@ PKG_BUILDFILE_UID = uid("pkgBuildFile:Supabase")
 FIREBASE_PKG_REF_UID = uid("pkgRef:firebase-ios-sdk")
 FIREBASE_PRODUCT_UID = uid("pkgProduct:FirebaseAnalytics")
 FIREBASE_BUILDFILE_UID = uid("pkgBuildFile:FirebaseAnalytics")
+CRASHLYTICS_PRODUCT_UID = uid("pkgProduct:FirebaseCrashlytics")
+CRASHLYTICS_BUILDFILE_UID = uid("pkgBuildFile:FirebaseCrashlytics")
+CRASHLYTICS_SCRIPT_PHASE = uid("shellScript:crashlyticsDsymUpload")
 
 pbxproj = f"""// !$*UTF8*$!
 {{
@@ -268,6 +279,7 @@ pbxproj = f"""// !$*UTF8*$!
 {emit_build_files_resources("widget")}
 \t\t{PKG_BUILDFILE_UID} /* Supabase in Frameworks */ = {{isa = PBXBuildFile; productRef = {PKG_PRODUCT_UID} /* Supabase */; }};
 \t\t{FIREBASE_BUILDFILE_UID} /* FirebaseAnalytics in Frameworks */ = {{isa = PBXBuildFile; productRef = {FIREBASE_PRODUCT_UID} /* FirebaseAnalytics */; }};
+\t\t{CRASHLYTICS_BUILDFILE_UID} /* FirebaseCrashlytics in Frameworks */ = {{isa = PBXBuildFile; productRef = {CRASHLYTICS_PRODUCT_UID} /* FirebaseCrashlytics */; }};
 \t\t{EMBED_WIDGET_BUILDFILE} /* {WIDGET_PRODUCT_NAME}.appex in Embed Foundation Extensions */ = {{isa = PBXBuildFile; fileRef = {WIDGET_PRODUCT_REF} /* {WIDGET_PRODUCT_NAME}.appex */; settings = {{ATTRIBUTES = (RemoveHeadersOnCopy, ); }}; }};
 /* End PBXBuildFile section */
 
@@ -308,6 +320,7 @@ pbxproj = f"""// !$*UTF8*$!
 \t\t\tfiles = (
 \t\t\t\t{PKG_BUILDFILE_UID} /* Supabase in Frameworks */,
 \t\t\t\t{FIREBASE_BUILDFILE_UID} /* FirebaseAnalytics in Frameworks */,
+\t\t\t\t{CRASHLYTICS_BUILDFILE_UID} /* FirebaseCrashlytics in Frameworks */,
 \t\t\t);
 \t\t\trunOnlyForDeploymentPostprocessing = 0;
 \t\t}};
@@ -352,6 +365,7 @@ pbxproj = f"""// !$*UTF8*$!
 \t\t\t\t{FRAMEWORKS_PHASE} /* Frameworks */,
 \t\t\t\t{RESOURCES_PHASE} /* Resources */,
 \t\t\t\t{EMBED_EXTENSIONS_PHASE} /* Embed Foundation Extensions */,
+\t\t\t\t{CRASHLYTICS_SCRIPT_PHASE} /* Upload Crashlytics dSYMs */,
 \t\t\t);
 \t\t\tbuildRules = (
 \t\t\t);
@@ -362,6 +376,7 @@ pbxproj = f"""// !$*UTF8*$!
 \t\t\tpackageProductDependencies = (
 \t\t\t\t{PKG_PRODUCT_UID} /* Supabase */,
 \t\t\t\t{FIREBASE_PRODUCT_UID} /* FirebaseAnalytics */,
+\t\t\t\t{CRASHLYTICS_PRODUCT_UID} /* FirebaseCrashlytics */,
 \t\t\t);
 \t\t\tproductName = {PRODUCT_NAME};
 \t\t\tproductReference = {APP_PRODUCT_REF} /* {PRODUCT_NAME}.app */;
@@ -454,6 +469,32 @@ pbxproj = f"""// !$*UTF8*$!
 \t\t\trunOnlyForDeploymentPostprocessing = 0;
 \t\t}};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+\t\t{CRASHLYTICS_SCRIPT_PHASE} /* Upload Crashlytics dSYMs */ = {{
+\t\t\tisa = PBXShellScriptBuildPhase;
+\t\t\tbuildActionMask = 2147483647;
+\t\t\tfiles = (
+\t\t\t);
+\t\t\tinputFileListPaths = (
+\t\t\t);
+\t\t\tinputPaths = (
+\t\t\t\t"${{DWARF_DSYM_FOLDER_PATH}}/${{DWARF_DSYM_FILE_NAME}}",
+\t\t\t\t"${{DWARF_DSYM_FOLDER_PATH}}/${{DWARF_DSYM_FILE_NAME}}/Contents/Resources/DWARF/${{PRODUCT_NAME}}",
+\t\t\t\t"${{DWARF_DSYM_FOLDER_PATH}}/${{DWARF_DSYM_FILE_NAME}}/Contents/Info.plist",
+\t\t\t\t"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/GoogleService-Info.plist",
+\t\t\t\t"$(TARGET_BUILD_DIR)/$(EXECUTABLE_PATH)",
+\t\t\t);
+\t\t\tname = "Upload Crashlytics dSYMs";
+\t\t\toutputFileListPaths = (
+\t\t\t);
+\t\t\toutputPaths = (
+\t\t\t);
+\t\t\trunOnlyForDeploymentPostprocessing = 0;
+\t\t\tshellPath = /bin/sh;
+\t\t\tshellScript = "# Only Release builds report crashes (Firebase is never started in DEBUG).\\nif [ \\\"${{CONFIGURATION}}\\\" != \\\"Release\\\" ]; then\\n  exit 0\\nfi\\n\\\"${{BUILD_DIR%/Build/*}}/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/run\\\"\\n";
+\t\t}};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 \t\t{SOURCES_PHASE} /* Sources */ = {{
@@ -746,6 +787,11 @@ pbxproj = f"""// !$*UTF8*$!
 \t\t\tisa = XCSwiftPackageProductDependency;
 \t\t\tpackage = {FIREBASE_PKG_REF_UID} /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 \t\t\tproductName = FirebaseAnalytics;
+\t\t}};
+\t\t{CRASHLYTICS_PRODUCT_UID} /* FirebaseCrashlytics */ = {{
+\t\t\tisa = XCSwiftPackageProductDependency;
+\t\t\tpackage = {FIREBASE_PKG_REF_UID} /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+\t\t\tproductName = FirebaseCrashlytics;
 \t\t}};
 /* End XCSwiftPackageProductDependency section */
 \t}};

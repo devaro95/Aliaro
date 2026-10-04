@@ -80,10 +80,11 @@ struct FamilyCalendarScreen: View {
                 case .people:
                     if isPeopleViewLocked {
                         FamilyCalendarPeopleView(
-                            events: FamilyCalendarPeopleDemoData.events(on: selectedDay ?? .now),
+                            events: FamilyCalendarPeopleDemoData.today,
                             members: FamilyCalendarPeopleDemoData.members,
-                            selectedDay: $selectedDay,
-                            onSelect: { _ in showPaywall = Track.paywall("calendar_people_event") }
+                            selectedDay: .constant(nil),
+                            isMock: true,
+                            onSelect: { _ in }
                         )
                         .aliPremiumPreview(true)
                     } else {

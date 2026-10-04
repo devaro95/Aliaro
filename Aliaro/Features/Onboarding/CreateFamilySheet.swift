@@ -1,7 +1,8 @@
 import SwiftUI
 
-/// Sheet to create a new family group: asks for the group's name (and the
-/// creator's name only if the account doesn't already have one). As soon as both fields are valid and
+/// Sheet to create a new family group: asks only for the group's name — the
+/// creator's name is always the account's (`AuthSession.displayName`, set
+/// at sign-up). As soon as the group name is valid and
 /// the user taps "Create group", this sheet hands the data off via
 /// `onConfirm` and dismisses immediately — it does not wait for any
 /// network call. `ContentView` takes over right away and shows the
@@ -14,11 +15,8 @@ struct CreateFamilySheet: View {
     @EnvironmentObject private var authSession: AuthSession
     @Environment(\.dismiss) private var dismiss
     @State private var familyName = ""
-    @State private var myName = ""
 
-    private var accountName: String? { authSession.displayName }
-
-    private var resolvedMyName: String { accountName ?? myName.trimmed }
+    private var resolvedMyName: String { authSession.displayName ?? "" }
 
     private var canSubmit: Bool {
         !familyName.trimmed.isEmpty && !resolvedMyName.isEmpty
@@ -37,10 +35,6 @@ struct CreateFamilySheet: View {
                     .foregroundStyle(ALIColors.ink)
 
                 ALITextField(placeholder: "Group name (e.g. The Smiths)", text: $familyName, onSubmit: submit)
-
-                if accountName == nil {
-                    ALITextField(placeholder: "Your name", text: $myName, onSubmit: submit)
-                }
 
                 ALIPrimaryButton(
                     text: "Create group",

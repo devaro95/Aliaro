@@ -9,6 +9,7 @@ struct AliaroApp: App {
     @StateObject private var authSession = AuthSession.shared
     @StateObject private var dataSync = AppDataSyncCoordinator()
     @StateObject private var premiumManager = PremiumManager.shared
+    @StateObject private var pendingInvite = PendingInvite.shared
 
     let modelContainer: ModelContainer = {
         let schema = Schema([
@@ -59,6 +60,13 @@ struct AliaroApp: App {
                 .environmentObject(authSession)
                 .environmentObject(dataSync)
                 .environmentObject(premiumManager)
+                .environmentObject(pendingInvite)
+                // Invite QR scanned with the iPhone Camera (universal link)
+                // or an `aliaro://join` link: remember the token until the
+                // person is signed in without a group — see PendingInvite.
+                .onOpenURL { url in
+                    pendingInvite.handle(url: url)
+                }
                 .onAppear {
                     PushNotificationManager.shared.attach(familyService: familyService)
                     // Notification permission is requested right after the

@@ -741,12 +741,17 @@ final class FamilyService: ObservableObject {
 
     func registerPushToken(_ apnsToken: String) async {
         guard let memberID = session.memberID else { return }
-        struct Body: Encodable { let memberId: UUID; let apnsToken: String }
+        struct Body: Encodable { let memberId: UUID; let apnsToken: String; let locale: String }
         struct OKResponse: Decodable { let ok: Bool }
+        // Language the app UI is actually shown in (one of the app's
+        // localizations), so push notifications — written server-side —
+        // arrive in that same language. Re-sent on every launch, so a change
+        // of the iPhone's language is picked up automatically.
+        let locale = Bundle.main.preferredLocalizations.first ?? "en"
         do {
             let _: OKResponse = try await invokeEdgeFunction(
                 "register-push-token",
-                options: FunctionInvokeOptions(body: Body(memberId: memberID, apnsToken: apnsToken))
+                options: FunctionInvokeOptions(body: Body(memberId: memberID, apnsToken: apnsToken, locale: locale))
             )
         } catch {
             lastError = error.localizedDescription

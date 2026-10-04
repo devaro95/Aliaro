@@ -28,6 +28,13 @@ struct ALIBottomBar: View {
     private let indicatorInset: CGFloat = 4
     private let indicatorVerticalInset: CGFloat = 4
 
+    /// Entrance animation plays once per process: a cold launch (app killed
+    /// and reopened) shows it; tab switches, re-mounts or coming back from
+    /// background don't, because the process — and this flag — survive.
+    @MainActor private static var hasPlayedEntrance = false
+    @State private var barVisible = ALIBottomBar.hasPlayedEntrance
+    @State private var iconsVisible = ALIBottomBar.hasPlayedEntrance
+
     var body: some View {
         GeometryReader { outerGeo in
             let barHeight = expandedHeight - (expandedHeight - collapsedHeight) * collapseFraction
@@ -44,6 +51,8 @@ struct ALIBottomBar: View {
                     // Same cornerRadius as the outer bar (barCornerRadius) so it nests well.
                     RoundedRectangle(cornerRadius: barCornerRadius, style: .continuous)
                         .fill(selected.accent.opacity(0.55))
+                        .opacity(iconsVisible ? 1 : 0)
+                        .animation(.easeOut(duration: 0.3).delay(0.1), value: iconsVisible)
                         .frame(width: slotWidth - indicatorInset * 2, height: barHeight - indicatorVerticalInset * 2)
                         .offset(x: selectedIndex * slotWidth + indicatorInset)
 
@@ -56,9 +65,16 @@ struct ALIBottomBar: View {
                                     selected = tab
                                 }
                             } label: {
+                                let index = Double(visibleTabs.firstIndex(of: tab) ?? 0)
                                 Image(systemName: tab.systemImage)
                                     .font(.system(size: visibleTabs.count > 4 ? 18 : 20, weight: .semibold))
                                     .foregroundStyle(tab == selected ? ALIColors.ink : ALIColors.mutedInk)
+                                    .scaleEffect(iconsVisible ? 1 : 0.4)
+                                    .opacity(iconsVisible ? 1 : 0)
+                                    .animation(
+                                        .spring(response: 0.45, dampingFraction: 0.6).delay(0.05 * index),
+                                        value: iconsVisible
+                                    )
                                     .frame(width: slotWidth, height: barHeight)
                             }
                             .accessibilityLabel(tab.label)
@@ -73,6 +89,9 @@ struct ALIBottomBar: View {
                         .stroke(ALIColors.outline, lineWidth: 1)
                 )
                 .shadow(color: .black.opacity(0.12), radius: 10, y: 3)
+                .scaleEffect(barVisible ? 1 : 0.85, anchor: .bottom)
+                .offset(y: barVisible ? 0 : 100)
+                .opacity(barVisible ? 1 : 0)
 
                 Spacer(minLength: 0)
             }
@@ -83,6 +102,18 @@ struct ALIBottomBar: View {
         .padding(.bottom, 8)
         .ignoresSafeArea(.container, edges: .bottom)
         .animation(.spring(response: 0.35, dampingFraction: 0.85), value: selected)
+        .onAppear(perform: playEntranceIfNeeded)
+    }
+
+    private func playEntranceIfNeeded() {
+        guard !Self.hasPlayedEntrance else { return }
+        Self.hasPlayedEntrance = true
+        withAnimation(.spring(response: 0.55, dampingFraction: 0.78).delay(0.15)) {
+            barVisible = true
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+            iconsVisible = true
+        }
     }
 }
 

@@ -7,15 +7,24 @@ import FirebaseCore
 #if canImport(FirebaseAnalytics)
 import FirebaseAnalytics
 #endif
+#if canImport(FirebaseCrashlytics)
+import FirebaseCrashlytics
+#endif
 
-/// Thin wrapper over Firebase Analytics — the only place in the app that
-/// talks to Firebase directly, so screens call `Track.event(...)` /
+/// Thin wrapper over Firebase Analytics + Crashlytics — the only place in
+/// the app that talks to Firebase directly, so screens call `Track.event(...)` /
 /// `.trackScreen(...)` and never import Firebase themselves.
 ///
 /// Config file: `GoogleService-Info.plist` in `Aliaro/` (production).
 /// Only Release builds send anything: in DEBUG Firebase is never
 /// configured and events are just printed. Without the plist, every call
 /// here is a silent no-op (the app keeps working, just untracked).
+///
+/// Crashlytics starts on its own with `FirebaseApp.configure` (so, like
+/// analytics, only in Release). Crash reports carry the member ID (see
+/// `setUser`), declared as "crash data, linked to the user" in App
+/// Privacy and `PrivacyInfo.xcprivacy`. dSYMs are uploaded by the
+/// "Upload Crashlytics dSYMs" build phase (Release only).
 ///
 /// Privacy: no free text typed by the user is ever sent (titles, notes,
 /// amounts…), only types, counts and flags — except grocery item and dish
@@ -109,6 +118,10 @@ enum Track {
         #if canImport(FirebaseAnalytics)
         guard isEnabled else { return }
         Analytics.setUserID(id?.uuidString)
+        #endif
+        #if canImport(FirebaseCrashlytics)
+        guard isEnabled else { return }
+        Crashlytics.crashlytics().setUserID(id?.uuidString ?? "")
         #endif
     }
 

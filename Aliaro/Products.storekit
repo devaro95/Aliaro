@@ -29,7 +29,7 @@
             "internalID": "CD2532D4",
             "numberOfPeriods": 1,
             "paymentMode": "free",
-            "subscriptionPeriod": "P1M"
+            "subscriptionPeriod": "P2W"
           },
           "localizations": [
             {
@@ -56,7 +56,7 @@
             "internalID": "809D8CE4",
             "numberOfPeriods": 1,
             "paymentMode": "free",
-            "subscriptionPeriod": "P3M"
+            "subscriptionPeriod": "P1M"
           },
           "localizations": [
             {

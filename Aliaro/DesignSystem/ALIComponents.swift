@@ -355,8 +355,14 @@ extension View {
     /// non-interactive while `locked`. Pair with `ALIPremiumPreviewBanner`.
     func aliPremiumPreview(_ locked: Bool) -> some View {
         self
-            .blur(radius: locked ? 3 : 0)
-            .disabled(locked)
+            // Touches pass straight through to the parent ScrollView: no
+            // press highlights on the inert content and no nested scroll
+            // views fighting the vertical scroll.
+            .allowsHitTesting(!locked)
+            // Flatten into a single layer so the blur is applied once to
+            // the composite instead of per subview on every scroll frame.
+            .compositingGroup()
+            .blur(radius: locked ? 3 : 0, opaque: false)
             .accessibilityHidden(locked)
     }
 

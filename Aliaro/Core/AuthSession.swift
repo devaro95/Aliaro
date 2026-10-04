@@ -22,6 +22,15 @@ final class AuthSession: ObservableObject {
     static let shared = AuthSession()
 
     private static let hasLaunchedBeforeKey = "aliaro.hasLaunchedBefore"
+    /// Set between a valid recovery code and the new password being saved
+    /// (see `verifyRecoveryCode`). If the app dies in between, the
+    /// recovery session is dropped at the next launch.
+    private static let pendingRecoveryKey = "aliaro.pendingPasswordRecovery"
+
+    /// While `true`, the session created by the recovery code is kept out
+    /// of `isSignedIn`, so the auth flow stays on screen until the new
+    /// password is saved.
+    private var isRecoveringPassword = false
 
     /// `false` until the stored session (if any) has been read at launch —
     /// lets `ContentView` avoid flashing the welcome screen for someone
@@ -46,12 +55,35 @@ final class AuthSession: ObservableObject {
     }
 
     private func apply(_ session: Session?) {
+        guard !isRecoveringPassword else { return }
         // Anonymous sessions (from the old optional-login model) don't
         // count as signed in — see `prepareSession`.
         let user = session.flatMap { $0.user.isAnonymous ? nil : $0.user }
         isSignedIn = user != nil
         email = user?.email
         displayName = user.flatMap { Self.name(from: $0) }
+        if let user { syncLocaleIfNeeded(user) }
+    }
+
+    // MARK: - Email language
+
+    /// App language ("es", "en"…) saved in `user_metadata.locale`, so the
+    /// Supabase Auth email templates (confirm signup, reset password) can
+    /// pick Spanish or English with `{{ if eq .Data.locale "es" }}`.
+    static var appLocale: String {
+        Bundle.main.preferredLocalizations.first ?? "en"
+    }
+
+    /// Keeps `user_metadata.locale` in line with the device language
+    /// (e.g. accounts created before this existed, or a language change).
+    /// The update fires `userUpdated`, which lands here again with the
+    /// value already equal, so it doesn't loop.
+    private func syncLocaleIfNeeded(_ user: User) {
+        let locale = Self.appLocale
+        if case let .string(current)? = user.userMetadata["locale"], current == locale { return }
+        Task {
+            _ = try? await supabase.auth.update(user: UserAttributes(data: ["locale": .string(locale)]))
+        }
     }
 
     private static func name(from user: User) -> String? {
@@ -73,6 +105,12 @@ final class AuthSession: ObservableObject {
             // .local: clears the on-device session without needing network.
             try? await supabase.auth.signOut(scope: .local)
             defaults.set(true, forKey: Self.hasLaunchedBeforeKey)
+        }
+        // Recovery code verified but the new password never saved: that
+        // session must not count as a login.
+        if defaults.bool(forKey: Self.pendingRecoveryKey) {
+            try? await supabase.auth.signOut(scope: .local)
+            defaults.removeObject(forKey: Self.pendingRecoveryKey)
         }
         // Stored session, even if its access token expired: it's refreshed
         // on the first request, so offline launches stay signed in.
@@ -99,13 +137,23 @@ final class AuthSession: ObservableObject {
         let response = try await supabase.auth.signUp(
             email: email,
             password: password,
-            data: ["name": .string(name)]
+            data: ["name": .string(name), "locale": .string(Self.appLocale)]
         )
         if let session = response.session {
             apply(session)
             return .signedIn
         }
+        // With email confirmation on, Supabase doesn't fail for an email that
+        // already has an account: it returns an obfuscated user with no
+        // identities (and sends nothing). Treat that as "already registered".
+        if response.user.identities?.isEmpty ?? false {
+            throw SignUpError.emailAlreadyRegistered
+        }
         return .needsConfirmation
+    }
+
+    enum SignUpError: Error {
+        case emailAlreadyRegistered
     }
 
     func confirmSignUp(email: String, code: String) async throws {
@@ -139,12 +187,36 @@ final class AuthSession: ObservableObject {
         try await supabase.auth.resetPasswordForEmail(email)
     }
 
-    /// Verifies the recovery code (which signs the person in) and sets the
-    /// new password on the account.
-    func resetPassword(email: String, code: String, newPassword: String) async throws {
-        try await supabase.auth.verifyOTP(email: email, token: code, type: .recovery)
+    /// Step 1: checks the recovery code. Supabase opens a session with it,
+    /// but it isn't treated as a login until `setNewPassword` succeeds.
+    func verifyRecoveryCode(email: String, code: String) async throws {
+        isRecoveringPassword = true
+        UserDefaults.standard.set(true, forKey: Self.pendingRecoveryKey)
+        do {
+            try await supabase.auth.verifyOTP(email: email, token: code, type: .recovery)
+        } catch {
+            isRecoveringPassword = false
+            UserDefaults.standard.removeObject(forKey: Self.pendingRecoveryKey)
+            throw error
+        }
+    }
+
+    /// Step 2: saves the new password and signs the person in.
+    func setNewPassword(_ newPassword: String) async throws {
         _ = try await supabase.auth.update(user: UserAttributes(password: newPassword))
+        isRecoveringPassword = false
+        UserDefaults.standard.removeObject(forKey: Self.pendingRecoveryKey)
         apply(try? await supabase.auth.session)
+    }
+
+    /// Leaving the new-password screen without saving: drops the recovery
+    /// session so the person is back at a signed-out login screen.
+    func cancelPasswordRecovery() async {
+        guard isRecoveringPassword else { return }
+        try? await supabase.auth.signOut(scope: .local)
+        isRecoveringPassword = false
+        UserDefaults.standard.removeObject(forKey: Self.pendingRecoveryKey)
+        apply(nil)
     }
 
     // MARK: - Account (change password / name)

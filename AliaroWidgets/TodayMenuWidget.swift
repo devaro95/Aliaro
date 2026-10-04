@@ -35,7 +35,7 @@ struct TodayMenuWidgetView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Label("Menú de hoy", systemImage: "fork.knife")
+            Label("Today's menu", systemImage: "fork.knife")
                 .font(.caption).bold()
                 .foregroundStyle(.green)
 
@@ -43,7 +43,7 @@ struct TodayMenuWidgetView: View {
                 Spacer()
                 HStack {
                     Spacer()
-                    Text("Únete a un grupo familiar en Aliaro")
+                    Text("Join a family group in Aliaro")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
@@ -51,8 +51,8 @@ struct TodayMenuWidgetView: View {
                 }
                 Spacer()
             } else {
-                mealRow(icon: "sun.max.fill", label: "Comida", dish: dish(for: "comida"))
-                mealRow(icon: "moon.stars.fill", label: "Cena", dish: dish(for: "cena"))
+                mealRow(icon: "sun.max.fill", label: "Lunch", dish: dish(for: "comida"))
+                mealRow(icon: "moon.stars.fill", label: "Dinner", dish: dish(for: "cena"))
                 Spacer(minLength: 0)
             }
         }
@@ -61,7 +61,7 @@ struct TodayMenuWidgetView: View {
     }
 
     @ViewBuilder
-    private func mealRow(icon: String, label: String, dish: String?) -> some View {
+    private func mealRow(icon: String, label: LocalizedStringKey, dish: String?) -> some View {
         HStack(alignment: .top, spacing: 6) {
             Image(systemName: icon)
                 .font(.caption2)
@@ -69,7 +69,7 @@ struct TodayMenuWidgetView: View {
                 .frame(width: 14)
             VStack(alignment: .leading, spacing: 1) {
                 Text(label).font(.caption2).foregroundStyle(.secondary)
-                Text(dish ?? "Sin planear").font(.caption).lineLimit(1)
+                Group { if let dish { Text(dish) } else { Text("Not planned") } }.font(.caption).lineLimit(1)
             }
         }
     }
@@ -83,8 +83,8 @@ struct TodayMenuWidget: Widget {
             TodayMenuWidgetView(snapshot: entry.snapshot)
                 .containerBackground(.background, for: .widget)
         }
-        .configurationDisplayName("Menú del día")
-        .description("La comida y la cena de hoy del menú semanal de Aliaro.")
+        .configurationDisplayName("Today's menu")
+        .description("Today's lunch and dinner from your Aliaro weekly menu.")
         .supportedFamilies([.systemSmall, .systemMedium])
     }
 }

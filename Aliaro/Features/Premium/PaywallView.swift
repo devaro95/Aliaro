@@ -615,11 +615,27 @@ struct PaywallView: View {
         .background(ALIColors.background.shadow(.drop(color: .black.opacity(0.06), radius: 8, y: -2)))
     }
 
+    /// Required by App Store guideline 3.1.2 for auto-renewable subscriptions.
+    private static let termsURL = URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!
+    private static let privacyURL = URL(string: "https://www.devaroapps.com/apps/aliaro/")!
+
     private var legalFooter: some View {
-        Text("Cancel anytime in your Apple ID subscription settings.")
-            .font(ALITypography.labelLarge)
-            .foregroundStyle(ALIColors.mutedInk)
-            .multilineTextAlignment(.center)
+        VStack(spacing: 8) {
+            Text("Payment is charged to your Apple ID. The subscription renews automatically unless cancelled at least 24 hours before the end of the current period. Cancel anytime in your Apple ID subscription settings.")
+                .font(ALITypography.labelLarge)
+                .foregroundStyle(ALIColors.mutedInk)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+            HStack(spacing: 6) {
+                Link("Terms of Use", destination: Self.termsURL)
+                    .simultaneousGesture(TapGesture().onEnded { Track.event("paywall_terms_tap", paywallParams()) })
+                Text("·").foregroundStyle(ALIColors.mutedInk)
+                Link("Privacy Policy", destination: Self.privacyURL)
+                    .simultaneousGesture(TapGesture().onEnded { Track.event("paywall_privacy_tap", paywallParams()) })
+            }
+            .font(ALITypography.labelLarge.weight(.semibold))
+            .tint(ALIColors.ink)
+        }
     }
 
     private func purchase() {
