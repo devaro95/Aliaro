@@ -21,7 +21,6 @@
 		0FA3EB4B780C42F3936857FB /* RemindersWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A20FA53ABE84EC983E8EB32 /* RemindersWidget.swift */; };
 		0FEF33B016C6496BA9654921 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = B7B7056AAFC64E8A9BC4C390 /* Supabase */; };
 		10DC89C49A6545C3B9DE61B9 /* KeyboardDismisser.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECCA3A296D9D4A4E844B50F9 /* KeyboardDismisser.swift */; };
-		B7ADABFC944E4F1FA2278D96 /* MetaAds.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05ABDB3DBE5D4C798BFD4D36 /* MetaAds.swift */; };
 		1272701C7669488F85D17F78 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = CC04D11D1709454FB2B50FDF /* Localizable.xcstrings */; };
 		1275289E14A4483993B9B035 /* NameEntrySheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DCCCB553E394B3D84F552DA /* NameEntrySheet.swift */; };
 		12A71C70FC2F4CDA8C5D0856 /* Supabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8F613A266AF41ED9DF43ACC /* Supabase.swift */; };
@@ -34,10 +33,10 @@
 		3192C0BBFC2B4A7C9C4D6E9B /* HouseTasksScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68D356D75565402AB7BA7537 /* HouseTasksScreen.swift */; };
 		319B793AC8254978B8D0404A /* WeeklyMenuScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3425F7D28974415F9674BCBC /* WeeklyMenuScreen.swift */; };
 		323BF01BD7C74494ACAFDE09 /* AliaroApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F84D80C0766E423B9F8031A7 /* AliaroApp.swift */; };
+		3347F03832864FF191F34044 /* FacebookCore in Frameworks */ = {isa = PBXBuildFile; productRef = 54862056D7CD45A0A7482F72 /* FacebookCore */; };
 		344287E75B614766BF210EBE /* AuthSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FCDCDB5EF734140BFBFDD10 /* AuthSession.swift */; };
 		34E87CFDA6BD4EAE81ED5A71 /* FamilyCalendarPeopleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8250DCEAE084BCA90A3C1A7 /* FamilyCalendarPeopleView.swift */; };
 		39B6106499E8438D9C890140 /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = 60E753E4B0D64706AFC943E5 /* FirebaseCrashlytics */; };
-		3347F03832864FF191F34044 /* FacebookCore in Frameworks */ = {isa = PBXBuildFile; productRef = 54862056D7CD45A0A7482F72 /* FacebookCore */; };
 		39F7D54F6B19447E93873E16 /* ForgotPasswordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B129373E624436EB7BE8FAD /* ForgotPasswordView.swift */; };
 		3BB0E789EACF4DCA8F1A4CE9 /* ALIBottomBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A5A5E1B06224433B9DC97CF /* ALIBottomBar.swift */; };
 		3C9141CDCCEE426F9067698D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 57C21DA19FA44C428D4F2FC6 /* Assets.xcassets */; };
@@ -90,6 +89,7 @@
 		AB7BDD506D654FB4B8697922 /* AppTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8A8E119554D488992BA6B54 /* AppTab.swift */; };
 		AE8368817CB0482081468B2A /* AppIntroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFAE2292AEC7433085F8C6A1 /* AppIntroView.swift */; };
 		AF3D4FDC0BED417E9E7BC1A6 /* AppGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84562391A95E41EAA860D9C6 /* AppGroup.swift */; };
+		B7ADABFC944E4F1FA2278D96 /* MetaAds.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05ABDB3DBE5D4C798BFD4D36 /* MetaAds.swift */; };
 		B85AE7D520384B079FC4181E /* FamilyOnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97DC2BDE95A843EB8A5250F6 /* FamilyOnboardingView.swift */; };
 		B8E7D1A525A84444856DC8D8 /* AddReminderSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = F75C27EED02D4484B879E280 /* AddReminderSheet.swift */; };
 		BD3C8DA16DDE4BCD8DB37DBB /* AddHouseTaskSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCC2CAD73EB140DAB9013519 /* AddHouseTaskSheet.swift */; };
@@ -153,6 +153,7 @@
 
 /* Begin PBXFileReference section */
 		00231E29AFA646B4A25E91D2 /* AliaroWidgetsBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AliaroWidgetsBundle.swift; sourceTree = "<group>"; };
+		05ABDB3DBE5D4C798BFD4D36 /* MetaAds.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetaAds.swift; sourceTree = "<group>"; };
 		087DC4A8EFBF490EB01278D6 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		08B9354B3438421AB84360B4 /* ALIComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ALIComponents.swift; sourceTree = "<group>"; };
 		08C95CDB63E449ED8F694B4F /* AddRecipeSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddRecipeSheet.swift; sourceTree = "<group>"; };
@@ -263,7 +264,6 @@
 		EA9B261DC0A947A6B3DDE443 /* FamilyEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilyEvent.swift; sourceTree = "<group>"; };
 		EB637434A9544C108A2FD0D9 /* PushNotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushNotificationManager.swift; sourceTree = "<group>"; };
 		ECCA3A296D9D4A4E844B50F9 /* KeyboardDismisser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardDismisser.swift; sourceTree = "<group>"; };
-		05ABDB3DBE5D4C798BFD4D36 /* MetaAds.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetaAds.swift; sourceTree = "<group>"; };
 		F43B8178695E4A3B81CC5073 /* BoardNote.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardNote.swift; sourceTree = "<group>"; };
 		F75C27EED02D4484B879E280 /* AddReminderSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddReminderSheet.swift; sourceTree = "<group>"; };
 		F84D80C0766E423B9F8031A7 /* AliaroApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AliaroApp.swift; sourceTree = "<group>"; };
@@ -916,7 +916,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Aliaro/Aliaro.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 10;
+				CURRENT_PROJECT_VERSION = 11;
 				DEVELOPMENT_ASSET_PATHS = "";
 				DEVELOPMENT_TEAM = P88UK832W4;
 				ENABLE_PREVIEWS = YES;
@@ -934,7 +934,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.1;
+				MARKETING_VERSION = 1.0.2;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
@@ -988,7 +988,7 @@
 				APP_GROUP_ID = group.com.devaro.aliaro.dev;
 				CODE_SIGN_ENTITLEMENTS = AliaroWidgets/AliaroWidgetsExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 9;
+				CURRENT_PROJECT_VERSION = 11;
 				DEVELOPMENT_TEAM = P88UK832W4;
 				INFOPLIST_FILE = AliaroWidgets/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -997,7 +997,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.0.0;
+				MARKETING_VERSION = 1.0.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.devaro.aliaro.dev.widgets;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -1015,7 +1015,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Aliaro/Aliaro.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 10;
+				CURRENT_PROJECT_VERSION = 11;
 				DEVELOPMENT_ASSET_PATHS = "";
 				DEVELOPMENT_TEAM = P88UK832W4;
 				ENABLE_PREVIEWS = YES;
@@ -1033,7 +1033,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.1;
+				MARKETING_VERSION = 1.0.2;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
@@ -1056,7 +1056,7 @@
 				APP_GROUP_ID = group.com.devaro.aliaro;
 				CODE_SIGN_ENTITLEMENTS = AliaroWidgets/AliaroWidgetsExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 9;
+				CURRENT_PROJECT_VERSION = 11;
 				DEVELOPMENT_TEAM = P88UK832W4;
 				INFOPLIST_FILE = AliaroWidgets/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -1065,7 +1065,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.0.0;
+				MARKETING_VERSION = 1.0.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.devaro.aliaro.widgets;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -1116,20 +1116,20 @@
 				minimumVersion = 12.0.0;
 			};
 		};
-		A56F89819A404671B230D90A /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/supabase/supabase-swift";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 2.55.1;
-			};
-		};
 		35C001A02F714AC3B19A45FA /* XCRemoteSwiftPackageReference "facebook-ios-sdk" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/facebook/facebook-ios-sdk";
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 18.0.0;
+			};
+		};
+		A56F89819A404671B230D90A /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/supabase/supabase-swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.55.1;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -1140,6 +1140,11 @@
 			package = 03D897172BE34E7E9416CCC2 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseAnalytics;
 		};
+		54862056D7CD45A0A7482F72 /* FacebookCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 35C001A02F714AC3B19A45FA /* XCRemoteSwiftPackageReference "facebook-ios-sdk" */;
+			productName = FacebookCore;
+		};
 		60E753E4B0D64706AFC943E5 /* FirebaseCrashlytics */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 03D897172BE34E7E9416CCC2 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
@@ -1149,11 +1154,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = A56F89819A404671B230D90A /* XCRemoteSwiftPackageReference "supabase-swift" */;
 			productName = Supabase;
-		};
-		54862056D7CD45A0A7482F72 /* FacebookCore */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 35C001A02F714AC3B19A45FA /* XCRemoteSwiftPackageReference "facebook-ios-sdk" */;
-			productName = FacebookCore;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
