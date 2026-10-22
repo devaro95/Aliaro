@@ -21,6 +21,7 @@
 		0FA3EB4B780C42F3936857FB /* RemindersWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A20FA53ABE84EC983E8EB32 /* RemindersWidget.swift */; };
 		0FEF33B016C6496BA9654921 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = B7B7056AAFC64E8A9BC4C390 /* Supabase */; };
 		10DC89C49A6545C3B9DE61B9 /* KeyboardDismisser.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECCA3A296D9D4A4E844B50F9 /* KeyboardDismisser.swift */; };
+		B7ADABFC944E4F1FA2278D96 /* MetaAds.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05ABDB3DBE5D4C798BFD4D36 /* MetaAds.swift */; };
 		1272701C7669488F85D17F78 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = CC04D11D1709454FB2B50FDF /* Localizable.xcstrings */; };
 		1275289E14A4483993B9B035 /* NameEntrySheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DCCCB553E394B3D84F552DA /* NameEntrySheet.swift */; };
 		12A71C70FC2F4CDA8C5D0856 /* Supabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8F613A266AF41ED9DF43ACC /* Supabase.swift */; };
@@ -36,6 +37,7 @@
 		344287E75B614766BF210EBE /* AuthSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FCDCDB5EF734140BFBFDD10 /* AuthSession.swift */; };
 		34E87CFDA6BD4EAE81ED5A71 /* FamilyCalendarPeopleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8250DCEAE084BCA90A3C1A7 /* FamilyCalendarPeopleView.swift */; };
 		39B6106499E8438D9C890140 /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = 60E753E4B0D64706AFC943E5 /* FirebaseCrashlytics */; };
+		3347F03832864FF191F34044 /* FacebookCore in Frameworks */ = {isa = PBXBuildFile; productRef = 54862056D7CD45A0A7482F72 /* FacebookCore */; };
 		39F7D54F6B19447E93873E16 /* ForgotPasswordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B129373E624436EB7BE8FAD /* ForgotPasswordView.swift */; };
 		3BB0E789EACF4DCA8F1A4CE9 /* ALIBottomBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A5A5E1B06224433B9DC97CF /* ALIBottomBar.swift */; };
 		3C9141CDCCEE426F9067698D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 57C21DA19FA44C428D4F2FC6 /* Assets.xcassets */; };
@@ -261,6 +263,7 @@
 		EA9B261DC0A947A6B3DDE443 /* FamilyEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilyEvent.swift; sourceTree = "<group>"; };
 		EB637434A9544C108A2FD0D9 /* PushNotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushNotificationManager.swift; sourceTree = "<group>"; };
 		ECCA3A296D9D4A4E844B50F9 /* KeyboardDismisser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardDismisser.swift; sourceTree = "<group>"; };
+		05ABDB3DBE5D4C798BFD4D36 /* MetaAds.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetaAds.swift; sourceTree = "<group>"; };
 		F43B8178695E4A3B81CC5073 /* BoardNote.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardNote.swift; sourceTree = "<group>"; };
 		F75C27EED02D4484B879E280 /* AddReminderSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddReminderSheet.swift; sourceTree = "<group>"; };
 		F84D80C0766E423B9F8031A7 /* AliaroApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AliaroApp.swift; sourceTree = "<group>"; };
@@ -284,6 +287,7 @@
 				0FEF33B016C6496BA9654921 /* Supabase in Frameworks */,
 				5DD60328A9B448B596EF38D4 /* FirebaseAnalytics in Frameworks */,
 				39B6106499E8438D9C890140 /* FirebaseCrashlytics in Frameworks */,
+				3347F03832864FF191F34044 /* FacebookCore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -558,6 +562,7 @@
 				56E1C9CBD2014983801AFF50 /* FamilySession.swift */,
 				250FEBC383B64AFBB9736815 /* InviteLink.swift */,
 				ECCA3A296D9D4A4E844B50F9 /* KeyboardDismisser.swift */,
+				05ABDB3DBE5D4C798BFD4D36 /* MetaAds.swift */,
 				0EB05F1B39FA46C2931EF500 /* PendingInvite.swift */,
 				206684FDCC314E8A9B760553 /* PremiumConfig.swift */,
 				982C7A9ED2D448BBB4F019DB /* PremiumFeature.swift */,
@@ -637,6 +642,7 @@
 				B7B7056AAFC64E8A9BC4C390 /* Supabase */,
 				019E27850EC247DABEC6F1AA /* FirebaseAnalytics */,
 				60E753E4B0D64706AFC943E5 /* FirebaseCrashlytics */,
+				54862056D7CD45A0A7482F72 /* FacebookCore */,
 			);
 			productName = Aliaro;
 			productReference = FAA17B628B4C4513AFD4C4AB /* Aliaro.app */;
@@ -683,6 +689,7 @@
 			packageReferences = (
 				A56F89819A404671B230D90A /* XCRemoteSwiftPackageReference "supabase-swift" */,
 				03D897172BE34E7E9416CCC2 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				35C001A02F714AC3B19A45FA /* XCRemoteSwiftPackageReference "facebook-ios-sdk" */,
 			);
 			productRefGroup = 818840976DA64EA79BD25E75 /* Products */;
 			projectDirPath = "";
@@ -757,6 +764,7 @@
 				E5C4D97167504B65A610D7CC /* FamilySession.swift in Sources */,
 				089DFCD177C24883B0902AC5 /* InviteLink.swift in Sources */,
 				10DC89C49A6545C3B9DE61B9 /* KeyboardDismisser.swift in Sources */,
+				B7ADABFC944E4F1FA2278D96 /* MetaAds.swift in Sources */,
 				D27491B7C9B9491FAE762689 /* PendingInvite.swift in Sources */,
 				C6600AE5479541E3BEE76746 /* PremiumConfig.swift in Sources */,
 				A34742B6BEDF436AB3CCF303 /* PremiumFeature.swift in Sources */,
@@ -1116,6 +1124,14 @@
 				minimumVersion = 2.55.1;
 			};
 		};
+		35C001A02F714AC3B19A45FA /* XCRemoteSwiftPackageReference "facebook-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/facebook/facebook-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 18.0.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -1133,6 +1149,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = A56F89819A404671B230D90A /* XCRemoteSwiftPackageReference "supabase-swift" */;
 			productName = Supabase;
+		};
+		54862056D7CD45A0A7482F72 /* FacebookCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 35C001A02F714AC3B19A45FA /* XCRemoteSwiftPackageReference "facebook-ios-sdk" */;
+			productName = FacebookCore;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

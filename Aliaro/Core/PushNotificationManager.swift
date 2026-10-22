@@ -114,6 +114,7 @@ final class AliaroAppDelegate: NSObject, UIApplicationDelegate {
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
         Track.configure()
+        MetaAds.configure(application: application, launchOptions: launchOptions)
         KeyboardDismisser.shared.install()
         // So taps on notifications are tracked from the very first launch
         // (not only after the onboarding permission prompt set it).
