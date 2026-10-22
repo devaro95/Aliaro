@@ -262,6 +262,9 @@ FIREBASE_PRODUCT_UID = uid("pkgProduct:FirebaseAnalytics")
 FIREBASE_BUILDFILE_UID = uid("pkgBuildFile:FirebaseAnalytics")
 CRASHLYTICS_PRODUCT_UID = uid("pkgProduct:FirebaseCrashlytics")
 CRASHLYTICS_BUILDFILE_UID = uid("pkgBuildFile:FirebaseCrashlytics")
+FACEBOOK_PKG_REF_UID = uid("pkgRef:facebook-ios-sdk")
+FACEBOOK_PRODUCT_UID = uid("pkgProduct:FacebookCore")
+FACEBOOK_BUILDFILE_UID = uid("pkgBuildFile:FacebookCore")
 CRASHLYTICS_SCRIPT_PHASE = uid("shellScript:crashlyticsDsymUpload")
 
 pbxproj = f"""// !$*UTF8*$!
@@ -280,6 +283,7 @@ pbxproj = f"""// !$*UTF8*$!
 \t\t{PKG_BUILDFILE_UID} /* Supabase in Frameworks */ = {{isa = PBXBuildFile; productRef = {PKG_PRODUCT_UID} /* Supabase */; }};
 \t\t{FIREBASE_BUILDFILE_UID} /* FirebaseAnalytics in Frameworks */ = {{isa = PBXBuildFile; productRef = {FIREBASE_PRODUCT_UID} /* FirebaseAnalytics */; }};
 \t\t{CRASHLYTICS_BUILDFILE_UID} /* FirebaseCrashlytics in Frameworks */ = {{isa = PBXBuildFile; productRef = {CRASHLYTICS_PRODUCT_UID} /* FirebaseCrashlytics */; }};
+\t\t{FACEBOOK_BUILDFILE_UID} /* FacebookCore in Frameworks */ = {{isa = PBXBuildFile; productRef = {FACEBOOK_PRODUCT_UID} /* FacebookCore */; }};
 \t\t{EMBED_WIDGET_BUILDFILE} /* {WIDGET_PRODUCT_NAME}.appex in Embed Foundation Extensions */ = {{isa = PBXBuildFile; fileRef = {WIDGET_PRODUCT_REF} /* {WIDGET_PRODUCT_NAME}.appex */; settings = {{ATTRIBUTES = (RemoveHeadersOnCopy, ); }}; }};
 /* End PBXBuildFile section */
 
@@ -321,6 +325,7 @@ pbxproj = f"""// !$*UTF8*$!
 \t\t\t\t{PKG_BUILDFILE_UID} /* Supabase in Frameworks */,
 \t\t\t\t{FIREBASE_BUILDFILE_UID} /* FirebaseAnalytics in Frameworks */,
 \t\t\t\t{CRASHLYTICS_BUILDFILE_UID} /* FirebaseCrashlytics in Frameworks */,
+\t\t\t\t{FACEBOOK_BUILDFILE_UID} /* FacebookCore in Frameworks */,
 \t\t\t);
 \t\t\trunOnlyForDeploymentPostprocessing = 0;
 \t\t}};
@@ -377,6 +382,7 @@ pbxproj = f"""// !$*UTF8*$!
 \t\t\t\t{PKG_PRODUCT_UID} /* Supabase */,
 \t\t\t\t{FIREBASE_PRODUCT_UID} /* FirebaseAnalytics */,
 \t\t\t\t{CRASHLYTICS_PRODUCT_UID} /* FirebaseCrashlytics */,
+\t\t\t\t{FACEBOOK_PRODUCT_UID} /* FacebookCore */,
 \t\t\t);
 \t\t\tproductName = {PRODUCT_NAME};
 \t\t\tproductReference = {APP_PRODUCT_REF} /* {PRODUCT_NAME}.app */;
@@ -440,6 +446,7 @@ pbxproj = f"""// !$*UTF8*$!
 \t\t\tpackageReferences = (
 \t\t\t\t{PKG_REF_UID} /* XCRemoteSwiftPackageReference "supabase-swift" */,
 \t\t\t\t{FIREBASE_PKG_REF_UID} /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+\t\t\t\t{FACEBOOK_PKG_REF_UID} /* XCRemoteSwiftPackageReference "facebook-ios-sdk" */,
 \t\t\t);
 \t\t\tproductRefGroup = {PRODUCTS_GROUP} /* Products */;
 \t\t\tprojectDirPath = "";
@@ -775,6 +782,14 @@ pbxproj = f"""// !$*UTF8*$!
 \t\t\t\tminimumVersion = 12.0.0;
 \t\t\t}};
 \t\t}};
+\t\t{FACEBOOK_PKG_REF_UID} /* XCRemoteSwiftPackageReference "facebook-ios-sdk" */ = {{
+\t\t\tisa = XCRemoteSwiftPackageReference;
+\t\t\trepositoryURL = "https://github.com/facebook/facebook-ios-sdk";
+\t\t\trequirement = {{
+\t\t\t\tkind = upToNextMajorVersion;
+\t\t\t\tminimumVersion = 18.0.0;
+\t\t\t}};
+\t\t}};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -792,6 +807,11 @@ pbxproj = f"""// !$*UTF8*$!
 \t\t\tisa = XCSwiftPackageProductDependency;
 \t\t\tpackage = {FIREBASE_PKG_REF_UID} /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 \t\t\tproductName = FirebaseCrashlytics;
+\t\t}};
+\t\t{FACEBOOK_PRODUCT_UID} /* FacebookCore */ = {{
+\t\t\tisa = XCSwiftPackageProductDependency;
+\t\t\tpackage = {FACEBOOK_PKG_REF_UID} /* XCRemoteSwiftPackageReference "facebook-ios-sdk" */;
+\t\t\tproductName = FacebookCore;
 \t\t}};
 /* End XCSwiftPackageProductDependency section */
 \t}};
