@@ -3,7 +3,8 @@ import SwiftData
 
 /// "Menu" tab: the weekly meal menu — a recurring Monday-to-Sunday
 /// template with lunch and dinner, chosen from a dish catalog, so you
-/// don't have to think each day about what to cook.
+/// don't have to think each day about what to cook. Meals that are a
+/// recipe get a "Cook" button that opens the recipe straight away.
 struct WeeklyMenuScreen: View {
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var bottomBarScrollTracker: BottomBarScrollTracker
@@ -11,9 +12,11 @@ struct WeeklyMenuScreen: View {
 
     @Query private var entries: [MealPlanEntry]
     @Query(sort: \FamilyMember.createdAt) private var members: [FamilyMember]
+    @Query private var recipes: [Recipe]
 
     @State private var dayBeingEdited: Weekday?
     @State private var showClearConfirm = false
+    @State private var openedRecipe: Recipe?
 
     private var canEditMenu: Bool {
         members.first(where: \.isCurrentDevice)?.can(.weeklyMenuEdit) ?? true
@@ -100,6 +103,9 @@ struct WeeklyMenuScreen: View {
                 canEdit: canEditMenu
             )
         }
+        .sheet(item: $openedRecipe) { recipe in
+            RecipeDetailSheet(recipe: recipe)
+        }
         .alert("Clear the weekly menu?", isPresented: $showClearConfirm) {
             Button("Cancel", role: .cancel) {}
             Button("Clear", role: .destructive) { clearAll() }
@@ -124,6 +130,7 @@ struct WeeklyMenuScreen: View {
         let lunch = dish(for: day, mealType: .lunch)
         let dinner = dish(for: day, mealType: .dinner)
         let past = isPast(day)
+        let isToday = day == todayWeekday
 
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
@@ -131,6 +138,16 @@ struct WeeklyMenuScreen: View {
                     .font(ALITypography.titleLarge)
                     .foregroundStyle(ALIColors.ink)
                     .lineLimit(1)
+
+                if isToday {
+                    Text("Today")
+                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                        .foregroundStyle(ALIColors.onAccent)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(ALIColors.primary)
+                        .clipShape(Capsule())
+                }
 
                 if past {
                     Image(systemName: "checkmark.circle.fill")
@@ -152,6 +169,14 @@ struct WeeklyMenuScreen: View {
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 14)
+        .background(isToday ? ALIColors.primary.opacity(0.14) : Color.clear)
+        .overlay(alignment: .leading) {
+            if isToday {
+                Rectangle()
+                    .fill(ALIColors.primary)
+                    .frame(width: 4)
+            }
+        }
         .opacity(past ? 0.55 : 1)
     }
 
@@ -174,6 +199,23 @@ struct WeeklyMenuScreen: View {
                 .truncationMode(.tail)
 
             Spacer(minLength: 0)
+
+            if let dish, let recipe = recipes.first(where: { $0.id == dish.id }) {
+                Button {
+                    Track.event("menu_recipe_open", ["from": "menu_list"])
+                    openedRecipe = recipe
+                } label: {
+                    Label("Cook", systemImage: "book.pages.fill")
+                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                        .foregroundStyle(ALIColors.onAccent)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(ALIColors.recipesAccent)
+                        .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text("View recipe"))
+            }
         }
     }
 }

@@ -30,6 +30,8 @@ enum ALIPalette {
     static let turquoise = Color(hex: 0x4ECDC4) // days with activity on the calendar
     static let rose = Color(hex: 0xFFC1CC)      // people / family group
     static let pistachio = Color(hex: 0xB8D9A0) // finances
+    static let apricot = Color(hex: 0xFFC49B)   // recipes
+    static let periwinkle = Color(hex: 0xB5C0F5) // board
 }
 
 /// Semantic palette, dynamic based on light/dark mode.
@@ -59,6 +61,8 @@ enum ALIColors {
     static let remindersAccent = ALIPalette.mint
     static let peopleAccent = ALIPalette.rose
     static let economiaAccent = ALIPalette.pistachio
+    static let recipesAccent = ALIPalette.apricot
+    static let boardAccent = ALIPalette.periwinkle
 
     // Distinguish lunch/dinner at a glance within the weekly menu.
     static let mealLunchAccent = ALIPalette.sun

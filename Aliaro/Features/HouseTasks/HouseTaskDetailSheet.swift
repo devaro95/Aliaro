@@ -64,7 +64,7 @@ struct HouseTaskDetailSheet: View {
                 }
 
                 if sortedLogs.isEmpty {
-                    ALIEmptyState(emoji: "🗓️", title: "No history", subtitle: "There's no record of this task yet.")
+                    ALIEmptyState(icon: ALIIcon.calendar, title: "No history", subtitle: "There's no record of this task yet.")
                     Spacer()
                 } else {
                     ScrollView {

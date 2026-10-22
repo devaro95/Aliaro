@@ -76,8 +76,18 @@
           "es": "Reparte las tareas\nde casa.",
           "en": "Share the chores\nat home."
         },
-        "screenshot": "/screenshots/apple/iphone/{locale}/04.png",
-        "inverted": true
+        "screenshot": "/screenshots/uploaded/98216ee352192156.png",
+        "inverted": true,
+        "transforms": {
+          "device": {
+            "x": 153.1822478386166,
+            "y": 745.68,
+            "width": 1013.6355043227666,
+            "height": 2064.96,
+            "rotation": 0,
+            "zIndex": 3
+          }
+        }
       },
       {
         "id": "aliaro-05",
@@ -118,8 +128,18 @@
           "es": "Gastos compartidos,\nsin líos.",
           "en": "Shared expenses,\nno drama."
         },
-        "screenshot": "/screenshots/apple/iphone/{locale}/07.png",
-        "inverted": false
+        "screenshot": "/screenshots/uploaded/6beeeb884ef2a25a.png",
+        "inverted": false,
+        "transforms": {
+          "device": {
+            "x": 153.1822478386166,
+            "y": 57.36,
+            "width": 1013.6355043227666,
+            "height": 2064.96,
+            "rotation": 0,
+            "zIndex": 3
+          }
+        }
       },
       {
         "id": "aliaro-08",
@@ -132,8 +152,18 @@
           "es": "Tus gastos,\nde un vistazo.",
           "en": "Your spending,\nat a glance."
         },
-        "screenshot": "/screenshots/apple/iphone/{locale}/08.png",
-        "inverted": true
+        "screenshot": "/screenshots/uploaded/9d8c70b7bbb38d2d.png",
+        "inverted": true,
+        "transforms": {
+          "device": {
+            "x": 153.1822478386166,
+            "y": 745.68,
+            "width": 1013.6355043227666,
+            "height": 2064.96,
+            "rotation": 0,
+            "zIndex": 3
+          }
+        }
       },
       {
         "id": "aliaro-09",
@@ -147,7 +177,17 @@
           "en": "Your way,\nfor everyone."
         },
         "screenshot": "/screenshots/apple/iphone/{locale}/09.png",
-        "inverted": false
+        "inverted": false,
+        "transforms": {
+          "device": {
+            "x": 153.1822478386166,
+            "y": 57.36,
+            "width": 1013.6355043227666,
+            "height": 2064.96,
+            "rotation": 0,
+            "zIndex": 3
+          }
+        }
       }
     ],
     "android": [

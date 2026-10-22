@@ -27,7 +27,7 @@ final class FamilyMember {
     init(
         id: UUID = UUID(),
         name: String,
-        emoji: String = "🙂",
+        emoji: String = ALIIcon.user,
         createdAt: Date = .now,
         isCurrentDevice: Bool = false,
         isCreator: Bool = false,

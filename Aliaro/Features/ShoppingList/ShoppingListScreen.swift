@@ -12,6 +12,7 @@ struct ShoppingListScreen: View {
     @EnvironmentObject private var premium: PremiumManager
 
     @Query(sort: \ShoppingList.position) private var lists: [ShoppingList]
+    @Query(sort: \FamilyMember.createdAt) private var members: [FamilyMember]
     @Query(sort: \ShoppingListEntry.addedAt, order: .reverse)
     private var allEntries: [ShoppingListEntry]
 
@@ -30,6 +31,10 @@ struct ShoppingListScreen: View {
         guard let selectedListID else { return [] }
         return allEntries.filter { $0.listID == selectedListID }
     }
+    private var currentMember: FamilyMember? { members.first(where: \.isCurrentDevice) }
+    private var canAdd: Bool { currentMember?.can(.shoppingAdd) ?? true }
+    private var canDelete: Bool { currentMember?.can(.shoppingDelete) ?? true }
+
     private var pending: [ShoppingListEntry] { entries.filter { !$0.isChecked } }
     private var checked: [ShoppingListEntry] {
         entries.filter(\.isChecked).sorted { ($0.checkedAt ?? .distantPast) > ($1.checkedAt ?? .distantPast) }
@@ -46,18 +51,20 @@ struct ShoppingListScreen: View {
 
             VStack(spacing: 16) {
                 ALITopBar(title: "Shopping list", accent: ALIColors.shoppingAccent) {
-                    ALIFloatingButton(accent: ALIColors.shoppingAccent) {
-                        Track.event("shopping_add_tap", ["pending": pending.count, "lists": lists.count])
-                        showAddSheet = true
+                    if canAdd {
+                        ALIFloatingButton(accent: ALIColors.shoppingAccent) {
+                            Track.event("shopping_add_tap", ["pending": pending.count, "lists": lists.count])
+                            showAddSheet = true
+                        }
+                            .scaleEffect(0.72)
                     }
-                        .scaleEffect(0.72)
                 }
 
                 listTabs
 
                 if entries.isEmpty {
                     ALIEmptyState(
-                        emoji: "🛒",
+                        icon: ALIIcon.cart,
                         title: "The list is empty",
                         subtitle: "Tap the + to add what you're missing at home."
                     )
@@ -67,9 +74,11 @@ struct ShoppingListScreen: View {
                     }
                     if !checked.isEmpty {
                         sectionCard(title: "Bought (\(checked.count))", rows: checked, dimmed: true)
-                        ALITextButton(text: "Clear bought") {
-                            Track.event("shopping_clear_bought", ["count": checked.count])
-                            clearChecked()
+                        if canDelete {
+                            ALITextButton(text: "Clear bought") {
+                                Track.event("shopping_clear_bought", ["count": checked.count])
+                                clearChecked()
+                            }
                         }
                     }
                 }
@@ -148,6 +157,7 @@ struct ShoppingListScreen: View {
                 ForEach(lists) { list in
                     listTab(list)
                 }
+                if canAdd {
                 Button {
                     if isNewListLocked {
                         showPaywall = Track.paywall("new_shopping_list")
@@ -165,6 +175,7 @@ struct ShoppingListScreen: View {
                         .aliPremiumLockOverlay(isNewListLocked)
                 }
                 .buttonStyle(.plain)
+                }
             }
             .padding(.horizontal, 2)
             .padding(.vertical, 2)
@@ -198,14 +209,16 @@ struct ShoppingListScreen: View {
         }
         .buttonStyle(.plain)
         .contextMenu {
-            Button {
-                Track.event("shopping_list_menu", ["action": "rename"])
-                renameListText = list.name
-                renamingList = list
-            } label: {
-                Label("Rename", systemImage: "pencil")
+            if canAdd {
+                Button {
+                    Track.event("shopping_list_menu", ["action": "rename"])
+                    renameListText = list.name
+                    renamingList = list
+                } label: {
+                    Label("Rename", systemImage: "pencil")
+                }
             }
-            if lists.count > 1 {
+            if lists.count > 1 && canDelete {
                 Button(role: .destructive) {
                     listPendingDelete = list
                 } label: {
@@ -226,7 +239,7 @@ struct ShoppingListScreen: View {
             ALICard {
                 VStack(spacing: 0) {
                     ForEach(Array(rows.enumerated()), id: \.element.id) { index, entry in
-                        ShoppingListRow(entry: entry, dimmed: dimmed) {
+                        ShoppingListRow(entry: entry, dimmed: dimmed, canDelete: canDelete) {
                             toggle(entry)
                         } onDelete: {
                             entryPendingDelete = entry
@@ -327,6 +340,7 @@ struct ShoppingListScreen: View {
 private struct ShoppingListRow: View {
     let entry: ShoppingListEntry
     var dimmed: Bool = false
+    var canDelete: Bool = true
     let onToggle: () -> Void
     let onDelete: () -> Void
 
@@ -354,13 +368,15 @@ private struct ShoppingListRow: View {
             }
             .buttonStyle(.plain)
 
-            Button(action: onDelete) {
-                Image(systemName: "trash")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(ALIColors.mutedInk)
-                    .frame(width: 32, height: 32)
+            if canDelete {
+                Button(action: onDelete) {
+                    Image(systemName: "trash")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(ALIColors.mutedInk)
+                        .frame(width: 32, height: 32)
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
         }
         .padding(.vertical, 12)
     }

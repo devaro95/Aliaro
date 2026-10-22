@@ -40,14 +40,14 @@ struct RemindersWidgetView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Label("Recordatorios", systemImage: "bell.fill")
+            Label("Reminders", systemImage: "bell.fill")
                 .font(.caption).bold()
                 .foregroundStyle(.orange)
 
             if !snapshot.hasFamilyGroup {
-                emptyState("Únete a un grupo familiar en Aliaro")
+                emptyState("Join a family group in Aliaro")
             } else if snapshot.reminders.isEmpty {
-                emptyState("Sin recordatorios próximos")
+                emptyState("No upcoming reminders")
             } else {
                 VStack(alignment: .leading, spacing: 5) {
                     ForEach(snapshot.reminders.prefix(maxItems)) { reminder in
@@ -69,7 +69,7 @@ struct RemindersWidgetView: View {
     }
 
     @ViewBuilder
-    private func emptyState(_ text: String) -> some View {
+    private func emptyState(_ text: LocalizedStringKey) -> some View {
         Spacer()
         HStack {
             Spacer()
@@ -91,8 +91,8 @@ struct RemindersWidget: Widget {
             RemindersWidgetView(snapshot: entry.snapshot)
                 .containerBackground(.background, for: .widget)
         }
-        .configurationDisplayName("Recordatorios")
-        .description("Tus próximos recordatorios de Aliaro.")
+        .configurationDisplayName("Reminders")
+        .description("Your upcoming Aliaro reminders.")
         .supportedFamilies([.systemSmall, .systemMedium])
     }
 }

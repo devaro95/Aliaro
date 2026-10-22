@@ -12,5 +12,31 @@
 	<false/>
 	<key>FirebaseAutomaticScreenReportingEnabled</key>
 	<false/>
+	<!-- Meta (Facebook) SDK: only used to measure installs from Meta ads
+	     (App Events + SKAdNetwork / Aggregated Event Measurement). No login,
+	     no IDFA (there's no ATT prompt), started only in Release builds —
+	     see MetaAds.swift. App: developers.facebook.com/apps/1607841283671428 -->
+	<key>FacebookAppID</key>
+	<string>1607841283671428</string>
+	<key>FacebookClientToken</key>
+	<string>942228364ffda3333e00c3622f17ea26</string>
+	<key>FacebookDisplayName</key>
+	<string>Aliaro</string>
+	<key>FacebookAutoLogAppEventsEnabled</key>
+	<true/>
+	<key>FacebookAdvertiserIDCollectionEnabled</key>
+	<false/>
+	<!-- Meta's SKAdNetwork IDs, so iOS 14.5+ installs from Meta ads are attributed. -->
+	<key>SKAdNetworkItems</key>
+	<array>
+		<dict>
+			<key>SKAdNetworkIdentifier</key>
+			<string>v9wttpbfk9.skadnetwork</string>
+		</dict>
+		<dict>
+			<key>SKAdNetworkIdentifier</key>
+			<string>n38lu8286q.skadnetwork</string>
+		</dict>
+	</array>
 </dict>
 </plist>

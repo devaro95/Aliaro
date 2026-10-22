@@ -21,6 +21,7 @@ struct RemindersScreen: View {
 
     private var currentMember: FamilyMember? { members.first(where: \.isCurrentDevice) }
     private var canCreate: Bool { currentMember?.can(.remindersCreate) ?? true }
+    private var canEdit: Bool { currentMember?.can(.remindersEdit) ?? true }
     /// Beyond 3 reminders, creating another one needs a subscription if
     /// `unlimitedReminders` is currently premium.
     private var isNewReminderLocked: Bool { reminders.count >= 3 && premium.isLocked(.unlimitedReminders) }
@@ -59,7 +60,7 @@ struct RemindersScreen: View {
 
                 if reminders.isEmpty {
                     ALIEmptyState(
-                        emoji: "🔔",
+                        icon: ALIIcon.bell,
                         title: "No reminders",
                         subtitle: "Create the first one and we'll notify whoever needs it, whenever it's needed."
                     )
@@ -74,7 +75,7 @@ struct RemindersScreen: View {
                                     canDelete: canDelete,
                                     locked: isLocked,
                                     onOpenDetail: {
-                                        if isLocked { showPaywall = Track.paywall("locked_reminder_detail") } else {
+                                        if isLocked { showPaywall = Track.paywall("locked_reminder_detail") } else if canEdit {
                                             Track.event("reminder_open", ["is_past": reminder.fireDate < .now])
                                             selectedReminder = reminder
                                         }

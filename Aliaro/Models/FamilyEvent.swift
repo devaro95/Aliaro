@@ -18,6 +18,14 @@ final class FamilyEvent {
     /// readable even if that person leaves the group.
     var createdByID: UUID?
     var createdByName: String?
+    /// Who the event is for: the whole family (`forEveryone`) or just
+    /// `memberIDs` (reference `FamilyMember`, not a SwiftData relationship).
+    var forEveryone: Bool = true
+    var memberIDs: [UUID] = []
+    /// All-day event (birthday, holiday…): no time shown. Stored as
+    /// `startDate` = start of the first day, `endDate` = 23:59:59 of the
+    /// last day (local time), so every existing day-range check still works.
+    var isAllDay: Bool = false
 
     init(
         id: UUID = UUID(),
@@ -25,10 +33,13 @@ final class FamilyEvent {
         note: String? = nil,
         startDate: Date,
         endDate: Date,
-        emoji: String = "🎉",
+        emoji: String = ALIIcon.party,
         createdAt: Date = .now,
         createdByID: UUID? = nil,
-        createdByName: String? = nil
+        createdByName: String? = nil,
+        forEveryone: Bool = true,
+        memberIDs: [UUID] = [],
+        isAllDay: Bool = false
     ) {
         self.id = id
         self.title = title
@@ -39,5 +50,15 @@ final class FamilyEvent {
         self.createdAt = createdAt
         self.createdByID = createdByID
         self.createdByName = createdByName
+        self.forEveryone = forEveryone
+        self.memberIDs = memberIDs
+        self.isAllDay = isAllDay
+    }
+
+    /// "Everyone" or the names of the people the event is for.
+    func attendeesLabel(members: [FamilyMember]) -> String {
+        if forEveryone { return String(localized: "Everyone") }
+        let names = members.filter { memberIDs.contains($0.id) }.map(\.name)
+        return names.isEmpty ? String(localized: "Everyone") : names.joined(separator: ", ")
     }
 }

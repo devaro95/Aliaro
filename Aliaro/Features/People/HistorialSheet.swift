@@ -48,7 +48,7 @@ struct HistorialSheet: View {
                 VStack(spacing: 16) {
                     if entries.isEmpty {
                         ALIEmptyState(
-                            emoji: "🕘",
+                            icon: ALIIcon.history,
                             title: "No history yet",
                             subtitle: "Every time someone creates, edits or deletes something in the group, it'll show up here."
                         )
@@ -101,6 +101,8 @@ private struct HistorialRow: View {
         case "house_task_log": return String(localized: "Task history")
         case "family_event": return String(localized: "Calendar")
         case "reminder": return String(localized: "Reminder")
+        case "board_note": return String(localized: "Board")
+        case "recipe": return String(localized: "Recipe")
         case "expense": return String(localized: "Finances")
         case "expense_archive": return String(localized: "Finances archive")
         default: return entry.entityType.capitalized

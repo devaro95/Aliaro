@@ -17,6 +17,9 @@ struct HouseTasksScreen: View {
 
     @Query(sort: \HouseTask.createdAt) private var tasks: [HouseTask]
     @Query(sort: \HouseTaskLog.completedAt, order: .reverse) private var logs: [HouseTaskLog]
+    @Query(sort: \FamilyMember.createdAt) private var members: [FamilyMember]
+
+    private var canCreate: Bool { members.first(where: \.isCurrentDevice)?.can(.tasksCreate) ?? true }
 
     @State private var showAddSheet = false
     @State private var selectedTask: HouseTask?
@@ -57,14 +60,16 @@ struct HouseTasksScreen: View {
                     HStack(spacing: 10) {
                         statsButton
                         viewModeToggleButton
-                        ALIFloatingButton(accent: ALIColors.houseTasksAccent) {
-                            if isNewTaskLocked { showPaywall = Track.paywall("new_house_task") } else {
-                                Track.event("house_task_add_tap", ["tasks": tasks.count])
-                                showAddSheet = true
+                        if canCreate {
+                            ALIFloatingButton(accent: ALIColors.houseTasksAccent) {
+                                if isNewTaskLocked { showPaywall = Track.paywall("new_house_task") } else {
+                                    Track.event("house_task_add_tap", ["tasks": tasks.count])
+                                    showAddSheet = true
+                                }
                             }
+                            .scaleEffect(0.72)
+                            .aliPremiumLockOverlay(isNewTaskLocked)
                         }
-                        .scaleEffect(0.72)
-                        .aliPremiumLockOverlay(isNewTaskLocked)
                     }
                 }
 
@@ -72,33 +77,22 @@ struct HouseTasksScreen: View {
                 case .list:
                     if tasks.isEmpty {
                         ALIEmptyState(
-                            emoji: "🧺",
+                            icon: ALIIcon.cleaning,
                             title: "No tasks yet",
                             subtitle: "Add the dishwasher, laundry, or anything you want to keep on top of."
                         )
                     } else {
-                        ALICard {
-                            VStack(spacing: 0) {
-                                ForEach(Array(tasks.enumerated()), id: \.element.id) { index, task in
-                                    let isLocked = lockedTaskIDs.contains(task.id)
-                                    HouseTaskRow(
-                                        task: task,
-                                        lastLog: lastLog(for: task),
-                                        locked: isLocked,
-                                        onToggleToday: {
-                                            if isLocked { showPaywall = Track.paywall("locked_task_toggle") } else { toggleToday(task) }
-                                        },
-                                        onOpenDetail: {
-                                            if isLocked { showPaywall = Track.paywall("locked_task_detail") } else {
-                                                Track.event("house_task_open", ["task_name": task.name])
-                                                selectedTask = task
-                                            }
-                                        }
-                                    )
-                                    if index < tasks.count - 1 {
-                                        Divider().overlay(ALIColors.outline)
-                                    }
-                                }
+                        if !todoTasks.isEmpty {
+                            taskSection(todoTasks)
+                        }
+                        if !doneTasks.isEmpty {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Done (\(doneTasks.count))")
+                                    .font(ALITypography.labelLarge)
+                                    .foregroundStyle(ALIColors.mutedInk)
+                                    .padding(.horizontal, 4)
+                                    .padding(.top, todoTasks.isEmpty ? 0 : 8)
+                                taskSection(doneTasks)
                             }
                         }
                     }
@@ -187,6 +181,45 @@ struct HouseTasksScreen: View {
         .accessibilityLabel(viewMode == .list ? "View as calendar" : "View as list")
     }
 
+    /// Pending tasks on top; the ones already done (today, or one-off
+    /// scheduled tasks done for their date) go to a "Done" section below.
+    private var todoTasks: [HouseTask] { tasks.filter { !$0.isDone(lastLog: lastLog(for: $0)) } }
+    private var doneTasks: [HouseTask] { tasks.filter { $0.isDone(lastLog: lastLog(for: $0)) } }
+
+    private func assigneeNames(_ task: HouseTask) -> [String] {
+        guard !task.forEveryone else { return [] }
+        return members.filter { task.memberIDs.contains($0.id) }.map(\.name)
+    }
+
+    private func taskSection(_ list: [HouseTask]) -> some View {
+        ALICard {
+            VStack(spacing: 0) {
+                ForEach(Array(list.enumerated()), id: \.element.id) { index, task in
+                    let isLocked = lockedTaskIDs.contains(task.id)
+                    HouseTaskRow(
+                        task: task,
+                        lastLog: lastLog(for: task),
+                        assignees: assigneeNames(task),
+                        locked: isLocked,
+                        onToggleToday: {
+                            if isLocked { showPaywall = Track.paywall("locked_task_toggle") } else { toggleToday(task) }
+                        },
+                        onOpenDetail: {
+                            if isLocked { showPaywall = Track.paywall("locked_task_detail") } else {
+                                Track.event("house_task_open", ["task_name": task.name])
+                                selectedTask = task
+                            }
+                        }
+                    )
+                    if index < list.count - 1 {
+                        Divider().overlay(ALIColors.outline)
+                    }
+                }
+            }
+        }
+        .transition(.opacity)
+    }
+
     private func lastLog(for task: HouseTask) -> HouseTaskLog? {
         logs.first { $0.taskID == task.id }
     }
@@ -195,7 +228,7 @@ struct HouseTasksScreen: View {
     /// done today, tapping the circle undoes it; otherwise it logs a "done" now.
     private func toggleToday(_ task: HouseTask) {
         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-            if let todayLog = lastLog(for: task), Calendar.current.isDateInToday(todayLog.completedAt) {
+            if let todayLog = lastLog(for: task), task.isDone(lastLog: todayLog) {
                 let logID = todayLog.id
                 Track.event("house_task_undone_today", ["task_name": task.name, "source": "list_checkbox"])
                 modelContext.delete(todayLog)
@@ -224,6 +257,7 @@ struct HouseTasksScreen: View {
 private struct HouseTaskRow: View {
     let task: HouseTask
     let lastLog: HouseTaskLog?
+    var assignees: [String] = []
     var locked: Bool = false
     let onToggleToday: () -> Void
     let onOpenDetail: () -> Void
@@ -233,14 +267,34 @@ private struct HouseTaskRow: View {
         return Calendar.current.dateComponents([.day], from: Calendar.current.startOfDay(for: lastLog.completedAt), to: Calendar.current.startOfDay(for: .now)).day
     }
 
-    private var isDoneToday: Bool { daysSince == 0 }
+    private var isDone: Bool { task.isDone(lastLog: lastLog) }
 
+    /// Assigned people (👤 Ana, Luis) or, for everyone's tasks, who created it.
     private var statusLabel: String {
+        if !assignees.isEmpty { return "\(status.text) · 👤 \(assignees.joined(separator: ", "))" }
         guard let name = task.createdByName, !name.isEmpty else { return status.text }
         return "\(status.text) · \(name)"
     }
 
+    private static func scheduleText(_ date: Date) -> String {
+        let calendar = Calendar.current
+        let time = date.formatted(date: .omitted, time: .shortened)
+        if calendar.isDateInToday(date) { return String(localized: "Today, \(time)") }
+        if calendar.isDateInTomorrow(date) { return String(localized: "Tomorrow, \(time)") }
+        if calendar.isDateInYesterday(date) { return String(localized: "Yesterday, \(time)") }
+        return date.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated).hour().minute())
+    }
+
     private var status: (color: Color, text: String) {
+        if task.scheduledAt != nil, task.intervalDays == nil, isDone {
+            return (ALIColors.success, String(localized: "Completed"))
+        }
+        if let scheduled = task.pendingSchedule(lastLog: lastLog), daysSince != 0 {
+            let when = Self.scheduleText(scheduled)
+            return scheduled > .now
+                ? (ALIColors.houseTasksAccent, String(localized: "Scheduled · \(when)"))
+                : (ALIColors.error, String(localized: "Overdue · \(when)"))
+        }
         guard let interval = task.intervalDays else {
             if let daysSince {
                 let text = daysSince == 0
@@ -272,9 +326,9 @@ private struct HouseTaskRow: View {
             Button(action: onToggleToday) {
                 ZStack {
                     Circle()
-                        .fill(isDoneToday ? ALIColors.success : ALIColors.surfaceVariant)
+                        .fill(isDone ? ALIColors.success : ALIColors.surfaceVariant)
                         .frame(width: 26, height: 26)
-                    if isDoneToday {
+                    if isDone {
                         Image(systemName: "checkmark")
                             .font(.system(size: 12, weight: .bold))
                             .foregroundStyle(ALIColors.onAccent)
@@ -288,10 +342,12 @@ private struct HouseTaskRow: View {
                     VStack(alignment: .leading, spacing: 3) {
                         Text(task.name)
                             .font(ALITypography.bodyLarge)
-                            .foregroundStyle(ALIColors.ink)
+                            .foregroundStyle(isDone ? ALIColors.mutedInk : ALIColors.ink)
+                            .strikethrough(isDone && task.scheduledAt != nil && task.intervalDays == nil, color: ALIColors.mutedInk)
                         HStack(spacing: 6) {
                             Circle().fill(status.color).frame(width: 7, height: 7)
                             Text(statusLabel)
+                                .lineLimit(1)
                                 .font(ALITypography.labelLarge)
                                 .foregroundStyle(ALIColors.mutedInk)
                         }

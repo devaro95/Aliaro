@@ -67,23 +67,26 @@ private func monthDays(anchor: Date, events: [WidgetCalendarEventItem]) -> [Mont
 struct FamilyCalendarWidgetView: View {
     var snapshot: WidgetSnapshot
 
-    private let weekdaySymbols = ["L", "M", "X", "J", "V", "S", "D"]
+    /// Monday-first, in the device language (L M X J V S D / M T W T F S S).
+    private let weekdaySymbols: [String] = {
+        let symbols = Calendar.current.veryShortStandaloneWeekdaySymbols
+        return Array(symbols[1...] + symbols[..<1])
+    }()
 
     private var monthTitle: String {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "es_ES")
-        formatter.dateFormat = "LLLL yyyy"
+        formatter.setLocalizedDateFormatFromTemplate("LLLLyyyy")
         return formatter.string(from: snapshot.monthAnchor).capitalized
     }
 
     var body: some View {
         if !snapshot.hasFamilyGroup {
             VStack {
-                Label("Calendario", systemImage: "calendar")
+                Label("Calendar", systemImage: "calendar")
                     .font(.caption).bold()
                     .foregroundStyle(.blue)
                 Spacer()
-                Text("Únete a un grupo familiar en Aliaro")
+                Text("Join a family group in Aliaro")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -101,7 +104,7 @@ struct FamilyCalendarWidgetView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
 
                 HStack(spacing: 0) {
-                    ForEach(weekdaySymbols, id: \.self) { symbol in
+                    ForEach(Array(weekdaySymbols.enumerated()), id: \.offset) { _, symbol in
                         Text(symbol)
                             .font(.system(size: 9))
                             .foregroundStyle(.secondary)
@@ -145,8 +148,8 @@ struct FamilyCalendarWidget: Widget {
             FamilyCalendarWidgetView(snapshot: entry.snapshot)
                 .containerBackground(.background, for: .widget)
         }
-        .configurationDisplayName("Calendario familiar")
-        .description("El calendario de este mes con los eventos de la familia.")
+        .configurationDisplayName("Family calendar")
+        .description("This month's calendar with your family's events.")
         .supportedFamilies([.systemMedium, .systemLarge])
     }
 }

@@ -16,7 +16,7 @@ final class ExpenseCategory {
     init(
         id: UUID = UUID(),
         name: String,
-        emoji: String = "🏷️",
+        emoji: String = ALIIcon.tag,
         isDefault: Bool = false,
         createdAt: Date = .now
     ) {
@@ -31,12 +31,12 @@ final class ExpenseCategory {
 extension ExpenseCategory {
     /// The 7 categories every family group starts out with.
     static let defaults: [(name: String, emoji: String)] = [
-        ("Groceries", "🛒"),
-        ("Housing", "🏠"),
-        ("Transport", "🚗"),
-        ("Dining out", "🍽️"),
-        ("Entertainment", "🎬"),
-        ("Shopping", "🛍️"),
-        ("Other", "🔖")
+        ("Groceries", ALIIcon.cart),
+        ("Housing", ALIIcon.home),
+        ("Transport", ALIIcon.car),
+        ("Dining out", ALIIcon.dining),
+        ("Entertainment", ALIIcon.film),
+        ("Shopping", ALIIcon.shopping),
+        ("Other", ALIIcon.bookmark)
     ]
 }

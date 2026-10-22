@@ -4,10 +4,15 @@ import SwiftData
 /// "Family" tab: birthdays, vacations and shared events, each with its
 /// own start and end date/time.
 struct FamilyCalendarScreen: View {
+    private enum ViewMode {
+        case month, people
+    }
+
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var bottomBarScrollTracker: BottomBarScrollTracker
     @EnvironmentObject private var dataSync: AppDataSyncCoordinator
     @EnvironmentObject private var familySession: FamilySession
+    @EnvironmentObject private var premium: PremiumManager
 
     @Query(sort: \FamilyEvent.startDate) private var events: [FamilyEvent]
     @Query(sort: \FamilyMember.createdAt) private var members: [FamilyMember]
@@ -16,6 +21,13 @@ struct FamilyCalendarScreen: View {
     @State private var showAddSheet = false
     @State private var selectedEvent: FamilyEvent?
     @State private var eventPendingDelete: FamilyEvent?
+    @State private var viewMode: ViewMode = .month
+    @State private var showPaywall = false
+
+    /// The "by person" view needs a subscription if `familyCalendarPeople`
+    /// is currently premium — it still opens, as a preview with sample data.
+    private var isPeopleViewLocked: Bool { premium.isLocked(.familyCalendarPeople) }
+    private var isPeoplePreview: Bool { viewMode == .people && isPeopleViewLocked }
 
     private var currentMember: FamilyMember? { members.first(where: \.isCurrentDevice) }
     private var canAdd: Bool { currentMember?.can(.calendarAdd) ?? true }
@@ -44,25 +56,58 @@ struct FamilyCalendarScreen: View {
 
             VStack(spacing: 16) {
                 ALITopBar(title: "Family calendar", accent: ALIColors.familyAccent) {
-                    if canAdd {
-                        ALIFloatingButton(accent: ALIColors.familyAccent) {
-                            Track.event("calendar_event_add_tap", ["events": events.count])
-                            showAddSheet = true
-                        }
+                    HStack(spacing: 10) {
+                        viewModeToggleButton
+                        if canAdd {
+                            ALIFloatingButton(accent: ALIColors.familyAccent) {
+                                Track.event("calendar_event_add_tap", ["events": events.count])
+                                showAddSheet = true
+                            }
                             .scaleEffect(0.72)
+                        }
                     }
                 }
 
-                FamilyCalendarMonthView(events: events, selectedDay: $selectedDay)
+                switch viewMode {
+                case .month:
+                    FamilyCalendarMonthView(events: events, selectedDay: $selectedDay)
 
-                if let selectedDay {
-                    selectedDaySummary(for: selectedDay)
+                    if let selectedDay {
+                        selectedDaySummary(for: selectedDay)
+                    }
+
+                    upcomingList
+                case .people:
+                    if isPeopleViewLocked {
+                        FamilyCalendarPeopleView(
+                            events: FamilyCalendarPeopleDemoData.today,
+                            members: FamilyCalendarPeopleDemoData.members,
+                            selectedDay: .constant(nil),
+                            isMock: true,
+                            onSelect: { _ in }
+                        )
+                        .aliPremiumPreview(true)
+                    } else {
+                        FamilyCalendarPeopleView(events: events, members: members, selectedDay: $selectedDay) { event in
+                            selectedEvent = event
+                        }
+                    }
                 }
-
-                upcomingList
             }
             .padding(.horizontal, 20)
-            .padding(.bottom, 100)
+            // Extra room while the preview banner floats over the content.
+            .padding(.bottom, isPeoplePreview ? 320 : 100)
+        }
+        .overlay(alignment: .bottom) {
+            if isPeoplePreview {
+                ALIPremiumPreviewBanner(
+                    message: .peopleCalendar,
+                    buttonTitle: "Unlock view"
+                ) { showPaywall = Track.paywall("calendar_people_banner") }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 76)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
         }
         .background(ALIColors.background)
         .sheet(isPresented: $showAddSheet) {
@@ -70,6 +115,9 @@ struct FamilyCalendarScreen: View {
         }
         .sheet(item: $selectedEvent) { event in
             AddFamilyEventSheet(eventToEdit: event, canEdit: canEdit)
+        }
+        .sheet(isPresented: $showPaywall) {
+            PaywallView()
         }
         .aliDeleteConfirmDialog(
             isPresented: Binding(get: { eventPendingDelete != nil }, set: { if !$0 { eventPendingDelete = nil } }),
@@ -93,6 +141,27 @@ struct FamilyCalendarScreen: View {
         }
     }
 
+    /// Toggles between the month view and the "by person" matrix. If the
+    /// matrix is locked it still switches, as a premium preview.
+    private var viewModeToggleButton: some View {
+        Button {
+            withAnimation(.easeInOut(duration: 0.15)) {
+                viewMode = (viewMode == .month) ? .people : .month
+            }
+            Track.event("calendar_view_mode", ["mode": viewMode == .month ? "month" : "people", "locked": isPeopleViewLocked])
+        } label: {
+            Image(systemName: viewMode == .month ? "person.3.fill" : "calendar")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(ALIColors.ink)
+                .frame(width: 40, height: 40)
+                .background(ALIColors.surfaceVariant)
+                .clipShape(Circle())
+                .aliPremiumPreviewOverlay(viewMode == .month && isPeopleViewLocked)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(viewMode == .month ? "View by person" : "View as month")
+    }
+
     private func selectedDaySummary(for day: Date) -> some View {
         let dayEvents = events(on: day)
         let formatter: DateFormatter = {
@@ -114,7 +183,7 @@ struct FamilyCalendarScreen: View {
                 } else {
                     VStack(spacing: 0) {
                         ForEach(Array(dayEvents.enumerated()), id: \.element.id) { index, event in
-                            EventRow(event: event, canDelete: canDelete, onTap: {
+                            EventRow(event: event, attendees: event.attendeesLabel(members: members), canDelete: canDelete, onTap: {
                                 Track.event("calendar_event_open", ["source": "selected_day"])
                                 selectedEvent = event
                             }, onDelete: {
@@ -143,7 +212,7 @@ struct FamilyCalendarScreen: View {
                     ALICard {
                         VStack(spacing: 0) {
                             ForEach(Array(upcoming.enumerated()), id: \.element.id) { index, event in
-                                EventRow(event: event, canDelete: canDelete, onTap: {
+                                EventRow(event: event, attendees: event.attendeesLabel(members: members), canDelete: canDelete, onTap: {
                                     Track.event("calendar_event_open", ["source": "upcoming"])
                                     selectedEvent = event
                                 }, onDelete: {
@@ -162,9 +231,10 @@ struct FamilyCalendarScreen: View {
     }
 }
 
-/// Row for an event: icon, title, date range and note.
+/// Row for an event: icon, title, date range and who it's for.
 private struct EventRow: View {
     let event: FamilyEvent
+    let attendees: String
     var canDelete: Bool = true
     let onTap: () -> Void
     let onDelete: () -> Void
@@ -173,6 +243,13 @@ private struct EventRow: View {
         let calendar = Calendar.current
         let sameDay = calendar.isDate(event.startDate, inSameDayAs: event.endDate)
         let formatter = DateFormatter()
+        if event.isAllDay {
+            formatter.dateFormat = "d MMM"
+            let allDay = String(localized: "All day")
+            return sameDay
+                ? "\(formatter.string(from: event.startDate)) · \(allDay)"
+                : "\(formatter.string(from: event.startDate)) – \(formatter.string(from: event.endDate)) · \(allDay)"
+        }
         if sameDay {
             formatter.dateFormat = "d MMM, HH:mm"
             return "\(formatter.string(from: event.startDate)) – \(timeOnly(event.endDate))"
@@ -188,21 +265,16 @@ private struct EventRow: View {
         return formatter.string(from: date)
     }
 
-    private func authorLabel(_ base: String) -> String {
-        guard let name = event.createdByName, !name.isEmpty else { return base }
-        return "\(base) · \(name)"
-    }
 
     var body: some View {
         Button(action: onTap) {
             HStack(spacing: 12) {
-                Text(event.emoji)
-                    .font(.system(size: 22))
+                ALIIconView(icon: event.emoji, size: 22, fallback: ALIIcon.calendar)
                 VStack(alignment: .leading, spacing: 3) {
                     Text(event.title)
                         .font(ALITypography.bodyLarge)
                         .foregroundStyle(ALIColors.ink)
-                    Text(authorLabel(rangeLabel))
+                    Text("\(rangeLabel) · \(attendees)")
                         .font(ALITypography.labelLarge)
                         .foregroundStyle(ALIColors.mutedInk)
                         .lineLimit(1)

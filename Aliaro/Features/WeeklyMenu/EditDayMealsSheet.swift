@@ -16,6 +16,14 @@ struct EditDayMealsSheet: View {
     @State private var lunchDish: DishSelection?
     @State private var dinnerDish: DishSelection?
     @State private var mealTypeBeingPicked: MealType?
+    @State private var openedRecipe: Recipe?
+
+    @Query private var recipes: [Recipe]
+
+    private func recipe(for selection: DishSelection?) -> Recipe? {
+        guard let selection else { return nil }
+        return recipes.first { $0.id == selection.id }
+    }
 
     init(day: Weekday, lunchDish: DishSelection?, dinnerDish: DishSelection?, canEdit: Bool = true) {
         self.day = day
@@ -75,6 +83,9 @@ struct EditDayMealsSheet: View {
             }
         }
         .presentationDetents([.medium])
+        .sheet(item: $openedRecipe) { recipe in
+            RecipeDetailSheet(recipe: recipe)
+        }
         .sheet(item: $mealTypeBeingPicked) { mealType in
             SelectDishSheet(mealType: mealType) { picked in
                 switch mealType {
@@ -117,6 +128,22 @@ struct EditDayMealsSheet: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(!canEdit)
+
+                if let recipe = recipe(for: selection.wrappedValue) {
+                    Button {
+                        Track.event("menu_recipe_open")
+                        openedRecipe = recipe
+                    } label: {
+                        Image(systemName: "book.pages.fill")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(ALIColors.onAccent)
+                            .frame(width: 36, height: 36)
+                            .background(ALIColors.recipesAccent)
+                            .clipShape(Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(Text("View recipe"))
+                }
 
                 if selection.wrappedValue != nil && canEdit {
                     Button {

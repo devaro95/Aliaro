@@ -9,6 +9,7 @@ struct AliaroApp: App {
     @StateObject private var authSession = AuthSession.shared
     @StateObject private var dataSync = AppDataSyncCoordinator()
     @StateObject private var premiumManager = PremiumManager.shared
+    @StateObject private var pendingInvite = PendingInvite.shared
 
     let modelContainer: ModelContainer = {
         let schema = Schema([
@@ -19,8 +20,10 @@ struct AliaroApp: App {
             HouseTaskLog.self,
             MealPlanEntry.self,
             Dish.self,
+            Recipe.self,
             FamilyMember.self,
             Reminder.self,
+            BoardNote.self,
             FamilyEvent.self,
             Expense.self,
             ExpenseCategory.self,
@@ -57,23 +60,23 @@ struct AliaroApp: App {
                 .environmentObject(authSession)
                 .environmentObject(dataSync)
                 .environmentObject(premiumManager)
+                .environmentObject(pendingInvite)
+                // Invite QR scanned with the iPhone Camera (universal link)
+                // or an `aliaro://join` link: remember the token until the
+                // person is signed in without a group — see PendingInvite.
+                .onOpenURL { url in
+                    pendingInvite.handle(url: url)
+                }
                 .onAppear {
                     PushNotificationManager.shared.attach(familyService: familyService)
                     // Notification permission is requested right after the
                     // welcome carousel (skip or last page), not here — see
                     // ContentView's AppIntroView.onFinish.
-                    // Every device gets a Supabase identity from the first
-                    // launch, anonymous until the person chooses to sign
-                    // in — see `AuthSession`. Wipe first: a stale Keychain
-                    // session from a previous owner must not survive a
-                    // fresh install (see AuthSession's privacy note).
+                    // Reads the stored account session (login is required —
+                    // see `AuthSession`). `linkAuthIfNeeded` runs from
+                    // ContentView each time the person is signed in.
                     Task {
-                        await authSession.wipeStaleSessionIfFreshInstall()
-                        await authSession.ensureSession()
-                        // RLS is scoped to family_members.auth_user_id — this
-                        // self-heals that column for the case it's stale/null
-                        // (see FamilyService.linkAuthIfNeeded doc comment).
-                        await familyService.linkAuthIfNeeded()
+                        await authSession.prepareSession()
                     }
                     Task {
                         await premiumManager.start()

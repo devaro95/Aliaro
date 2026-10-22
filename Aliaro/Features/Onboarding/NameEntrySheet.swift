@@ -1,7 +1,9 @@
 import SwiftUI
 
-/// Simple sheet to ask for the person's name before creating or joining a
-/// family group. `onConfirm` can throw; the error is shown inline.
+/// Confirmation sheet before joining a family group. The member's name is
+/// always the one on the account (`AuthSession.displayName`, set at
+/// sign-up) — it's never asked here. `onConfirm` can throw; the error is
+/// shown inline.
 struct NameEntrySheet: View {
     let title: String
     let confirmTitle: String
@@ -10,10 +12,12 @@ struct NameEntrySheet: View {
     var joiningFamilyName: String? = nil
     let onConfirm: (String) async throws -> Void
 
+    @EnvironmentObject private var authSession: AuthSession
     @Environment(\.dismiss) private var dismiss
-    @State private var name = ""
     @State private var isSubmitting = false
     @State private var errorMessage: String?
+
+    private var resolvedName: String { authSession.displayName ?? "" }
 
     var body: some View {
         trackedBody.trackScreen("name_entry")
@@ -23,7 +27,7 @@ struct NameEntrySheet: View {
     private var trackedBody: some View {
         NavigationStack {
             VStack(spacing: 20) {
-                Text(title)
+                Text("Join family group")
                     .font(ALITypography.headlineMedium)
                     .foregroundStyle(ALIColors.ink)
 
@@ -34,8 +38,6 @@ struct NameEntrySheet: View {
                         .multilineTextAlignment(.center)
                 }
 
-                ALITextField(placeholder: "Your name", text: $name, onSubmit: submit)
-
                 if let errorMessage {
                     Text(errorMessage)
                         .font(ALITypography.bodyMedium)
@@ -44,7 +46,7 @@ struct NameEntrySheet: View {
 
                 ALIPrimaryButton(
                     text: isSubmitting ? "One moment…" : LocalizedStringKey(confirmTitle),
-                    enabled: !name.trimmed.isEmpty && !isSubmitting,
+                    enabled: !resolvedName.isEmpty && !isSubmitting,
                     accent: ALIColors.familyAccent,
                     action: submit
                 )
@@ -65,7 +67,7 @@ struct NameEntrySheet: View {
     }
 
     private func submit() {
-        let trimmedName = name.trimmed
+        let trimmedName = resolvedName
         guard !trimmedName.isEmpty, !isSubmitting else { return }
         isSubmitting = true
         errorMessage = nil
