@@ -6,14 +6,19 @@ import SwiftData
 /// dish catalog. It's also where that catalog lives: search, create, edit
 /// and delete — just like the shopping list catalog. Recipes are edited
 /// from Recipes, not here.
+///
+/// With `onSelect == nil` it opens in "manage" mode (the menu's dishes
+/// button): no picking, tapping a dish renames it and "+" adds new ones.
 struct SelectDishSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var dataSync: AppDataSyncCoordinator
     @EnvironmentObject private var familySession: FamilySession
 
-    let mealType: MealType
-    let onSelect: (DishSelection) -> Void
+    let mealType: MealType?
+    let onSelect: ((DishSelection) -> Void)?
+
+    private var isManaging: Bool { onSelect == nil }
 
     @Query(sort: \Dish.name) private var catalog: [Dish]
     @Query(sort: \Recipe.name) private var recipes: [Recipe]
@@ -22,6 +27,7 @@ struct SelectDishSheet: View {
     private var recipeIDs: Set<UUID> { Set(recipes.map(\.id)) }
 
     private var filteredRecipes: [Recipe] {
+        guard !isManaging else { return [] }
         guard !searchText.trimmed.isEmpty else { return recipes }
         return recipes.filter { $0.name.localizedCaseInsensitiveContains(searchText.trimmed) }
     }
@@ -30,6 +36,8 @@ struct SelectDishSheet: View {
     @State private var renamingDish: Dish?
     @State private var renameText = ""
     @State private var dishPendingDelete: Dish?
+    @State private var showNewDish = false
+    @State private var newDishName = ""
 
     /// Plain dishes only (recipe twins show up in the recipes section).
     private var filteredCatalog: [Dish] {
@@ -60,7 +68,11 @@ struct SelectDishSheet: View {
                     Button(action: createFromSearchIfNeeded) {
                         HStack {
                             Image(systemName: "sparkles")
-                            Text("Create \"\(searchText.trimmed)\" and choose")
+                            if isManaging {
+                                Text("Create \"\(searchText.trimmed)\"")
+                            } else {
+                                Text("Create \"\(searchText.trimmed)\" and choose")
+                            }
                             Spacer()
                         }
                         .font(ALITypography.titleLarge)
@@ -98,7 +110,14 @@ struct SelectDishSheet: View {
                                 DishCatalogRow(
                                     dish: dish,
                                     isRecipe: false,
-                                    onSelect: { select(dish) },
+                                    onSelect: {
+                                        if isManaging {
+                                            renamingDish = dish
+                                            renameText = dish.name
+                                        } else {
+                                            select(dish)
+                                        }
+                                    },
                                     onEdit: {
                                         Track.event("dish_edit_tap")
                                         renamingDish = dish
@@ -114,12 +133,29 @@ struct SelectDishSheet: View {
                 }
             }
             .background(ALIColors.background)
-            .navigationTitle(mealType == .lunch ? "Choose lunch" : "Choose dinner")
+            .navigationTitle(navigationTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+                    Button(LocalizedStringKey(isManaging ? "Done" : "Cancel")) { dismiss() }
                 }
+                if isManaging {
+                    ToolbarItem(placement: .primaryAction) {
+                        Button {
+                            Track.event("dish_add_tap")
+                            newDishName = ""
+                            showNewDish = true
+                        } label: {
+                            Image(systemName: "plus")
+                        }
+                        .accessibilityLabel("New dish")
+                    }
+                }
+            }
+            .alert("New dish", isPresented: $showNewDish) {
+                TextField("Name", text: $newDishName)
+                Button("Cancel", role: .cancel) {}
+                Button("Add") { createDish(named: newDishName) }
             }
             .alert("Rename dish", isPresented: Binding(get: { renamingDish != nil }, set: { if !$0 { renamingDish = nil } })) {
                 TextField("Name", text: $renameText)
@@ -148,6 +184,14 @@ struct SelectDishSheet: View {
         .presentationDetents([.medium, .large])
     }
 
+    private var navigationTitle: LocalizedStringKey {
+        switch mealType {
+        case .lunch: return "Choose lunch"
+        case .dinner: return "Choose dinner"
+        case nil: return "Dishes"
+        }
+    }
+
     private func sectionHeader(_ title: LocalizedStringKey) -> some View {
         Text(title)
             .font(ALITypography.labelLarge)
@@ -162,36 +206,52 @@ struct SelectDishSheet: View {
         RecipeDishLink.sync(recipe, modelContext: modelContext, dataSync: dataSync, familyID: familySession.familyID)
         Track.event("dish_selected", [
             "dish_name": recipe.name,
-            "meal": String(describing: mealType),
+            "meal": mealType.map { String(describing: $0) } ?? "none",
             "is_new": false,
             "is_recipe": true,
             "searching": !searchText.trimmed.isEmpty,
             "catalog_size": catalog.count
         ])
-        onSelect(DishSelection(id: recipe.id, name: recipe.name))
+        onSelect?(DishSelection(id: recipe.id, name: recipe.name))
         dismiss()
     }
 
     private func select(_ dish: Dish, isNew: Bool = false) {
         Track.event("dish_selected", [
             "dish_name": dish.name,
-            "meal": String(describing: mealType),
+            "meal": mealType.map { String(describing: $0) } ?? "none",
             "is_new": isNew,
             "searching": !searchText.trimmed.isEmpty,
             "catalog_size": catalog.count
         ])
-        onSelect(DishSelection(id: dish.id, name: dish.name))
+        onSelect?(DishSelection(id: dish.id, name: dish.name))
         dismiss()
     }
 
     private func createFromSearchIfNeeded() {
         let name = searchText.trimmed
         guard !name.isEmpty, !exactMatchExists else { return }
+        createDish(named: name)
+    }
+
+    /// Adds a dish to the catalog. In picking mode it's selected right away;
+    /// in manage mode it just stays in the list.
+    private func createDish(named rawName: String) {
+        let name = rawName.trimmed
+        guard !name.isEmpty else { return }
+        if catalog.contains(where: { $0.name.compare(name, options: .caseInsensitive) == .orderedSame }) {
+            searchText = ""
+            return
+        }
         let dish = Dish(name: name)
         modelContext.insert(dish)
         if let familyID = familySession.familyID { dataSync.pushDish(dish, familyID: familyID) }
-        Track.event("dish_created", ["dish_name": name, "catalog_size": catalog.count + 1])
-        select(dish, isNew: true)
+        Track.event("dish_created", ["dish_name": name, "catalog_size": catalog.count + 1, "from": isManaging ? "dishes" : "picker"])
+        if isManaging {
+            searchText = ""
+        } else {
+            select(dish, isNew: true)
+        }
     }
 }
 

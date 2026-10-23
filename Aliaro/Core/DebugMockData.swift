@@ -42,7 +42,7 @@ enum DebugMockData {
             // WeeklyMenu+Support.swift.
             for mealType in [MealType.lunch.rawValue, MealType.dinner.rawValue] {
                 guard let dish = dishes.randomElement() else { continue }
-                track(MealPlanEntry(weekday: weekday, mealType: mealType, dishID: dish.id, dishName: dish.name))
+                track(MealPlanEntry(date: MenuCalendar.adding(days: weekday, to: MenuCalendar.startOfWeek(.now)), mealType: mealType, dishID: dish.id, dishName: dish.name))
             }
         }
 
