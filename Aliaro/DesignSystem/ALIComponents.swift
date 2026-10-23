@@ -300,7 +300,7 @@ struct ALIPremiumPreviewBanner: View {
     @Environment(\.colorScheme) private var colorScheme
 
     enum Message {
-        case familyData, tasksCalendar, peopleCalendar
+        case familyData, tasksCalendar, peopleCalendar, menuMonth
     }
 
     /// Message with the "Aliaro" wordmark (salmon-dot "i") inlined.
@@ -314,6 +314,8 @@ struct ALIPremiumPreviewBanner: View {
             return Text("This is a preview with sample data. Get \(wordmark) Premium to see your tasks in a calendar.")
         case .peopleCalendar:
             return Text("This is a preview with sample data. Get \(wordmark) Premium to see your family's day by person.")
+        case .menuMonth:
+            return Text("This is a preview with sample data. Get \(wordmark) Premium to plan your menu month by month.")
         }
     }
 

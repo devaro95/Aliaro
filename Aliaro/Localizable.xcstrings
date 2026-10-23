@@ -1,6 +1,38 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "This is a preview with sample data. Get %@ Premium to plan your menu month by month." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This is a preview with sample data. Get %@ Premium to plan your menu month by month."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esto es una vista previa con datos de ejemplo. Hazte %@ Premium para planificar el menú mes a mes."
+          }
+        }
+      }
+    },
+    "Unlock monthly menu" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unlock monthly menu"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desbloquear menú mensual"
+          }
+        }
+      }
+    },
     "This week" : {
       "localizations" : {
         "en" : {

@@ -33,6 +33,8 @@ struct WeeklyMenuScreen: View {
     }
 
     private var isPlanningLocked: Bool { premium.isLocked(.menuPlanning) }
+    /// Month view open as a premium preview (sample data + blur + floating banner).
+    private var isMonthPreview: Bool { viewMode == .month && isPlanningLocked }
 
     private var weekDays: [Date] { MenuCalendar.days(ofWeek: weekStart) }
 
@@ -86,11 +88,28 @@ struct WeeklyMenuScreen: View {
                         onNext: { moveMonth(1) },
                         onToday: { goToToday() }
                     )
-                    monthCard
+                    if isMonthPreview {
+                        monthCard.aliPremiumPreview(true)
+                    } else {
+                        monthCard
+                    }
                 }
             }
             .padding(.horizontal, 20)
-            .padding(.bottom, 100)
+            // Extra room while the preview banner floats over the content.
+            .padding(.bottom, isMonthPreview ? 320 : 100)
+        }
+        .overlay(alignment: .bottom) {
+            if isMonthPreview {
+                // Floats just above the bottom bar (same placement as Tasks).
+                ALIPremiumPreviewBanner(
+                    message: .menuMonth,
+                    buttonTitle: "Unlock monthly menu"
+                ) { showPaywall = Track.paywall("menu_month_banner") }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 76)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
         }
         .background(ALIColors.background)
         .sheet(item: $dayBeingEdited) { day in
@@ -141,10 +160,6 @@ struct WeeklyMenuScreen: View {
 
     private var viewModeToggleButton: some View {
         Button {
-            if viewMode == .week && isPlanningLocked {
-                showPaywall = Track.paywall("menu_month_view")
-                return
-            }
             withAnimation(.easeInOut(duration: 0.15)) {
                 if viewMode == .week {
                     monthStart = MenuCalendar.startOfMonth(weekStart)
@@ -156,7 +171,7 @@ struct WeeklyMenuScreen: View {
                     viewMode = .week
                 }
             }
-            Track.event("menu_view_mode", ["mode": viewMode == .week ? "week" : "month"])
+            Track.event("menu_view_mode", ["mode": viewMode == .week ? "week" : "month", "locked": isPlanningLocked])
         } label: {
             Image(systemName: viewMode == .week ? "calendar" : "list.bullet")
                 .font(.system(size: 16, weight: .semibold))
@@ -164,7 +179,7 @@ struct WeeklyMenuScreen: View {
                 .frame(width: 40, height: 40)
                 .background(ALIColors.surfaceVariant)
                 .clipShape(Circle())
-                .aliPremiumLockOverlay(viewMode == .week && isPlanningLocked)
+                .aliPremiumPreviewOverlay(viewMode == .week && isPlanningLocked)
         }
         .buttonStyle(.plain)
         .accessibilityLabel(viewMode == .week ? "View month" : "View week")
@@ -236,32 +251,34 @@ struct WeeklyMenuScreen: View {
         HStack(spacing: 8) {
             arrowButton("chevron.left", label: "Previous", action: onPrevious)
 
-            VStack(spacing: 2) {
+            // "Today" goes under the label (never beside it) so long ranges don't overlap.
+            VStack(spacing: 4) {
                 Text(title)
                     .font(ALITypography.titleLarge)
                     .foregroundStyle(ALIColors.ink)
                     .lineLimit(1)
+                    .minimumScaleFactor(0.85)
                 if let subtitle, subtitle != title {
                     Text(subtitle)
                         .font(ALITypography.labelLarge)
                         .foregroundStyle(ALIColors.mutedInk)
+                        .lineLimit(1)
                 }
-            }
-            .frame(maxWidth: .infinity)
-            .overlay(alignment: .trailing) {
                 if !isCurrent {
                     Button(action: onToday) {
                         Text("Today")
                             .font(.system(size: 12, weight: .bold, design: .rounded))
                             .foregroundStyle(ALIColors.onAccent)
                             .padding(.horizontal, 10)
-                            .padding(.vertical, 5)
+                            .padding(.vertical, 4)
                             .background(ALIColors.primary)
                             .clipShape(Capsule())
                     }
                     .buttonStyle(.plain)
+                    .transition(.opacity)
                 }
             }
+            .frame(maxWidth: .infinity)
 
             arrowButton("chevron.right", label: "Next", action: onNext)
         }
@@ -485,8 +502,11 @@ struct WeeklyMenuScreen: View {
     }
 
     private func monthCell(_ date: Date) -> some View {
-        let hasLunch = dish(for: date, mealType: .lunch) != nil
-        let hasDinner = dish(for: date, mealType: .dinner) != nil
+        let planned = isMonthPreview
+            ? MenuDemoData.planned(on: date)
+            : (dish(for: date, mealType: .lunch) != nil, dish(for: date, mealType: .dinner) != nil)
+        let hasLunch = planned.lunch
+        let hasDinner = planned.dinner
         let isToday = MenuCalendar.isSameDay(date, .now)
         let past = date < MenuCalendar.today
 
@@ -576,5 +596,14 @@ struct WeeklyMenuScreen: View {
                 MenuWriter.remove(entry, modelContext: modelContext, dataSync: dataSync)
             }
         }
+    }
+}
+
+/// Sample month for the `menuPlanning` premium preview: a believable,
+/// mostly-planned month (stable per day so it doesn't flicker).
+enum MenuDemoData {
+    static func planned(on date: Date) -> (lunch: Bool, dinner: Bool) {
+        let day = MenuCalendar.calendar.component(.day, from: date)
+        return (lunch: day % 7 != 3, dinner: day % 5 != 2 && day % 11 != 0)
     }
 }
