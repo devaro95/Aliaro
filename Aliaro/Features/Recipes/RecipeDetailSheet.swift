@@ -225,14 +225,22 @@ struct AddRecipeToMenuSheet: View {
 
     @Query private var entries: [MealPlanEntry]
 
-    @State private var day: Weekday = {
-        let systemWeekday = Calendar.current.component(.weekday, from: Date())
-        return Weekday(rawValue: (systemWeekday + 5) % 7) ?? .monday
-    }()
+    @State private var day: Date = MenuCalendar.today
+
+    /// Today and the next 13 days.
+    private var upcomingDays: [Date] {
+        (0..<14).map { MenuCalendar.adding(days: $0, to: MenuCalendar.today) }
+    }
+
+    private func chipTitle(for date: Date) -> String {
+        if MenuCalendar.isSameDay(date, .now) { return String(localized: "Today") }
+        if MenuCalendar.isSameDay(date, MenuCalendar.adding(days: 1, to: MenuCalendar.today)) { return String(localized: "Tomorrow") }
+        return date.formatted(.dateTime.weekday(.abbreviated).day()).capitalized
+    }
     @State private var mealType: MealType = .lunch
 
     private var currentDishName: String? {
-        entries.first { $0.weekday == day.rawValue && $0.mealType == mealType.rawValue }?.dishName
+        entries.first { MenuCalendar.isSameDay($0.date, day) && $0.mealType == mealType.rawValue }?.dishName
     }
 
     var body: some View {
@@ -246,9 +254,9 @@ struct AddRecipeToMenuSheet: View {
                 .pickerStyle(.segmented)
 
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 96), spacing: 8)], spacing: 8) {
-                    ForEach(Weekday.allCases) { weekday in
-                        RecipeChip(title: weekday.shortLabel, isSelected: day == weekday) {
-                            day = weekday
+                    ForEach(upcomingDays, id: \.self) { date in
+                        RecipeChip(title: LocalizedStringKey(chipTitle(for: date)), isSelected: MenuCalendar.isSameDay(day, date)) {
+                            day = date
                         }
                     }
                 }
@@ -283,18 +291,19 @@ struct AddRecipeToMenuSheet: View {
         let familyID = familySession.familyID
         RecipeDishLink.sync(recipe, modelContext: modelContext, dataSync: dataSync, familyID: familyID)
 
-        let entry: MealPlanEntry
-        if let existing = entries.first(where: { $0.weekday == day.rawValue && $0.mealType == mealType.rawValue }) {
-            existing.dishID = recipe.id
-            existing.dishName = recipe.name
-            existing.updatedAt = .now
-            entry = existing
-        } else {
-            entry = MealPlanEntry(weekday: day.rawValue, mealType: mealType.rawValue, dishID: recipe.id, dishName: recipe.name)
-            modelContext.insert(entry)
-        }
-        if let familyID { dataSync.pushMealPlanEntry(entry, familyID: familyID) }
-        Track.event("recipe_added_to_menu", ["weekday": String(describing: day), "meal": String(describing: mealType)])
+        MenuWriter.set(
+            DishSelection(id: recipe.id, name: recipe.name),
+            date: day,
+            mealType: mealType,
+            entries: entries,
+            modelContext: modelContext,
+            dataSync: dataSync,
+            familyID: familyID
+        )
+        Track.event("recipe_added_to_menu", [
+            "days_ahead": MenuCalendar.calendar.dateComponents([.day], from: MenuCalendar.today, to: day).day ?? 0,
+            "meal": String(describing: mealType)
+        ])
         dismiss()
     }
 }

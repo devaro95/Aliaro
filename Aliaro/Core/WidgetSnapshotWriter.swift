@@ -31,15 +31,10 @@ enum WidgetSnapshotWriter {
                 .map { WidgetCalendarEventItem(id: $0.id, title: $0.title, emoji: $0.emoji, startDate: $0.startDate, endDate: $0.endDate) }
         }
 
-        // MealPlanEntry.weekday: 0 = Monday ... 6 = Sunday. Calendar's
-        // `.weekday` component is always 1 = Sunday ... 7 = Saturday
-        // regardless of locale/firstWeekday, hence the +5 offset.
-        let weekdayComponent = calendar.component(.weekday, from: now)
-        let todayWeekday = (weekdayComponent + 5) % 7
         let allMealPlanEntries = (try? modelContext.fetch(FetchDescriptor<MealPlanEntry>())) ?? []
         let mealOrder = ["comida", "cena"]
         let todayMenu = allMealPlanEntries
-            .filter { $0.weekday == todayWeekday }
+            .filter { MenuCalendar.isSameDay($0.date, now) }
             .sorted { (mealOrder.firstIndex(of: $0.mealType) ?? 0) < (mealOrder.firstIndex(of: $1.mealType) ?? 0) }
             .map { WidgetMenuEntryItem(mealType: $0.mealType, dishName: $0.dishName) }
 

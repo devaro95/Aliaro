@@ -10,6 +10,7 @@ enum PremiumFeature: String, CaseIterable, Identifiable {
     case historial
     case extraShoppingLists = "extra_shopping_lists"
     case unlimitedReminders = "unlimited_reminders"
+    case menuPlanning = "menu_planning"
     case houseTasksCalendar = "house_tasks_calendar"
     case familyCalendarPeople = "family_calendar_people"
     case houseTasksStats = "house_tasks_stats"
@@ -27,6 +28,7 @@ enum PremiumFeature: String, CaseIterable, Identifiable {
         case .historial: return "Group history"
         case .extraShoppingLists: return "Multiple shopping lists"
         case .unlimitedReminders: return "Unlimited reminders"
+        case .menuPlanning: return "Monthly menu planning"
         case .houseTasksCalendar: return "Tasks calendar view"
         case .familyCalendarPeople: return "Calendar by person"
         case .houseTasksStats: return "Task statistics"
@@ -45,6 +47,7 @@ enum PremiumFeature: String, CaseIterable, Identifiable {
         case .historial: return "See who did what and when in your group."
         case .extraShoppingLists: return "Separate lists for the supermarket, the pharmacy and more."
         case .unlimitedReminders: return "Never forget anything important again."
+        case .menuPlanning: return "Plan the whole month and copy weeks in one tap."
         case .houseTasksCalendar: return "Plan the week's chores at a glance."
         case .familyCalendarPeople: return "See everyone's day side by side, hour by hour."
         case .houseTasksStats: return "Find out who pulls their weight at home."
@@ -63,6 +66,7 @@ enum PremiumFeature: String, CaseIterable, Identifiable {
         case .historial, .familyCalendarPeople: return ALIColors.familyAccent
         case .extraShoppingLists: return ALIColors.shoppingAccent
         case .unlimitedReminders: return ALIColors.remindersAccent
+        case .menuPlanning: return ALIColors.weeklyMenuAccent
         case .houseTasksCalendar, .houseTasksStats, .unlimitedHouseTasks: return ALIColors.houseTasksAccent
         case .economiaStats, .extraCategories, .financeArchive: return ALIColors.economiaAccent
         case .extraMembers: return ALIColors.peopleAccent
@@ -75,6 +79,7 @@ enum PremiumFeature: String, CaseIterable, Identifiable {
         case .historial: return "clock.arrow.circlepath"
         case .extraShoppingLists: return "cart.fill"
         case .unlimitedReminders: return "bell.fill"
+        case .menuPlanning: return "calendar"
         case .houseTasksCalendar: return "calendar"
         case .familyCalendarPeople: return "person.3.fill"
         case .houseTasksStats: return "chart.bar.fill"

@@ -43,11 +43,15 @@ struct RemoteRecipe: FamilySynced {
     var created_by_name: String?
 }
 
+/// Dated menu (table `meal_plan_days`). The legacy weekday-based
+/// `meal_plan_entries` table is only kept (and bridged server-side) for
+/// app versions released before dated menus.
 struct RemoteMealPlanEntry: FamilySynced {
-    static let tableName = "meal_plan_entries"
+    static let tableName = "meal_plan_days"
     var id: UUID
     var family_id: UUID
-    var weekday: Int
+    /// Postgres `date` ("yyyy-MM-dd"), local day.
+    var date: String
     var meal_type: String
     var dish_id: UUID
     var dish_name: String
@@ -547,6 +551,11 @@ final class AppDataSyncCoordinator: ObservableObject {
         do {
             let remote = try await mealPlanEntries.fetchAll(familyID: familyID)
             for r in remote { applyMealPlanEntry(r, modelContext: modelContext) }
+            // Rows migrated from the old weekday model that the server
+            // didn't send back (so they never got a real date).
+            let undated = Date.distantPast
+            let stale = FetchDescriptor<MealPlanEntry>(predicate: #Predicate { $0.date == undated })
+            for entry in (try? modelContext.fetch(stale)) ?? [] { modelContext.delete(entry) }
         } catch {
             lastError = error.localizedDescription
         }
@@ -564,9 +573,10 @@ final class AppDataSyncCoordinator: ObservableObject {
     }
 
     private func applyMealPlanEntry(_ remote: RemoteMealPlanEntry, modelContext: ModelContext) {
+        guard let date = MenuCalendar.date(fromKey: remote.date) else { return }
         let descriptor = FetchDescriptor<MealPlanEntry>(predicate: #Predicate { $0.id == remote.id })
         if let existing = try? modelContext.fetch(descriptor).first {
-            existing.weekday = remote.weekday
+            existing.date = date
             existing.mealType = remote.meal_type
             existing.dishID = remote.dish_id
             existing.dishName = remote.dish_name
@@ -574,7 +584,7 @@ final class AppDataSyncCoordinator: ObservableObject {
         } else {
             modelContext.insert(MealPlanEntry(
                 id: remote.id,
-                weekday: remote.weekday,
+                date: date,
                 mealType: remote.meal_type,
                 dishID: remote.dish_id,
                 dishName: remote.dish_name,
@@ -586,7 +596,7 @@ final class AppDataSyncCoordinator: ObservableObject {
 
     func pushMealPlanEntry(_ entry: MealPlanEntry, familyID: UUID) {
         let record = RemoteMealPlanEntry(
-            id: entry.id, family_id: familyID, weekday: entry.weekday, meal_type: entry.mealType,
+            id: entry.id, family_id: familyID, date: MenuCalendar.key(entry.date), meal_type: entry.mealType,
             dish_id: entry.dishID, dish_name: entry.dishName, updated_at: entry.updatedAt
         )
         Task { try? await mealPlanEntries.push(record) }

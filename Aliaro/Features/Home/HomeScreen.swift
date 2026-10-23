@@ -557,7 +557,9 @@ struct HomeScreen: View {
     private func tileDetail(for tab: AppTab) -> String? {
         switch tab {
         case .weeklyMenu:
-            let count = mealPlan.count
+            let weekStart = MenuCalendar.startOfWeek(.now)
+            let weekEnd = MenuCalendar.adding(days: 7, to: weekStart)
+            let count = mealPlan.filter { $0.date >= weekStart && $0.date < weekEnd }.count
             if count == 0 { return String(localized: "Nothing planned") }
             return count == 1 ? String(localized: "1 meal planned") : String(localized: "\(count) meals planned")
         case .recipes:
@@ -658,9 +660,7 @@ struct HomeScreen: View {
     }
 
     private var menuSummary: HomeSummary? {
-        // MealPlanEntry.weekday: 0 = Monday ... 6 = Sunday (see WidgetSnapshotWriter).
-        let todayWeekday = (Calendar.current.component(.weekday, from: .now) + 5) % 7
-        let today = mealPlan.filter { $0.weekday == todayWeekday }
+        let today = mealPlan.filter { MenuCalendar.isSameDay($0.date, .now) }
         let lunch = today.first { $0.mealType == MealType.lunch.rawValue }?.dishName
         let dinner = today.first { $0.mealType == MealType.dinner.rawValue }?.dishName
         switch (lunch, dinner) {
