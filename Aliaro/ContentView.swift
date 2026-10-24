@@ -58,6 +58,9 @@ struct ContentView: View {
             }
         }
         .background(ALIColors.background)
+        #if DEBUG
+        .debugMenuOnShake()
+        #endif
         .onChange(of: dataSync.wasRemovedFromFamily) { _, removed in
             guard removed else { return }
             Task { await familyService.handleRemovedFromFamily(modelContext: modelContext, dataSync: dataSync) }

@@ -127,6 +127,7 @@
 		FB2899EA18CA45A7BC411971 /* MealPlanEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DDE73C48F8A4636AAFFDC1C /* MealPlanEntry.swift */; };
 		FB7688777868404B97796AC6 /* CreateFamilySheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1990A26115342EC8F964E5F /* CreateFamilySheet.swift */; };
 		FD666F06F91F47B19A411F5A /* SplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96126D62606445939588B1D5 /* SplashView.swift */; };
+		D682987ECABE41ED80D3EA06 /* DebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADAFF8664E604BC2B0B98635 /* DebugMenu.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -274,6 +275,7 @@
 		F8F613A266AF41ED9DF43ACC /* Supabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Supabase.swift; sourceTree = "<group>"; };
 		FAA17B628B4C4513AFD4C4AB /* Aliaro.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Aliaro.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		FB3982593EAF4A3BA2C3159E /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
+		ADAFF8664E604BC2B0B98635 /* DebugMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugMenu.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -473,6 +475,7 @@
 			children = (
 				35A87DF24E1D4372B506D637 /* Auth */,
 				1578ED3814874B36816CDDE2 /* Board */,
+				7A522A76567F4D7A9AB90F21 /* Debug */,
 				BBD3A17BA0AA415C9D7CD11A /* Economia */,
 				A50744DBE1A64ED1816136B4 /* FamilyCalendar */,
 				324B5B0375CA481ABF7D645F /* Home */,
@@ -508,6 +511,14 @@
 				1596268DB0954B98AC62EAF6 /* MainTabContainer.swift */,
 			);
 			path = Navigation;
+			sourceTree = "<group>";
+		};
+		7A522A76567F4D7A9AB90F21 /* Debug */ = {
+			isa = PBXGroup;
+			children = (
+				ADAFF8664E604BC2B0B98635 /* DebugMenu.swift */,
+			);
+			path = Debug;
 			sourceTree = "<group>";
 		};
 		BBD3A17BA0AA415C9D7CD11A /* Economia */ = {
@@ -766,6 +777,7 @@
 				344287E75B614766BF210EBE /* AuthSession.swift in Sources */,
 				5ED9BB7760BA4CAFB822B299 /* DataSync.swift in Sources */,
 				2F0CDD202CAB4E4BBF742BD5 /* DebugMockData.swift in Sources */,
+				D682987ECABE41ED80D3EA06 /* DebugMenu.swift in Sources */,
 				8FA126BBE0104B06B2A9BC64 /* FamilyService.swift in Sources */,
 				E5C4D97167504B65A610D7CC /* FamilySession.swift in Sources */,
 				089DFCD177C24883B0902AC5 /* InviteLink.swift in Sources */,

@@ -4,646 +4,6 @@
     "" : {
 
     },
-    "Color" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Color"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Color"
-          }
-        }
-      }
-    },
-    "Colors" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Colors"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Colores"
-          }
-        }
-      }
-    },
-    "Coming up" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Coming up"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Siguientes"
-          }
-        }
-      }
-    },
-    "Couldn't rename the group" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Couldn't rename the group"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No se pudo renombrar el grupo"
-          }
-        }
-      }
-    },
-    "Delete only this event" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Delete only this event"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Borrar solo este evento"
-          }
-        }
-      }
-    },
-    "Delete the whole series" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Delete the whole series"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Borrar toda la serie"
-          }
-        }
-      }
-    },
-    "Every %lld days" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Every %lld days"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cada %lld días"
-          }
-        }
-      }
-    },
-    "Every %lld months" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Every %lld months"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cada %lld meses"
-          }
-        }
-      }
-    },
-    "Every %lld weeks" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Every %lld weeks"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cada %lld semanas"
-          }
-        }
-      }
-    },
-    "Every %lld years" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Every %lld years"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cada %lld años"
-          }
-        }
-      }
-    },
-    "Every day" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Every day"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cada día"
-          }
-        }
-      }
-    },
-    "Every month" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Every month"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cada mes"
-          }
-        }
-      }
-    },
-    "Every week" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Every week"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cada semana"
-          }
-        }
-      }
-    },
-    "Every year" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Every year"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cada año"
-          }
-        }
-      }
-    },
-    "Got it" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Got it"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "¡Entendido!"
-          }
-        }
-      }
-    },
-    "months" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "months"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "meses"
-          }
-        }
-      }
-    },
-    "New in Tasks" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "New in Tasks"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Novedades en Tareas"
-          }
-        }
-      }
-    },
-    "New in the Family calendar" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "New in the Family calendar"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Novedades en el calendario familiar"
-          }
-        }
-      }
-    },
-    "No tasks for this day." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No tasks for this day."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No hay tareas para este día."
-          }
-        }
-      }
-    },
-    "Pick from 30 colors so each event stands out on the calendar." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pick from 30 colors so each event stands out on the calendar."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Elige entre 30 colores para distinguir cada evento de un vistazo en el calendario."
-          }
-        }
-      }
-    },
-    "Pick from 30 colors so each task stands out on the calendar." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pick from 30 colors so each task stands out on the calendar."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Elige entre 30 colores para distinguir cada tarea de un vistazo en el calendario."
-          }
-        }
-      }
-    },
-    "Rename family group" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rename family group"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Renombrar grupo familiar"
-          }
-        }
-      }
-    },
-    "Rename group" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rename group"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Renombrar grupo"
-          }
-        }
-      }
-    },
-    "Repeat" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Repeat"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Repetir"
-          }
-        }
-      }
-    },
-    "Repeat any event every few days, weeks, months or years." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Repeat any event every few days, weeks, months or years."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Repite cualquier evento cada X días, semanas, meses o años."
-          }
-        }
-      }
-    },
-    "Repeating events" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Repeating events"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Eventos que se repiten"
-          }
-        }
-      }
-    },
-    "Reset" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reset"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Restablecer"
-          }
-        }
-      }
-    },
-    "Reset order?" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reset order?"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "¿Restablecer el orden?"
-          }
-        }
-      }
-    },
-    "See what's to do each day, what's done, and what's coming up next." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "See what's to do each day, what's done, and what's coming up next."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ve lo que toca cada día, lo que ya está hecho y lo que viene después."
-          }
-        }
-      }
-    },
-    "The cards will go back to their original order. This only changes it for you." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The cards will go back to their original order. This only changes it for you."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Las tarjetas volverán a su orden original. Solo cambia para ti."
-          }
-        }
-      }
-    },
-    "This is a repeating event. Deleting the whole series can't be undone." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This is a repeating event. Deleting the whole series can't be undone."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Es un evento que se repite. Borrar toda la serie no se puede deshacer."
-          }
-        }
-      }
-    },
-    "Tip: open your existing events and edit them to add a color or a repetition." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tip: open your existing events and edit them to add a color or a repetition."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Consejo: abre tus eventos de antes y edítalos para añadirles un color o una repetición."
-          }
-        }
-      }
-    },
-    "Tip: open your existing tasks and edit them to give them a color." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tip: open your existing tasks and edit them to give them a color."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Consejo: abre tus tareas de antes y edítalas para darles un color."
-          }
-        }
-      }
-    },
-    "To do" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "To do"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Por hacer"
-          }
-        }
-      }
-    },
-    "To-dos on the calendar" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "To-dos on the calendar"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lo pendiente, en el calendario"
-          }
-        }
-      }
-    },
-    "until %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "until %@"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "hasta el %@"
-          }
-        }
-      }
-    },
-    "Until a date" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Until a date"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hasta una fecha"
-          }
-        }
-      }
-    },
-    "weeks" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "weeks"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "semanas"
-          }
-        }
-      }
-    },
-    "What's new" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "What's new"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Novedades"
-          }
-        }
-      }
-    },
-    "years" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "years"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "años"
-          }
-        }
-      }
-    },
     "·" : {
       "comment" : "A separator between date and recipients",
       "isCommentAutoGenerated" : true,
@@ -681,6 +41,10 @@
           }
         }
       }
+    },
+    "#%@" : {
+      "comment" : "A label for a color picker button. The argument is the color code.",
+      "isCommentAutoGenerated" : true
     },
     "%@" : {
       "comment" : "A recipe chip with a duration.",
@@ -2752,6 +2116,54 @@
         }
       }
     },
+    "Color" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Color"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Color"
+          }
+        }
+      }
+    },
+    "Colors" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Colors"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Colores"
+          }
+        }
+      }
+    },
+    "Coming up" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coming up"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Siguientes"
+          }
+        }
+      }
+    },
     "Completed" : {
       "localizations" : {
         "en" : {
@@ -2958,6 +2370,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No se pudo eliminar"
+          }
+        }
+      }
+    },
+    "Couldn't rename the group" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't rename the group"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudo renombrar el grupo"
           }
         }
       }
@@ -3378,7 +2806,6 @@
       }
     },
     "days" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3518,6 +2945,22 @@
         }
       }
     },
+    "Delete only this event" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete only this event"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Borrar solo este evento"
+          }
+        }
+      }
+    },
     "Delete recipes" : {
       "comment" : "Label for a permission that allows a user to delete recipes.",
       "isCommentAutoGenerated" : true,
@@ -3554,6 +2997,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Eliminar tarea"
+          }
+        }
+      }
+    },
+    "Delete the whole series" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete the whole series"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Borrar toda la serie"
           }
         }
       }
@@ -4217,6 +3676,102 @@
         }
       }
     },
+    "Every %lld days" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Every %lld days"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cada %lld días"
+          }
+        }
+      }
+    },
+    "Every %lld months" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Every %lld months"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cada %lld meses"
+          }
+        }
+      }
+    },
+    "Every %lld weeks" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Every %lld weeks"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cada %lld semanas"
+          }
+        }
+      }
+    },
+    "Every %lld years" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Every %lld years"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cada %lld años"
+          }
+        }
+      }
+    },
+    "Every day" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Every day"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cada día"
+          }
+        }
+      }
+    },
+    "Every month" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Every month"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cada mes"
+          }
+        }
+      }
+    },
     "Every time someone creates, edits or deletes something in the group, it'll show up here." : {
       "localizations" : {
         "en" : {
@@ -4229,6 +3784,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Cada vez que alguien cree, edite o elimine algo en el grupo, aparecerá aquí."
+          }
+        }
+      }
+    },
+    "Every week" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Every week"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cada semana"
+          }
+        }
+      }
+    },
+    "Every year" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Every year"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cada año"
           }
         }
       }
@@ -4746,6 +4333,22 @@
         }
       }
     },
+    "Got it" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Got it"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¡Entendido!"
+          }
+        }
+      }
+    },
     "Grams (g)" : {
       "localizations" : {
         "en" : {
@@ -4928,6 +4531,7 @@
       }
     },
     "House Tasks" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5774,6 +5378,22 @@
         }
       }
     },
+    "months" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "months"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "meses"
+          }
+        }
+      }
+    },
     "Months" : {
       "comment" : "A label for the months picker in the task creation sheet.",
       "isCommentAutoGenerated" : true,
@@ -6068,6 +5688,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nuevas tareas del hogar"
+          }
+        }
+      }
+    },
+    "New in Tasks" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New in Tasks"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Novedades en Tareas"
+          }
+        }
+      }
+    },
+    "New in the Family calendar" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New in the Family calendar"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Novedades en el calendario familiar"
           }
         }
       }
@@ -6451,6 +6103,7 @@
       }
     },
     "No task was logged on this day." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6472,6 +6125,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Aún no hay tareas hechas en este periodo."
+          }
+        }
+      }
+    },
+    "No tasks for this day." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No tasks for this day."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No hay tareas para este día."
           }
         }
       }
@@ -7117,6 +6786,38 @@
         }
       }
     },
+    "Pick from 30 colors so each event stands out on the calendar." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick from 30 colors so each event stands out on the calendar."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elige entre 30 colores para distinguir cada evento de un vistazo en el calendario."
+          }
+        }
+      }
+    },
+    "Pick from 30 colors so each task stands out on the calendar." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick from 30 colors so each task stands out on the calendar."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elige entre 30 colores para distinguir cada tarea de un vistazo en el calendario."
+          }
+        }
+      }
+    },
     "Pick up Marta" : {
       "localizations" : {
         "es" : {
@@ -7633,6 +7334,38 @@
         }
       }
     },
+    "Rename family group" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rename family group"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Renombrar grupo familiar"
+          }
+        }
+      }
+    },
+    "Rename group" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rename group"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Renombrar grupo"
+          }
+        }
+      }
+    },
     "Rename item" : {
       "localizations" : {
         "en" : {
@@ -7681,6 +7414,54 @@
         }
       }
     },
+    "Repeat" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Repeat"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Repetir"
+          }
+        }
+      }
+    },
+    "Repeat any event every few days, weeks, months or years." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Repeat any event every few days, weeks, months or years."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Repite cualquier evento cada X días, semanas, meses o años."
+          }
+        }
+      }
+    },
+    "Repeating events" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Repeating events"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eventos que se repiten"
+          }
+        }
+      }
+    },
     "Replaces \"%@\"" : {
       "localizations" : {
         "en" : {
@@ -7713,6 +7494,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Reenviar código en %lld s"
+          }
+        }
+      }
+    },
+    "Reset" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restablecer"
+          }
+        }
+      }
+    },
+    "Reset order?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset order?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Restablecer el orden?"
           }
         }
       }
@@ -7965,6 +7778,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ve el día de todos en paralelo, hora a hora."
+          }
+        }
+      }
+    },
+    "See what's to do each day, what's done, and what's coming up next." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See what's to do each day, what's done, and what's coming up next."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ve lo que toca cada día, lo que ya está hecho y lo que viene después."
           }
         }
       }
@@ -8639,6 +8468,22 @@
         }
       }
     },
+    "The cards will go back to their original order. This only changes it for you." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The cards will go back to their original order. This only changes it for you."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las tarjetas volverán a su orden original. Solo cambia para ti."
+          }
+        }
+      }
+    },
     "The end date can't be before the start date." : {
       "localizations" : {
         "en" : {
@@ -8937,6 +8782,22 @@
         }
       }
     },
+    "This is a repeating event. Deleting the whole series can't be undone." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This is a repeating event. Deleting the whole series can't be undone."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Es un evento que se repite. Borrar toda la serie no se puede deshacer."
+          }
+        }
+      }
+    },
     "This is how the rest of your family group sees you." : {
       "comment" : "A description of the name field.",
       "isCommentAutoGenerated" : true,
@@ -9012,6 +8873,38 @@
         }
       }
     },
+    "Tip: open your existing events and edit them to add a color or a repetition." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tip: open your existing events and edit them to add a color or a repetition."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Consejo: abre tus eventos de antes y edítalos para añadirles un color o una repetición."
+          }
+        }
+      }
+    },
+    "Tip: open your existing tasks and edit them to give them a color." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tip: open your existing tasks and edit them to give them a color."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Consejo: abre tus tareas de antes y edítalas para darles un color."
+          }
+        }
+      }
+    },
     "To buy (%lld)" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -9025,6 +8918,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Por comprar (%lld)"
+          }
+        }
+      }
+    },
+    "To do" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To do"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Por hacer"
           }
         }
       }
@@ -9067,6 +8976,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Al gusto"
+          }
+        }
+      }
+    },
+    "To-dos on the calendar" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To-dos on the calendar"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lo pendiente, en el calendario"
           }
         }
       }
@@ -9524,6 +9449,38 @@
         }
       }
     },
+    "until %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "until %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "hasta el %@"
+          }
+        }
+      }
+    },
+    "Until a date" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Until a date"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hasta una fecha"
+          }
+        }
+      }
+    },
     "Up to date · %lld days ago" : {
       "localizations" : {
         "en" : {
@@ -9823,6 +9780,22 @@
         }
       }
     },
+    "weeks" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "weeks"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "semanas"
+          }
+        }
+      }
+    },
     "Welcome back! Log in to get to your family group." : {
       "localizations" : {
         "es" : {
@@ -9911,6 +9884,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "¿Qué debe recordar todo el mundo?"
+          }
+        }
+      }
+    },
+    "What's new" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What's new"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Novedades"
           }
         }
       }
@@ -10233,6 +10222,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Anual o mensual, lo que mejor le encaje a tu familia."
+          }
+        }
+      }
+    },
+    "years" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "years"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "años"
           }
         }
       }
