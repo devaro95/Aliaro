@@ -59,6 +59,8 @@ struct HomeScreen: View {
     // Reordering the feature cards (custom drag, same feel as the Board).
     /// Whether the grid is in reorder mode (grips shown, taps disabled).
     @State private var isReordering = false
+    /// Confirmation before going back to the default card order.
+    @State private var showResetOrder = false
     /// Card being dragged, if any.
     @State private var draggingTab: AppTab?
     /// Working order while dragging; saved on release.
@@ -185,6 +187,12 @@ struct HomeScreen: View {
         .sensoryFeedback(.impact(weight: .light), trigger: entranceRevealed) { _, new in new }
         .sheet(isPresented: $showPaywall) {
             PaywallView()
+        }
+        .alert("Reset order?", isPresented: $showResetOrder) {
+            Button("Cancel", role: .cancel) {}
+            Button("Reset", role: .destructive, action: resetOrder)
+        } message: {
+            Text("The cards will go back to their original order. This only changes it for you.")
         }
     }
 
@@ -396,6 +404,24 @@ struct HomeScreen: View {
             sectionTitle("All features")
             Spacer()
             if visibleFeatures.count > 1 {
+                if isReordering {
+                    Button {
+                        Track.event("home_features_reset_tap")
+                        showResetOrder = true
+                    } label: {
+                        Text("Reset")
+                            .font(ALITypography.labelLarge.weight(.semibold))
+                            .foregroundStyle(ALIColors.ink)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(ALIColors.surface)
+                            .clipShape(Capsule())
+                            .overlay(Capsule().stroke(ALIColors.outline, lineWidth: 1))
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.top, 4)
+                    .transition(.opacity)
+                }
                 Button {
                     withAnimation(.easeInOut(duration: 0.2)) { isReordering.toggle() }
                     if isReordering { Track.event("home_features_reorder_tap") }
@@ -544,6 +570,14 @@ struct HomeScreen: View {
         let hidden = familySession.homeFeatureOrder.filter { !keys.contains($0) }
         familySession.setHomeFeatureOrder(keys + hidden)
         Track.event("home_features_reorder", ["features": keys.count])
+    }
+
+    /// Back to the canonical order (an empty personal order).
+    private func resetOrder() {
+        withAnimation(.easeInOut(duration: 0.25)) {
+            familySession.setHomeFeatureOrder([])
+        }
+        Track.event("home_features_reset")
     }
 
     /// Whole-feature locks, plus the Board, which opens as a blurred
