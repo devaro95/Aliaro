@@ -27,6 +27,8 @@ final class HouseTask {
     /// readable even if that person leaves the group.
     var createdByID: UUID?
     var createdByName: String?
+    /// Tag color ("RRGGBB" from `ALIItemColors`); nil = default accent.
+    var color: String?
 
     init(
         id: UUID = UUID(),
@@ -37,7 +39,8 @@ final class HouseTask {
         forEveryone: Bool = true,
         memberIDs: [UUID] = [],
         createdByID: UUID? = nil,
-        createdByName: String? = nil
+        createdByName: String? = nil,
+        color: String? = nil
     ) {
         self.id = id
         self.name = name
@@ -48,6 +51,7 @@ final class HouseTask {
         self.memberIDs = memberIDs
         self.createdByID = createdByID
         self.createdByName = createdByName
+        self.color = color
     }
 
     /// Whether the task is assigned to this member (all tasks are, unless

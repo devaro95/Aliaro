@@ -23,6 +23,12 @@ struct AddFamilyEventSheet: View {
     @State private var forEveryone = true
     @State private var isAllDay = false
     @State private var selectedMemberIDs: Set<UUID> = []
+    @State private var repeats = false
+    @State private var repeatEvery = 1
+    @State private var repeatUnit: FamilyEventRepeatUnit = .week
+    @State private var color: String?
+    @State private var hasUntil = false
+    @State private var repeatUntil = Calendar.current.date(byAdding: .month, value: 1, to: .now) ?? .now
 
     private static let emojiOptions = [
         ALIIcon.party, ALIIcon.cake, ALIIcon.plane, ALIIcon.beach, ALIIcon.xmas,
@@ -58,6 +64,7 @@ struct AddFamilyEventSheet: View {
 
                     attendeesCard
                     emojiCard
+                    ALIColorPickerCard(selection: $color, enabled: canEdit)
                     datesCard
 
                     if canEdit {
@@ -183,6 +190,56 @@ struct AddFamilyEventSheet: View {
                 }
                 .tint(ALIColors.familyAccent)
 
+                Toggle(isOn: Binding(get: { repeats }, set: { value in
+                    withAnimation { repeats = value }
+                    if value { keepEndOnStartDay() }
+                })) {
+                    Text("Repeat")
+                        .font(ALITypography.bodyLarge)
+                        .foregroundStyle(ALIColors.ink)
+                }
+                .tint(ALIColors.familyAccent)
+
+                if repeats {
+                    HStack(spacing: 10) {
+                        Text("Every")
+                            .font(ALITypography.bodyMedium)
+                            .foregroundStyle(ALIColors.ink)
+                        Stepper(value: $repeatEvery, in: 1...99) {
+                            Text("\(repeatEvery)")
+                                .font(ALITypography.bodyLarge)
+                                .foregroundStyle(ALIColors.ink)
+                                .monospacedDigit()
+                        }
+                        .fixedSize()
+                        Picker("", selection: $repeatUnit) {
+                            ForEach(FamilyEventRepeatUnit.allCases) { unit in
+                                Text(unit.pickerLabel).tag(unit)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        .tint(ALIColors.ink)
+                        .labelsHidden()
+                        Spacer(minLength: 0)
+                    }
+                    Toggle(isOn: $hasUntil.animation()) {
+                        Text("Until a date")
+                            .font(ALITypography.bodyMedium)
+                            .foregroundStyle(ALIColors.ink)
+                    }
+                    .tint(ALIColors.familyAccent)
+                    if hasUntil {
+                        DatePicker("", selection: $repeatUntil, in: Calendar.current.startOfDay(for: startDate)..., displayedComponents: [.date])
+                            .datePickerStyle(.compact)
+                            .labelsHidden()
+                    }
+                    Text(repeatSummary)
+                        .font(ALITypography.labelLarge)
+                        .foregroundStyle(ALIColors.mutedInk)
+                }
+
+                Divider().overlay(ALIColors.outline)
+
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Starts")
                         .font(ALITypography.bodyMedium)
@@ -191,17 +248,23 @@ struct AddFamilyEventSheet: View {
                         .datePickerStyle(.compact)
                         .labelsHidden()
                         .onChange(of: startDate) { _, newValue in
+                            if repeats { keepEndOnStartDay() }
                             if endDate < newValue { endDate = newValue }
+                            if repeatUntil < newValue { repeatUntil = newValue }
                         }
                 }
 
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Ends")
-                        .font(ALITypography.bodyMedium)
-                        .foregroundStyle(ALIColors.ink)
-                    DatePicker("", selection: $endDate, in: minEndDate..., displayedComponents: pickerComponents)
-                        .datePickerStyle(.compact)
-                        .labelsHidden()
+                // Repetitions last a single day: only the end time is chosen
+                // (nothing for all-day ones); the series end goes below.
+                if !(repeats && isAllDay) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Ends")
+                            .font(ALITypography.bodyMedium)
+                            .foregroundStyle(ALIColors.ink)
+                        DatePicker("", selection: $endDate, in: minEndDate..., displayedComponents: repeats ? [.hourAndMinute] : pickerComponents)
+                            .datePickerStyle(.compact)
+                            .labelsHidden()
+                    }
                 }
 
                 if !isAllDay && endDate < startDate {
@@ -211,6 +274,24 @@ struct AddFamilyEventSheet: View {
                 }
             }
         }
+    }
+
+    /// "Every 5 days · until 24 Nov" / "Every week".
+    private var repeatSummary: String {
+        let every = repeatUnit.everyLabel(repeatEvery)
+        guard hasUntil else { return every }
+        let f = DateFormatter()
+        f.setLocalizedDateFormatFromTemplate("dMMM")
+        return "\(every) · " + String(localized: "until \(f.string(from: repeatUntil))")
+    }
+
+    /// Moves the end to the start's day, keeping its time (a repetition
+    /// lasts a single day); at least an hour after the start.
+    private func keepEndOnStartDay() {
+        let calendar = Calendar.current
+        let t = calendar.dateComponents([.hour, .minute], from: endDate)
+        let sameDay = calendar.date(bySettingHour: t.hour ?? 0, minute: t.minute ?? 0, second: 0, of: startDate) ?? endDate
+        endDate = sameDay > startDate ? sameDay : startDate.addingTimeInterval(3600)
     }
 
     private var pickerComponents: DatePickerComponents {
@@ -232,6 +313,12 @@ struct AddFamilyEventSheet: View {
             forEveryone = event.forEveryone
             selectedMemberIDs = Set(event.memberIDs)
             isAllDay = event.isAllDay
+            repeats = event.isRepeating
+            repeatEvery = max(event.repeatInterval, 1)
+            repeatUnit = event.repeatUnitValue
+            color = event.color
+            hasUntil = event.repeatUntil != nil
+            if let until = event.repeatUntil { repeatUntil = until }
         } else if let day = defaultDay {
             let calendar = Calendar.current
             startDate = calendar.date(bySettingHour: 9, minute: 0, second: 0, of: day) ?? day
@@ -248,15 +335,27 @@ struct AddFamilyEventSheet: View {
         // All-day: first day 00:00 → last day 23:59:59 (local time).
         let calendar = Calendar.current
         let finalStart = isAllDay ? calendar.startOfDay(for: startDate) : startDate
-        let finalEnd = isAllDay
+        var finalEnd = isAllDay
             ? calendar.startOfDay(for: max(endDate, startDate)).addingTimeInterval(86_399)
             : endDate
+        if repeats {
+            // A repetition lasts a single day: same day as the start.
+            if isAllDay {
+                finalEnd = calendar.startOfDay(for: startDate).addingTimeInterval(86_399)
+            } else {
+                let t = calendar.dateComponents([.hour, .minute], from: endDate)
+                let sameDay = calendar.date(bySettingHour: t.hour ?? 0, minute: t.minute ?? 0, second: 0, of: finalStart) ?? finalStart
+                finalEnd = sameDay > finalStart ? sameDay : finalStart.addingTimeInterval(3600)
+            }
+        }
+        let finalUntil: Date? = repeats && hasUntil ? calendar.startOfDay(for: max(repeatUntil, finalStart)) : nil
         Track.event(wasEditing ? "calendar_event_edited" : "calendar_event_new", [
             "emoji": emoji,
             "has_note": !trimmedNote.isEmpty,
             "for_everyone": forEveryone,
             "attendees": memberIDs.count,
             "all_day": isAllDay,
+            "repeat": repeats ? "\(repeatEvery)_\(repeatUnit.rawValue)" : "none",
             "multi_day": !Calendar.current.isDate(startDate, inSameDayAs: endDate),
             "duration_hours": Int(endDate.timeIntervalSince(startDate) / 3600),
             "days_ahead": Calendar.current.dateComponents([.day], from: .now, to: startDate).day ?? 0
@@ -272,6 +371,10 @@ struct AddFamilyEventSheet: View {
             existing.forEveryone = forEveryone
             existing.memberIDs = memberIDs
             existing.isAllDay = isAllDay
+            existing.repeatInterval = repeats ? repeatEvery : 0
+            existing.repeatUnit = repeatUnit.rawValue
+            existing.color = color
+            existing.repeatUntil = finalUntil
             event = existing
         } else {
             event = FamilyEvent(
@@ -284,7 +387,11 @@ struct AddFamilyEventSheet: View {
                 createdByName: familySession.memberID.flatMap { modelContext.familyMemberName(id: $0) },
                 forEveryone: forEveryone,
                 memberIDs: memberIDs,
-                isAllDay: isAllDay
+                isAllDay: isAllDay,
+                repeatInterval: repeats ? repeatEvery : 0,
+                repeatUnit: repeatUnit.rawValue,
+                color: color,
+                repeatUntil: finalUntil
             )
             modelContext.insert(event)
         }

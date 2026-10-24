@@ -40,8 +40,15 @@ struct FamilyCalendarMonthView: View {
     /// The multi-day event (if any) that covers that date. Single-day
     /// events don't count here — those are marked with a dot, not the
     /// band.
-    private func spanningEvent(on day: Date) -> FamilyEvent? {
-        events.first { event in
+    /// Events (and repetitions) overlapping the visible grid.
+    private var gridEvents: [FamilyEvent] {
+        guard let first = gridDays.first, let last = gridDays.last,
+              let end = calendar.date(byAdding: .day, value: 1, to: last) else { return [] }
+        return events.expanded(in: DateInterval(start: first, end: end))
+    }
+
+    private func spanningEvent(on day: Date, in gridEvents: [FamilyEvent]) -> FamilyEvent? {
+        gridEvents.first { event in
             let start = calendar.startOfDay(for: event.startDate)
             let end = calendar.startOfDay(for: event.endDate)
             guard start != end else { return false }
@@ -51,8 +58,8 @@ struct FamilyCalendarMonthView: View {
     }
 
     /// Events that occur entirely on that day (for the little dot below the number).
-    private func singleDayEvents(on day: Date) -> [FamilyEvent] {
-        events.filter { event in
+    private func singleDayEvents(on day: Date, in gridEvents: [FamilyEvent]) -> [FamilyEvent] {
+        gridEvents.filter { event in
             let start = calendar.startOfDay(for: event.startDate)
             let end = calendar.startOfDay(for: event.endDate)
             return start == end && calendar.isDate(day, inSameDayAs: event.startDate)
@@ -62,8 +69,8 @@ struct FamilyCalendarMonthView: View {
     /// The id of the multi-day event occupying each grid cell, in the
     /// same order as `gridDays` — this way we know whether the previous
     /// or next cell belongs to the same event to join the band between them.
-    private var spanningEventIDs: [UUID?] {
-        gridDays.map { spanningEvent(on: $0)?.id }
+    private func spanningEventIDs(in gridEvents: [FamilyEvent]) -> [UUID?] {
+        gridDays.map { spanningEvent(on: $0, in: gridEvents)?.id }
     }
 
     private func isInDisplayedMonth(_ day: Date) -> Bool {
@@ -118,17 +125,20 @@ struct FamilyCalendarMonthView: View {
     }
 
     private var dayGrid: some View {
-        let ids = spanningEventIDs
+        // Expanded once per render (repetitions included), then shared by every cell.
+        let events = gridEvents
+        let ids = spanningEventIDs(in: events)
         return LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 7), spacing: 8) {
             ForEach(Array(gridDays.enumerated()), id: \.offset) { index, day in
-                dayCell(day, index: index, spanningIDs: ids)
+                dayCell(day, index: index, spanningIDs: ids, events: events)
             }
         }
     }
 
-    private func dayCell(_ day: Date, index: Int, spanningIDs: [UUID?]) -> some View {
-        let singleEvents = singleDayEvents(on: day)
-        let spanning = spanningEventIDs.isEmpty ? nil : spanningIDs[index]
+    private func dayCell(_ day: Date, index: Int, spanningIDs: [UUID?], events: [FamilyEvent]) -> some View {
+        let singleEvents = singleDayEvents(on: day, in: events)
+        let spanning = spanningIDs.isEmpty ? nil : spanningIDs[index]
+        let spanningColor = events.first { $0.id == spanning }?.color
         let isToday = calendar.isDateInToday(day)
         let isSelected = selectedDay.map { calendar.isDate($0, inSameDayAs: day) } ?? false
         let inMonth = isInDisplayedMonth(day)
@@ -158,19 +168,19 @@ struct FamilyCalendarMonthView: View {
                     .padding(.vertical, 2)
                     .frame(maxWidth: .infinity)
                     .background(
-                        rangeBackground(isStart: isRangeStart, isEnd: isRangeEnd, isActive: spanning != nil)
+                        rangeBackground(isStart: isRangeStart, isEnd: isRangeEnd, isActive: spanning != nil, color: spanningColor)
                     )
 
                 HStack(spacing: 3) {
                     if singleEvents.isEmpty {
-                        Color.clear.frame(width: 4, height: 4)
+                        Color.clear.frame(width: 5, height: 5)
                     } else {
-                        ForEach(0..<min(singleEvents.count, 3), id: \.self) { _ in
-                            Circle().fill(ALIColors.familyAccent).frame(width: 4, height: 4)
+                        ForEach(Array(singleEvents.prefix(3).enumerated()), id: \.offset) { _, event in
+                            Circle().fill(ALIItemColors.color(event.color, fallback: ALIColors.familyAccent)).frame(width: 5, height: 5)
                         }
                     }
                 }
-                .frame(height: 4)
+                .frame(height: 5)
             }
             .padding(.vertical, 3)
             .frame(maxWidth: .infinity)
@@ -185,7 +195,7 @@ struct FamilyCalendarMonthView: View {
     /// event's actual end (or the end of the row, if the event continues
     /// into the following week).
     @ViewBuilder
-    private func rangeBackground(isStart: Bool, isEnd: Bool, isActive: Bool) -> some View {
+    private func rangeBackground(isStart: Bool, isEnd: Bool, isActive: Bool, color: String?) -> some View {
         if isActive {
             UnevenRoundedRectangle(
                 topLeadingRadius: isStart ? 15 : 0,
@@ -193,7 +203,7 @@ struct FamilyCalendarMonthView: View {
                 bottomTrailingRadius: isEnd ? 15 : 0,
                 topTrailingRadius: isEnd ? 15 : 0
             )
-            .fill(ALIColors.familyAccent.opacity(0.32))
+            .fill(ALIItemColors.color(color, fallback: ALIColors.familyAccent).opacity(0.32))
             .padding(.leading, isStart ? 0 : -2)
             .padding(.trailing, isEnd ? 0 : -2)
         }

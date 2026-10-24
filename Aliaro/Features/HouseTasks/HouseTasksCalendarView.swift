@@ -1,9 +1,11 @@
 import SwiftUI
 
 /// Calendar view for "House Tasks": navigates month by month and
-/// highlights the days a task was logged as done. Tapping a day shows
-/// the detail below of what was marked on that date.
+/// highlights the days with tasks to do (scheduled date) and the days a
+/// task was logged as done. Tapping a day shows below what's to do and
+/// what was done on that date.
 struct HouseTasksCalendarView: View {
+    var tasks: [HouseTask] = []
     let logs: [HouseTaskLog]
 
     @State private var displayedMonth: Date = Calendar.current.startOfDay(for: .now)
@@ -39,6 +41,66 @@ struct HouseTasksCalendarView: View {
         logs.filter { calendar.isDate($0.completedAt, inSameDayAs: day) }
     }
 
+    /// Next date the task is due: its pending scheduled date; for recurring
+    /// tasks, last "done" + interval (or the schedule, or today if never done).
+    private func nextDueDate(for task: HouseTask) -> Date? {
+        let lastLog = logs.first { $0.taskID == task.id }
+        if let pending = task.pendingSchedule(lastLog: lastLog) { return calendar.startOfDay(for: pending) }
+        guard let interval = task.intervalDays, interval > 0 else { return nil }
+        if let lastLog {
+            return calendar.date(byAdding: .day, value: interval, to: calendar.startOfDay(for: lastLog.completedAt))
+        }
+        return calendar.startOfDay(for: .now)
+    }
+
+    /// Whether the task has to be done on `day`: its next due date and, for
+    /// recurring tasks, every following repetition (from today if overdue).
+    private func isDue(_ task: HouseTask, on day: Date) -> Bool {
+        guard let next = nextDueDate(for: task) else { return false }
+        let target = calendar.startOfDay(for: day)
+        if target == next { return true }
+        guard let interval = task.intervalDays, interval > 0 else { return false }
+        let base = max(next, calendar.startOfDay(for: .now))
+        guard target >= base, let diff = calendar.dateComponents([.day], from: base, to: target).day else { return false }
+        return diff % interval == 0
+    }
+
+    /// Tag color of a task (default accent when it has none).
+    private func taskColor(_ hex: String?) -> Color {
+        ALIItemColors.color(hex, fallback: ALIColors.houseTasksAccent)
+    }
+
+    /// Color of the task a "done" log belongs to.
+    private func logColor(_ log: HouseTaskLog) -> Color {
+        taskColor(tasks.first { $0.id == log.taskID }?.color)
+    }
+
+    private func pendingTasks(on day: Date) -> [HouseTask] {
+        tasks.filter { isDue($0, on: day) }
+    }
+
+    /// First due date after today of each task (soonest first, max 5): the
+    /// "Coming up" reminder shown under today.
+    private var upcomingTasks: [(task: HouseTask, date: Date)] {
+        let today = calendar.startOfDay(for: .now)
+        let items: [(task: HouseTask, date: Date)] = tasks.compactMap { task in
+            guard let next = nextDueDate(for: task) else { return nil }
+            if next > today { return (task, next) }
+            guard let interval = task.intervalDays, interval > 0,
+                  let date = calendar.date(byAdding: .day, value: interval, to: today) else { return nil }
+            return (task, date)
+        }
+        return Array(items.sorted { $0.date < $1.date }.prefix(5))
+    }
+
+    /// "Tomorrow" or "Mon 27".
+    private func upcomingLabel(_ date: Date) -> String {
+        if calendar.isDateInTomorrow(date) { return String(localized: "Tomorrow") }
+        let f = DateFormatter()
+        f.setLocalizedDateFormatFromTemplate("EEEd")
+        return f.string(from: date).capitalized
+    }
+
     private func isInDisplayedMonth(_ day: Date) -> Bool {
         calendar.isDate(day, equalTo: displayedMonth, toGranularity: .month)
     }
@@ -60,6 +122,9 @@ struct HouseTasksCalendarView: View {
 
             if let selectedDay {
                 selectedDaySummary(for: selectedDay)
+                if calendar.isDateInToday(selectedDay) {
+                    upcomingSummary
+                }
             }
         }
     }
@@ -111,12 +176,13 @@ struct HouseTasksCalendarView: View {
 
     private func dayCell(_ day: Date) -> some View {
         let dayLogs = logs(on: day)
+        let dayPending = pendingTasks(on: day)
         let isToday = calendar.isDateInToday(day)
         let isSelected = selectedDay.map { calendar.isDate($0, inSameDayAs: day) } ?? false
         let inMonth = isInDisplayedMonth(day)
 
         return Button {
-            Track.event("calendar_day_tap", ["screen": "house_tasks_calendar", "has_items": !dayLogs.isEmpty, "is_today": isToday])
+            Track.event("calendar_day_tap", ["screen": "house_tasks_calendar", "has_items": !dayLogs.isEmpty || !dayPending.isEmpty, "is_today": isToday])
             withAnimation(.easeInOut(duration: 0.15)) { selectedDay = day }
         } label: {
             VStack(spacing: 4) {
@@ -134,16 +200,22 @@ struct HouseTasksCalendarView: View {
                         Circle().stroke(isToday && !isSelected ? ALIColors.houseTasksAccent : .clear, lineWidth: 1.5)
                     )
 
+                // Hollow dots = to do, filled = done (max 3 in total).
                 HStack(spacing: 3) {
-                    if dayLogs.isEmpty {
-                        Color.clear.frame(width: 4, height: 4)
+                    let pendingDots = min(dayPending.count, 3)
+                    let doneDots = min(dayLogs.count, 3 - pendingDots)
+                    if pendingDots + doneDots == 0 {
+                        Color.clear.frame(width: 5, height: 5)
                     } else {
-                        ForEach(0..<min(dayLogs.count, 3), id: \.self) { _ in
-                            Circle().fill(ALIColors.houseTasksAccent).frame(width: 4, height: 4)
+                        ForEach(Array(dayPending.prefix(pendingDots).enumerated()), id: \.offset) { _, task in
+                            Circle().stroke(taskColor(task.color), lineWidth: 1.2).frame(width: 5, height: 5)
+                        }
+                        ForEach(Array(dayLogs.prefix(doneDots).enumerated()), id: \.offset) { _, log in
+                            Circle().fill(logColor(log)).frame(width: 5, height: 5)
                         }
                     }
                 }
-                .frame(height: 4)
+                .frame(height: 5)
             }
             .frame(maxWidth: .infinity)
         }
@@ -152,6 +224,7 @@ struct HouseTasksCalendarView: View {
 
     private func selectedDaySummary(for day: Date) -> some View {
         let dayLogs = logs(on: day)
+        let dayPending = pendingTasks(on: day)
         let formatter: DateFormatter = {
             let f = DateFormatter()
             f.dateFormat = "EEEE, MMMM d"
@@ -160,30 +233,79 @@ struct HouseTasksCalendarView: View {
 
         return ALICard {
             VStack(alignment: .leading, spacing: 12) {
-                Text(formatter.string(from: day).capitalized)
+                Text(calendar.isDateInToday(day) ? String(localized: "Today") : formatter.string(from: day).capitalized)
                     .font(ALITypography.titleLarge)
                     .foregroundStyle(ALIColors.ink)
 
-                if dayLogs.isEmpty {
-                    Text("No task was logged on this day.")
+                if dayLogs.isEmpty && dayPending.isEmpty {
+                    Text("No tasks for this day.")
                         .font(ALITypography.bodyMedium)
                         .foregroundStyle(ALIColors.mutedInk)
                 } else {
-                    VStack(spacing: 0) {
-                        ForEach(Array(dayLogs.enumerated()), id: \.element.id) { index, log in
-                            HStack(spacing: 10) {
-                                Circle().fill(ALIColors.success).frame(width: 8, height: 8)
-                                Text(log.taskName)
-                                    .font(ALITypography.bodyLarge)
-                                    .foregroundStyle(ALIColors.ink)
-                                Spacer()
-                            }
-                            .padding(.vertical, 8)
-                            if index < dayLogs.count - 1 {
-                                Divider().overlay(ALIColors.outline)
-                            }
+                    if !dayPending.isEmpty {
+                        daySection(title: "To do", items: dayPending.map { ($0.name, taskColor($0.color)) }, done: false)
+                    }
+                    if !dayLogs.isEmpty {
+                        daySection(title: "Done", items: dayLogs.map { ($0.taskName, logColor($0)) }, done: true)
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var upcomingSummary: some View {
+        let items = upcomingTasks
+        if !items.isEmpty {
+            ALICard {
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("Coming up")
+                        .font(ALITypography.labelLarge)
+                        .foregroundStyle(ALIColors.mutedInk)
+                        .padding(.bottom, 2)
+                    ForEach(Array(items.enumerated()), id: \.offset) { index, item in
+                        HStack(spacing: 10) {
+                            Circle().stroke(taskColor(item.task.color), lineWidth: 2).frame(width: 10, height: 10)
+                            Text(item.task.name)
+                                .font(ALITypography.bodyLarge)
+                                .foregroundStyle(ALIColors.ink)
+                            Spacer()
+                            Text(upcomingLabel(item.date))
+                                .font(ALITypography.labelLarge)
+                                .foregroundStyle(ALIColors.mutedInk)
+                        }
+                        .padding(.vertical, 8)
+                        if index < items.count - 1 {
+                            Divider().overlay(ALIColors.outline)
                         }
                     }
+                }
+            }
+        }
+    }
+
+    private func daySection(title: LocalizedStringKey, items: [(name: String, color: Color)], done: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text(title)
+                .font(ALITypography.labelLarge)
+                .foregroundStyle(ALIColors.mutedInk)
+                .padding(.bottom, 2)
+            ForEach(Array(items.enumerated()), id: \.offset) { index, item in
+                HStack(spacing: 10) {
+                    if done {
+                        Circle().fill(item.color).frame(width: 10, height: 10)
+                    } else {
+                        Circle().stroke(item.color, lineWidth: 2).frame(width: 10, height: 10)
+                    }
+                    Text(item.name)
+                        .font(ALITypography.bodyLarge)
+                        .foregroundStyle(done ? ALIColors.mutedInk : ALIColors.ink)
+                        .strikethrough(done, color: ALIColors.mutedInk)
+                    Spacer()
+                }
+                .padding(.vertical, 8)
+                if index < items.count - 1 {
+                    Divider().overlay(ALIColors.outline)
                 }
             }
         }

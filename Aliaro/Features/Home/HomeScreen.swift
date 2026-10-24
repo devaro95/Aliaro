@@ -574,7 +574,7 @@ struct HomeScreen: View {
             return count == 1 ? String(localized: "1 task") : String(localized: "\(count) tasks")
         case .familyCalendar:
             guard let week = Calendar.current.dateInterval(of: .weekOfYear, for: .now) else { return nil }
-            let count = events.filter { $0.startDate < week.end && $0.endDate >= week.start }.count
+            let count = events.expanded(in: week).count
             if count == 0 { return String(localized: "No events this week") }
             return count == 1 ? String(localized: "1 event this week") : String(localized: "\(count) events this week")
         case .reminders:
@@ -646,7 +646,9 @@ struct HomeScreen: View {
 
     private var calendarSummary: HomeSummary? {
         let now = Date.now
-        guard let next = events.first(where: { $0.endDate >= now }) else { return nil }
+        guard let next = events
+            .compactMap({ event in event.nextOccurrence(from: now).map { event.occurrenceCopy(start: $0.start, end: $0.end) } })
+            .min(by: { $0.startDate < $1.startDate }) else { return nil }
         let when: String
         if next.isAllDay {
             when = next.startDate <= now ? String(localized: "Today") : dayLabel(for: next.startDate)

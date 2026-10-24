@@ -21,6 +21,7 @@ struct AddHouseTaskSheet: View {
     @State private var reminderEnabled = false
     @State private var intervalMonths = 0
     @State private var intervalDaysPart = 7
+    @State private var color: String?
 
     private var isEditing: Bool { taskToEdit != nil }
 
@@ -53,6 +54,7 @@ struct AddHouseTaskSheet: View {
                     scheduleCard
                     assigneesCard
                     intervalCard
+                    ALIColorPickerCard(selection: $color)
 
                     ALIPrimaryButton(text: isEditing ? "Save" : "Create task", enabled: canSave, accent: ALIColors.houseTasksAccent) {
                         save()
@@ -79,6 +81,7 @@ struct AddHouseTaskSheet: View {
                     if let date = task.scheduledAt { scheduledAt = date }
                     forEveryone = task.forEveryone
                     selectedMemberIDs = Set(task.memberIDs)
+                    color = task.color
                 }
             }
         }
@@ -227,6 +230,7 @@ struct AddHouseTaskSheet: View {
             existing.scheduledAt = schedule
             existing.forEveryone = forEveryone
             existing.memberIDs = assignees
+            existing.color = color
             task = existing
         } else {
             task = HouseTask(
@@ -236,7 +240,8 @@ struct AddHouseTaskSheet: View {
                 forEveryone: forEveryone,
                 memberIDs: assignees,
                 createdByID: familySession.memberID,
-                createdByName: familySession.memberID.flatMap { modelContext.familyMemberName(id: $0) }
+                createdByName: familySession.memberID.flatMap { modelContext.familyMemberName(id: $0) },
+                color: color
             )
             modelContext.insert(task)
         }
