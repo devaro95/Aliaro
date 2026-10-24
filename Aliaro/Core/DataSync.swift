@@ -549,13 +549,21 @@ final class AppDataSyncCoordinator: ObservableObject {
 
     private func startMealPlanEntries(familyID: UUID, modelContext: ModelContext) async {
         do {
+            // First launch of this version in the family: the server fills
+            // the current week with the weekly template the family has today
+            // (idempotent, a no-op afterwards). See `meal_plan_activate`.
+            struct ActivateParams: Encodable { let p_family: UUID }
+            // Best-effort: if it fails it simply runs again on the next launch.
+            _ = try? await supabase.rpc("meal_plan_activate", params: ActivateParams(p_family: familyID)).execute()
+
             let remote = try await mealPlanEntries.fetchAll(familyID: familyID)
             for r in remote { applyMealPlanEntry(r, modelContext: modelContext) }
-            // Rows migrated from the old weekday model that the server
-            // didn't send back (so they never got a real date).
-            let undated = Date.distantPast
-            let stale = FetchDescriptor<MealPlanEntry>(predicate: #Predicate { $0.date == undated })
-            for entry in (try? modelContext.fetch(stale)) ?? [] { modelContext.delete(entry) }
+            // Anything not on the server anymore (deleted while the app was
+            // closed, or rows from the old weekday model) goes away locally.
+            let remoteIDs = Set(remote.map(\.id))
+            for entry in (try? modelContext.fetch(FetchDescriptor<MealPlanEntry>())) ?? [] where !remoteIDs.contains(entry.id) {
+                modelContext.delete(entry)
+            }
         } catch {
             lastError = error.localizedDescription
         }
