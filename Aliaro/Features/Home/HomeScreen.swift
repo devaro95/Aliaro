@@ -59,6 +59,8 @@ struct HomeScreen: View {
     // Reordering the feature cards (custom drag, same feel as the Board).
     /// Whether the grid is in reorder mode (grips shown, taps disabled).
     @State private var isReordering = false
+    /// Confirmation before going back to the default card order.
+    @State private var showResetOrder = false
     /// Card being dragged, if any.
     @State private var draggingTab: AppTab?
     /// Working order while dragging; saved on release.
@@ -185,6 +187,12 @@ struct HomeScreen: View {
         .sensoryFeedback(.impact(weight: .light), trigger: entranceRevealed) { _, new in new }
         .sheet(isPresented: $showPaywall) {
             PaywallView()
+        }
+        .alert("Reset order?", isPresented: $showResetOrder) {
+            Button("Cancel", role: .cancel) {}
+            Button("Reset", role: .destructive, action: resetOrder)
+        } message: {
+            Text("The cards will go back to their original order. This only changes it for you.")
         }
     }
 
@@ -396,6 +404,24 @@ struct HomeScreen: View {
             sectionTitle("All features")
             Spacer()
             if visibleFeatures.count > 1 {
+                if isReordering {
+                    Button {
+                        Track.event("home_features_reset_tap")
+                        showResetOrder = true
+                    } label: {
+                        Text("Reset")
+                            .font(ALITypography.labelLarge.weight(.semibold))
+                            .foregroundStyle(ALIColors.ink)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(ALIColors.surface)
+                            .clipShape(Capsule())
+                            .overlay(Capsule().stroke(ALIColors.outline, lineWidth: 1))
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.top, 4)
+                    .transition(.opacity)
+                }
                 Button {
                     withAnimation(.easeInOut(duration: 0.2)) { isReordering.toggle() }
                     if isReordering { Track.event("home_features_reorder_tap") }
@@ -546,6 +572,14 @@ struct HomeScreen: View {
         Track.event("home_features_reorder", ["features": keys.count])
     }
 
+    /// Back to the canonical order (an empty personal order).
+    private func resetOrder() {
+        withAnimation(.easeInOut(duration: 0.25)) {
+            familySession.setHomeFeatureOrder([])
+        }
+        Track.event("home_features_reset")
+    }
+
     /// Whole-feature locks, plus the Board, which opens as a blurred
     /// preview when locked but still reads as premium from the grid.
     private func showsCrown(_ tab: AppTab) -> Bool {
@@ -574,7 +608,7 @@ struct HomeScreen: View {
             return count == 1 ? String(localized: "1 task") : String(localized: "\(count) tasks")
         case .familyCalendar:
             guard let week = Calendar.current.dateInterval(of: .weekOfYear, for: .now) else { return nil }
-            let count = events.filter { $0.startDate < week.end && $0.endDate >= week.start }.count
+            let count = events.expanded(in: week).count
             if count == 0 { return String(localized: "No events this week") }
             return count == 1 ? String(localized: "1 event this week") : String(localized: "\(count) events this week")
         case .reminders:
@@ -646,7 +680,9 @@ struct HomeScreen: View {
 
     private var calendarSummary: HomeSummary? {
         let now = Date.now
-        guard let next = events.first(where: { $0.endDate >= now }) else { return nil }
+        guard let next = events
+            .compactMap({ event in event.nextOccurrence(from: now).map { event.occurrenceCopy(start: $0.start, end: $0.end) } })
+            .min(by: { $0.startDate < $1.startDate }) else { return nil }
         let when: String
         if next.isAllDay {
             when = next.startDate <= now ? String(localized: "Today") : dayLabel(for: next.startDate)

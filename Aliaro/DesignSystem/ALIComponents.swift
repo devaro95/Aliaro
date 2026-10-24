@@ -519,3 +519,180 @@ struct ALIAvatarButton: View {
         .buttonStyle(.plain)
     }
 }
+
+/// Card with the 30 item colors (see `ALIItemColors`). Tapping the selected
+/// one again clears it (back to the default accent).
+struct ALIColorPickerCard: View {
+    @Binding var selection: String?
+    var enabled: Bool = true
+
+    var body: some View {
+        ALICard {
+            VStack(alignment: .leading, spacing: 14) {
+                Text("Color")
+                    .font(ALITypography.labelLarge)
+                    .foregroundStyle(ALIColors.mutedInk)
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 6), spacing: 10) {
+                    ForEach(ALIItemColors.palette, id: \.self) { hex in
+                        let isSelected = selection == hex
+                        Button {
+                            selection = isSelected ? nil : hex
+                        } label: {
+                            Circle()
+                                .fill(ALIItemColors.color(hex, fallback: .clear))
+                                .frame(width: 34, height: 34)
+                                .overlay(Circle().stroke(ALIColors.ink, lineWidth: isSelected ? 2.5 : 0).padding(-4))
+                                .overlay {
+                                    if isSelected {
+                                        Image(systemName: "checkmark")
+                                            .font(.system(size: 13, weight: .bold))
+                                            .foregroundStyle(.white)
+                                    }
+                                }
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(!enabled)
+                        .accessibilityLabel("#\(hex)")
+                    }
+                }
+                .padding(.vertical, 4)
+            }
+        }
+    }
+}
+
+// MARK: - What's new
+
+struct ALIWhatsNewItem: Identifiable {
+    let id = UUID()
+    let systemImage: String
+    let title: LocalizedStringKey
+    let text: LocalizedStringKey
+}
+
+/// One-off "What's new" sheet: sparkle header, a strip of the item colors,
+/// one row per feature and a tip at the bottom.
+struct ALIWhatsNewSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    let title: LocalizedStringKey
+    let accent: Color
+    let items: [ALIWhatsNewItem]
+    let tip: LocalizedStringKey
+
+    @State private var appeared = false
+
+    private let stripColors = Array(ALIItemColors.palette.enumerated().filter { $0.offset % 3 == 0 }.map(\.element))
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 24) {
+                VStack(spacing: 14) {
+                    ZStack {
+                        Circle()
+                            .fill(LinearGradient(colors: [accent, accent.opacity(0.45)], startPoint: .topLeading, endPoint: .bottomTrailing))
+                            .frame(width: 84, height: 84)
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 36, weight: .semibold))
+                            .foregroundStyle(ALIColors.onAccent)
+                            .symbolEffect(.bounce, value: appeared)
+                    }
+                    .scaleEffect(appeared ? 1 : 0.6)
+                    .opacity(appeared ? 1 : 0)
+
+                    Text("What's new")
+                        .font(ALITypography.labelLarge)
+                        .foregroundStyle(ALIColors.mutedInk)
+                        .textCase(.uppercase)
+                    Text(title)
+                        .font(.system(size: 24, weight: .bold, design: .rounded))
+                        .foregroundStyle(ALIColors.ink)
+                        .multilineTextAlignment(.center)
+
+                    HStack(spacing: 6) {
+                        ForEach(Array(stripColors.enumerated()), id: \.offset) { index, hex in
+                            Circle()
+                                .fill(ALIItemColors.color(hex, fallback: accent))
+                                .frame(width: 14, height: 14)
+                                .scaleEffect(appeared ? 1 : 0)
+                                .animation(.spring(response: 0.4, dampingFraction: 0.55).delay(0.15 + Double(index) * 0.05), value: appeared)
+                        }
+                    }
+                }
+                .padding(.top, 12)
+
+                VStack(spacing: 12) {
+                    ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
+                        ALICard {
+                            HStack(alignment: .top, spacing: 14) {
+                                Image(systemName: item.systemImage)
+                                    .font(.system(size: 18, weight: .semibold))
+                                    .foregroundStyle(ALIColors.onAccent)
+                                    .frame(width: 42, height: 42)
+                                    .background(accent)
+                                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(item.title)
+                                        .font(ALITypography.bodyLarge.weight(.semibold))
+                                        .foregroundStyle(ALIColors.ink)
+                                    Text(item.text)
+                                        .font(ALITypography.bodyMedium)
+                                        .foregroundStyle(ALIColors.mutedInk)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+                                Spacer(minLength: 0)
+                            }
+                        }
+                        .offset(y: appeared ? 0 : 24)
+                        .opacity(appeared ? 1 : 0)
+                        .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.25 + Double(index) * 0.1), value: appeared)
+                    }
+                }
+
+                HStack(alignment: .top, spacing: 10) {
+                    Image(systemName: "lightbulb.fill")
+                        .foregroundStyle(ALIColors.sun)
+                    Text(tip)
+                        .font(ALITypography.bodyMedium)
+                        .foregroundStyle(ALIColors.ink)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 0)
+                }
+                .padding(14)
+                .background(ALIColors.sun.opacity(0.18))
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .opacity(appeared ? 1 : 0)
+                .animation(.easeOut(duration: 0.4).delay(0.5), value: appeared)
+
+                ALIPrimaryButton(text: "Got it", accent: accent) { dismiss() }
+            }
+            .padding(20)
+        }
+        .background(ALIColors.background)
+        .presentationDetents([.large])
+        .presentationDragIndicator(.visible)
+        .onAppear {
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) { appeared = true }
+        }
+    }
+}
+
+/// Shows something only once per install: returns true the first time
+/// (and marks it as seen right away, however it's then dismissed).
+enum ALIShowOnce {
+    /// Debug (Dev) builds use their own key round, so bumping it shows the
+    /// dialogs again to every Dev tester without touching production.
+    #if DEBUG
+    private static let debugRound = "_dev2"
+    #else
+    private static let debugRound = ""
+    #endif
+
+    static func consume(_ baseKey: String) -> Bool {
+        let key = baseKey + debugRound
+        let defaults = UserDefaults.standard
+        guard !defaults.bool(forKey: key) else { return false }
+        defaults.set(true, forKey: key)
+        return true
+    }
+}
+

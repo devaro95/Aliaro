@@ -84,3 +84,22 @@ extension Color {
         })
     }
 }
+
+/// The 30 colors a house task or family event can be tagged with, stored
+/// as "RRGGBB" (nil = the section's default accent). Same list on Android.
+enum ALIItemColors {
+    static let palette: [String] = [
+        "FF8FA3", "FFAF9E", "FFC1CC", "F67280", "E85D75", "C06C84",
+        "FFC49B", "FFD98E", "F8B259", "F4A261", "E9C46A", "FFE066",
+        "B8D9A0", "8FD9C4", "4ECDC4", "6BCB77", "2A9D8F", "A3C4BC",
+        "9FD3F0", "5DADE2", "3A86FF", "B5C0F5", "6C8EBF", "264653",
+        "C7B6EC", "A78BFA", "8E7DBE", "D291BC", "9D4EDD", "7C7488",
+    ]
+
+    /// The stored color, or `fallback` when there's none (or it's invalid).
+    static func color(_ hex: String?, fallback: Color) -> Color {
+        guard let hex, let value = UInt32(hex, radix: 16) else { return fallback }
+        return Color(hex: value)
+    }
+}
+

@@ -25,10 +25,13 @@ enum WidgetSnapshotWriter {
         let monthAnchor = calendar.dateInterval(of: .month, for: now)?.start ?? now
         if let monthInterval = calendar.dateInterval(of: .month, for: now) {
             let allEvents = (try? modelContext.fetch(FetchDescriptor<FamilyEvent>())) ?? []
-            monthEvents = allEvents
-                .filter { $0.startDate < monthInterval.end && $0.endDate >= monthInterval.start }
-                .sorted { $0.startDate < $1.startDate }
-                .map { WidgetCalendarEventItem(id: $0.id, title: $0.title, emoji: $0.emoji, startDate: $0.startDate, endDate: $0.endDate) }
+            // Repetitions get their own id so the widget's lists stay unique.
+            monthEvents = allEvents.flatMap { event in
+                event.occurrences(in: monthInterval).enumerated().map { index, occ in
+                    WidgetCalendarEventItem(id: index == 0 ? event.id : UUID(), title: event.title, emoji: event.emoji, startDate: occ.start, endDate: occ.end)
+                }
+            }
+            .sorted { $0.startDate < $1.startDate }
         }
 
         // MealPlanEntry.weekday: 0 = Monday ... 6 = Sunday. Calendar's

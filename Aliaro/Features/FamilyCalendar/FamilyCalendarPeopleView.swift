@@ -52,7 +52,7 @@ struct FamilyCalendarPeopleView: View {
     }
 
     private var dayEvents: [FamilyEvent] {
-        events.filter { $0.startDate < dayEnd && $0.endDate >= day }
+        events.expanded(in: DateInterval(start: day, end: dayEnd))
     }
 
     private func isFor(_ event: FamilyEvent, _ column: Column) -> Bool {
@@ -386,9 +386,11 @@ struct FamilyCalendarPeopleView: View {
         }
     }
 
-    /// Personal events take the person's color; shared ones the calendar accent.
+    /// The event's own color if it has one; otherwise personal events take
+    /// the person's color and shared ones the calendar accent.
     private func color(for event: FamilyEvent, in column: Column) -> Color {
-        (event.forEveryone || event.memberIDs.isEmpty) ? ALIColors.familyAccent : column.color
+        if event.color != nil { return ALIItemColors.color(event.color, fallback: ALIColors.familyAccent) }
+        return (event.forEveryone || event.memberIDs.isEmpty) ? ALIColors.familyAccent : column.color
     }
 
     private var nowLine: some View {

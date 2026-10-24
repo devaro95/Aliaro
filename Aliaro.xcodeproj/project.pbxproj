@@ -39,6 +39,7 @@
 		39B6106499E8438D9C890140 /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = 60E753E4B0D64706AFC943E5 /* FirebaseCrashlytics */; };
 		39F7D54F6B19447E93873E16 /* ForgotPasswordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B129373E624436EB7BE8FAD /* ForgotPasswordView.swift */; };
 		3BB0E789EACF4DCA8F1A4CE9 /* ALIBottomBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A5A5E1B06224433B9DC97CF /* ALIBottomBar.swift */; };
+		3C8754CB99D74541AC13416E /* ForceUpdate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 385599090DDF45FA94122229 /* ForceUpdate.swift */; };
 		3C9141CDCCEE426F9067698D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 57C21DA19FA44C428D4F2FC6 /* Assets.xcassets */; };
 		3D16B660112644859CDB6603 /* FamilyMember.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1328761C7AF5420AB03E1D88 /* FamilyMember.swift */; };
 		414FDDF84A5440EF999484C2 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 4B3F6C5188A146769E330199 /* PrivacyInfo.xcprivacy */; };
@@ -57,6 +58,7 @@
 		5DD60328A9B448B596EF38D4 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 019E27850EC247DABEC6F1AA /* FirebaseAnalytics */; };
 		5ED9BB7760BA4CAFB822B299 /* DataSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90DAFEAD26CB4B188CD05130 /* DataSync.swift */; };
 		5F90C277FB784E9F9EBE92FF /* Recipe.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5A6BD420E9F434A9FFD6356 /* Recipe.swift */; };
+		61E89992BE8F4E28863355CA /* ForceUpdateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33E3936004D84DB5BCACC725 /* ForceUpdateView.swift */; };
 		62BCD51FDC914EFE916D5952 /* ALITypography.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97D02702D46D4C889BD8D93C /* ALITypography.swift */; };
 		62D427B6356B456ABAF10B2F /* PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DCA63F626E8418CB65D5469 /* PaywallView.swift */; };
 		69F38A4D67894645BAEED5F1 /* WeeklyMenu+Support.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6EAAF083CBC416F94AD526B /* WeeklyMenu+Support.swift */; };
@@ -105,6 +107,7 @@
 		CEF26B86BA4341BA98146111 /* JoinByCodeSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7512AD19556C47A393B62FC6 /* JoinByCodeSheet.swift */; };
 		D24D638DA9EB46018D742DFB /* GroceryItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A4DF8C903714E67A54687F3 /* GroceryItem.swift */; };
 		D27491B7C9B9491FAE762689 /* PendingInvite.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EB05F1B39FA46C2931EF500 /* PendingInvite.swift */; };
+		D682987ECABE41ED80D3EA06 /* DebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADAFF8664E604BC2B0B98635 /* DebugMenu.swift */; };
 		D8351C33B8534B1FABD0A6E3 /* HouseTasksCalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD4ABD571F244DA18EC09C57 /* HouseTasksCalendarView.swift */; };
 		D91EF29889EE4BDAA4F36E86 /* PushNotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB637434A9544C108A2FD0D9 /* PushNotificationManager.swift */; };
 		DABBDB64291842058C884FC9 /* AddToShoppingListSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 665FE0DE65674EC2BA67359B /* AddToShoppingListSheet.swift */; };
@@ -177,10 +180,12 @@
 		301045FEAA90487DAC5829F3 /* ExpenseCategory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpenseCategory.swift; sourceTree = "<group>"; };
 		30BEDDCEBD394B77852B16BE /* FamilyCalendarMonthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilyCalendarMonthView.swift; sourceTree = "<group>"; };
 		3396AECD0B6F46F6AE0A671B /* MemberPermissionsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemberPermissionsSheet.swift; sourceTree = "<group>"; };
+		33E3936004D84DB5BCACC725 /* ForceUpdateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForceUpdateView.swift; sourceTree = "<group>"; };
 		3425F7D28974415F9674BCBC /* WeeklyMenuScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyMenuScreen.swift; sourceTree = "<group>"; };
 		3461F10825C34BC295AA2E48 /* ExpenseArchive.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpenseArchive.swift; sourceTree = "<group>"; };
 		358DFB44FCB8474493F9EF6B /* PremiumManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PremiumManager.swift; sourceTree = "<group>"; };
 		37D28CB1A3BF40B1A2B978E5 /* HouseTaskLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HouseTaskLog.swift; sourceTree = "<group>"; };
+		385599090DDF45FA94122229 /* ForceUpdate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForceUpdate.swift; sourceTree = "<group>"; };
 		3C91C387EDCE4599A4CBC42D /* Dish.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Dish.swift; sourceTree = "<group>"; };
 		3EFA0FD398174F918C465B08 /* ShoppingListEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingListEntry.swift; sourceTree = "<group>"; };
 		4B3F6C5188A146769E330199 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
@@ -228,6 +233,7 @@
 		A8475C9E93C34702BF3E5830 /* SupabaseConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseConfig.swift; sourceTree = "<group>"; };
 		ABF7746550354BF7859A2612 /* TodayMenuWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayMenuWidget.swift; sourceTree = "<group>"; };
 		AD265FB038E74CFCB4DBA13E /* WidgetSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetSnapshot.swift; sourceTree = "<group>"; };
+		ADAFF8664E604BC2B0B98635 /* DebugMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugMenu.swift; sourceTree = "<group>"; };
 		AFAE2292AEC7433085F8C6A1 /* AppIntroView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIntroView.swift; sourceTree = "<group>"; };
 		B15B5D8DED564037A4DA683F /* Expense.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Expense.swift; sourceTree = "<group>"; };
 		B5A6BD420E9F434A9FFD6356 /* Recipe.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Recipe.swift; sourceTree = "<group>"; };
@@ -415,6 +421,14 @@
 			);
 			sourceTree = "<group>";
 		};
+		7A522A76567F4D7A9AB90F21 /* Debug */ = {
+			isa = PBXGroup;
+			children = (
+				ADAFF8664E604BC2B0B98635 /* DebugMenu.swift */,
+			);
+			path = Debug;
+			sourceTree = "<group>";
+		};
 		7F1457BFC24344D1B26FBDB5 /* AliaroWidgets */ = {
 			isa = PBXGroup;
 			children = (
@@ -469,6 +483,7 @@
 			children = (
 				35A87DF24E1D4372B506D637 /* Auth */,
 				1578ED3814874B36816CDDE2 /* Board */,
+				7A522A76567F4D7A9AB90F21 /* Debug */,
 				BBD3A17BA0AA415C9D7CD11A /* Economia */,
 				A50744DBE1A64ED1816136B4 /* FamilyCalendar */,
 				324B5B0375CA481ABF7D645F /* Home */,
@@ -565,6 +580,7 @@
 				05ABDB3DBE5D4C798BFD4D36 /* MetaAds.swift */,
 				0EB05F1B39FA46C2931EF500 /* PendingInvite.swift */,
 				206684FDCC314E8A9B760553 /* PremiumConfig.swift */,
+				385599090DDF45FA94122229 /* ForceUpdate.swift */,
 				982C7A9ED2D448BBB4F019DB /* PremiumFeature.swift */,
 				358DFB44FCB8474493F9EF6B /* PremiumManager.swift */,
 				EB637434A9544C108A2FD0D9 /* PushNotificationManager.swift */,
@@ -582,6 +598,7 @@
 			isa = PBXGroup;
 			children = (
 				2DCA63F626E8418CB65D5469 /* PaywallView.swift */,
+				33E3936004D84DB5BCACC725 /* ForceUpdateView.swift */,
 			);
 			path = Premium;
 			sourceTree = "<group>";
@@ -760,6 +777,7 @@
 				344287E75B614766BF210EBE /* AuthSession.swift in Sources */,
 				5ED9BB7760BA4CAFB822B299 /* DataSync.swift in Sources */,
 				2F0CDD202CAB4E4BBF742BD5 /* DebugMockData.swift in Sources */,
+				D682987ECABE41ED80D3EA06 /* DebugMenu.swift in Sources */,
 				8FA126BBE0104B06B2A9BC64 /* FamilyService.swift in Sources */,
 				E5C4D97167504B65A610D7CC /* FamilySession.swift in Sources */,
 				089DFCD177C24883B0902AC5 /* InviteLink.swift in Sources */,
@@ -767,6 +785,7 @@
 				B7ADABFC944E4F1FA2278D96 /* MetaAds.swift in Sources */,
 				D27491B7C9B9491FAE762689 /* PendingInvite.swift in Sources */,
 				C6600AE5479541E3BEE76746 /* PremiumConfig.swift in Sources */,
+				3C8754CB99D74541AC13416E /* ForceUpdate.swift in Sources */,
 				A34742B6BEDF436AB3CCF303 /* PremiumFeature.swift in Sources */,
 				91CC0D3732134D7796D9FAA0 /* PremiumManager.swift in Sources */,
 				D91EF29889EE4BDAA4F36E86 /* PushNotificationManager.swift in Sources */,
@@ -818,6 +837,7 @@
 				2F6058625683408FBF61CE98 /* NotificationsScreen.swift in Sources */,
 				7FEAD3CD06104265A2299496 /* PeopleScreen.swift in Sources */,
 				62D427B6356B456ABAF10B2F /* PaywallView.swift in Sources */,
+				61E89992BE8F4E28863355CA /* ForceUpdateView.swift in Sources */,
 				858F83E1FA604FD595EC9553 /* AddRecipeSheet.swift in Sources */,
 				CB1D2646FE8A4092BA31ED6C /* CameraPicker.swift in Sources */,
 				49958C1C07A149B18F34E45E /* DurationPickerSheet.swift in Sources */,
@@ -916,7 +936,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Aliaro/Aliaro.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 11;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_ASSET_PATHS = "";
 				DEVELOPMENT_TEAM = P88UK832W4;
 				ENABLE_PREVIEWS = YES;
@@ -934,7 +954,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.2;
+				MARKETING_VERSION = 1.1.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
@@ -988,7 +1008,7 @@
 				APP_GROUP_ID = group.com.devaro.aliaro.dev;
 				CODE_SIGN_ENTITLEMENTS = AliaroWidgets/AliaroWidgetsExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 11;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = P88UK832W4;
 				INFOPLIST_FILE = AliaroWidgets/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -997,7 +1017,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.0.2;
+				MARKETING_VERSION = 1.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.devaro.aliaro.dev.widgets;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -1015,7 +1035,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Aliaro/Aliaro.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 11;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_ASSET_PATHS = "";
 				DEVELOPMENT_TEAM = P88UK832W4;
 				ENABLE_PREVIEWS = YES;
@@ -1033,7 +1053,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.2;
+				MARKETING_VERSION = 1.1.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
@@ -1056,7 +1076,7 @@
 				APP_GROUP_ID = group.com.devaro.aliaro;
 				CODE_SIGN_ENTITLEMENTS = AliaroWidgets/AliaroWidgetsExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 11;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = P88UK832W4;
 				INFOPLIST_FILE = AliaroWidgets/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -1065,7 +1085,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.0.2;
+				MARKETING_VERSION = 1.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.devaro.aliaro.widgets;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
