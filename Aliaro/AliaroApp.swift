@@ -1,3 +1,4 @@
+import Combine
 import SwiftUI
 import SwiftData
 
@@ -10,6 +11,7 @@ struct AliaroApp: App {
     @StateObject private var dataSync = AppDataSyncCoordinator()
     @StateObject private var premiumManager = PremiumManager.shared
     @StateObject private var pendingInvite = PendingInvite.shared
+    @Environment(\.scenePhase) private var scenePhase
 
     let modelContainer: ModelContainer = {
         let schema = Schema([
@@ -81,7 +83,17 @@ struct AliaroApp: App {
                     Task {
                         await premiumManager.start()
                     }
+                    Task {
+                        await ForceUpdate.shared.start()
+                    }
                     Track.refreshUserProperties()
+                }
+                // Force update: blocks the whole app while it's below the remote minimum.
+                .onReceive(ForceUpdate.shared.$required.combineLatest(ForceUpdate.shared.$debugPreview)) { required, preview in
+                    ForceUpdatePresenter.update(required: required, debugPreview: preview)
+                }
+                .onChange(of: scenePhase) { _, phase in
+                    if phase == .active { Task { await ForceUpdate.shared.refresh() } }
                 }
         }
         .modelContainer(modelContainer)
