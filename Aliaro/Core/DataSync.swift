@@ -94,6 +94,8 @@ struct RemoteHouseTask: FamilySynced {
     var member_ids: [UUID]
     var created_by: UUID?
     var created_by_name: String?
+    /// Optional so rows from DBs without this column still decode.
+    var color: String?
 
     /// Explicit nulls for `interval_days`/`scheduled_at`, so removing the
     /// cadence or the schedule when editing also clears it in Supabase
@@ -109,6 +111,7 @@ struct RemoteHouseTask: FamilySynced {
         try c.encode(member_ids, forKey: .member_ids)
         try c.encode(created_by, forKey: .created_by)
         try c.encode(created_by_name, forKey: .created_by_name)
+        try c.encode(color, forKey: .color)
     }
 }
 
@@ -139,6 +142,37 @@ struct RemoteFamilyEvent: FamilySynced {
     var for_everyone: Bool
     var member_ids: [UUID]
     var is_all_day: Bool
+    /// Optional so rows from DBs without these columns still decode.
+    var repeat_interval: Int?
+    var repeat_unit: String?
+    /// "" = no color (so clearing it also reaches Supabase).
+    var color: String?
+    var repeat_until: Date?
+    var excluded_dates: [String]?
+
+    /// Explicit null for `repeat_until`, so removing the end date when
+    /// editing also clears it in Supabase (the synthesized encoder omits nils).
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(id, forKey: .id)
+        try c.encode(family_id, forKey: .family_id)
+        try c.encode(title, forKey: .title)
+        try c.encode(note, forKey: .note)
+        try c.encode(start_date, forKey: .start_date)
+        try c.encode(end_date, forKey: .end_date)
+        try c.encode(emoji, forKey: .emoji)
+        try c.encode(created_at, forKey: .created_at)
+        try c.encode(created_by, forKey: .created_by)
+        try c.encode(created_by_name, forKey: .created_by_name)
+        try c.encode(for_everyone, forKey: .for_everyone)
+        try c.encode(member_ids, forKey: .member_ids)
+        try c.encode(is_all_day, forKey: .is_all_day)
+        try c.encodeIfPresent(repeat_interval, forKey: .repeat_interval)
+        try c.encodeIfPresent(repeat_unit, forKey: .repeat_unit)
+        try c.encodeIfPresent(color, forKey: .color)
+        try c.encode(repeat_until, forKey: .repeat_until)
+        try c.encode(excluded_dates ?? [], forKey: .excluded_dates)
+    }
 }
 
 struct RemoteReminder: FamilySynced {
@@ -758,11 +792,12 @@ final class AppDataSyncCoordinator: ObservableObject {
             existing.memberIDs = remote.member_ids
             existing.createdByID = remote.created_by
             existing.createdByName = remote.created_by_name
+            existing.color = remote.color
         } else {
             modelContext.insert(HouseTask(
                 id: remote.id, name: remote.name, intervalDays: remote.interval_days,
                 scheduledAt: remote.scheduled_at, forEveryone: remote.for_everyone, memberIDs: remote.member_ids,
-                createdByID: remote.created_by, createdByName: remote.created_by_name
+                createdByID: remote.created_by, createdByName: remote.created_by_name, color: remote.color
             ))
         }
     }
@@ -771,7 +806,7 @@ final class AppDataSyncCoordinator: ObservableObject {
         let record = RemoteHouseTask(
             id: task.id, family_id: familyID, name: task.name, interval_days: task.intervalDays,
             scheduled_at: task.scheduledAt, for_everyone: task.forEveryone, member_ids: task.memberIDs,
-            created_by: task.createdByID, created_by_name: task.createdByName
+            created_by: task.createdByID, created_by_name: task.createdByName, color: task.color
         )
         Task { try? await houseTasks.push(record) }
     }
@@ -867,6 +902,11 @@ final class AppDataSyncCoordinator: ObservableObject {
             existing.forEveryone = remote.for_everyone
             existing.memberIDs = remote.member_ids
             existing.isAllDay = remote.is_all_day
+            existing.repeatInterval = remote.repeat_interval ?? 0
+            existing.repeatUnit = remote.repeat_unit ?? FamilyEventRepeatUnit.week.rawValue
+            existing.color = remote.color.flatMap { $0.isEmpty ? nil : $0 }
+            existing.repeatUntil = remote.repeat_until
+            existing.excludedDates = remote.excluded_dates ?? []
         } else {
             modelContext.insert(FamilyEvent(
                 id: remote.id, title: remote.title, note: remote.note,
@@ -874,7 +914,12 @@ final class AppDataSyncCoordinator: ObservableObject {
                 emoji: remote.emoji, createdAt: remote.created_at,
                 createdByID: remote.created_by, createdByName: remote.created_by_name,
                 forEveryone: remote.for_everyone, memberIDs: remote.member_ids,
-                isAllDay: remote.is_all_day
+                isAllDay: remote.is_all_day,
+                repeatInterval: remote.repeat_interval ?? 0,
+                repeatUnit: remote.repeat_unit ?? FamilyEventRepeatUnit.week.rawValue,
+                color: remote.color.flatMap { $0.isEmpty ? nil : $0 },
+                repeatUntil: remote.repeat_until,
+                excludedDates: remote.excluded_dates ?? []
             ))
         }
         refreshWidgetSnapshot()
@@ -886,7 +931,10 @@ final class AppDataSyncCoordinator: ObservableObject {
             start_date: event.startDate, end_date: event.endDate, emoji: event.emoji, created_at: event.createdAt,
             created_by: event.createdByID, created_by_name: event.createdByName,
             for_everyone: event.forEveryone, member_ids: event.memberIDs,
-            is_all_day: event.isAllDay
+            is_all_day: event.isAllDay,
+            repeat_interval: event.repeatInterval, repeat_unit: event.repeatUnit,
+            color: event.color ?? "",
+            repeat_until: event.repeatUntil, excluded_dates: event.excludedDates
         )
         Task { try? await familyEvents.push(record) }
         refreshWidgetSnapshot()

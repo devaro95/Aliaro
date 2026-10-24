@@ -20,9 +20,11 @@ struct FamilyCalendarScreen: View {
     @State private var selectedDay: Date? = Calendar.current.startOfDay(for: .now)
     @State private var showAddSheet = false
     @State private var selectedEvent: FamilyEvent?
+    /// The tapped occurrence (for repeating events, a display copy with its own dates).
     @State private var eventPendingDelete: FamilyEvent?
     @State private var viewMode: ViewMode = .month
     @State private var showPaywall = false
+    @State private var showWhatsNew = false
 
     /// The "by person" view needs a subscription if `familyCalendarPeople`
     /// is currently premium — it still opens, as a preview with sample data.
@@ -36,13 +38,16 @@ struct FamilyCalendarScreen: View {
 
     private var calendar: Calendar { Calendar.current }
 
+    /// Events (and repetitions) that touch that day.
     private func events(on day: Date) -> [FamilyEvent] {
-        events.filter { event in
-            let start = calendar.startOfDay(for: event.startDate)
-            let end = calendar.startOfDay(for: event.endDate)
-            let target = calendar.startOfDay(for: day)
-            return target >= start && target <= end
-        }
+        let start = calendar.startOfDay(for: day)
+        let end = calendar.date(byAdding: .day, value: 1, to: start) ?? start
+        return events.expanded(in: DateInterval(start: start, end: end.addingTimeInterval(-1)))
+    }
+
+    /// Repetitions are display copies: map them back to the stored event.
+    private func original(_ event: FamilyEvent) -> FamilyEvent {
+        events.first { $0.id == event.id } ?? event
     }
 
     var body: some View {
@@ -89,7 +94,7 @@ struct FamilyCalendarScreen: View {
                         .aliPremiumPreview(true)
                     } else {
                         FamilyCalendarPeopleView(events: events, members: members, selectedDay: $selectedDay) { event in
-                            selectedEvent = event
+                            selectedEvent = original(event)
                         }
                     }
                 }
@@ -116,29 +121,89 @@ struct FamilyCalendarScreen: View {
         .sheet(item: $selectedEvent) { event in
             AddFamilyEventSheet(eventToEdit: event, canEdit: canEdit)
         }
+        .sheet(isPresented: $showWhatsNew) {
+            ALIWhatsNewSheet(
+                title: "New in the Family calendar",
+                accent: ALIColors.familyAccent,
+                items: [
+                    ALIWhatsNewItem(systemImage: "repeat", title: "Repeating events", text: "Repeat any event every few days, weeks, months or years."),
+                    ALIWhatsNewItem(systemImage: "paintpalette.fill", title: "Colors", text: "Pick from 30 colors so each event stands out on the calendar.")
+                ],
+                tip: "Tip: open your existing events and edit them to add a color or a repetition."
+            )
+        }
+        .onAppear {
+            if ALIShowOnce.consume("whats_new_calendar_repeat_colors_v1") {
+                Track.event("whats_new_shown", ["screen": "calendar"])
+                showWhatsNew = true
+            }
+        }
         .sheet(isPresented: $showPaywall) {
             PaywallView()
         }
         .aliDeleteConfirmDialog(
-            isPresented: Binding(get: { eventPendingDelete != nil }, set: { if !$0 { eventPendingDelete = nil } }),
+            isPresented: Binding(
+                get: { eventPendingDelete.map { !$0.isRepeating } ?? false },
+                set: { if !$0 { eventPendingDelete = nil } }
+            ),
             itemName: eventPendingDelete?.title ?? ""
         ) {
-            if let event = eventPendingDelete {
-                let eventID = event.id
-                let eventTitle = event.title
-                modelContext.delete(event)
-                dataSync.deleteFamilyEvent(id: eventID)
-                if let familyID = familySession.familyID {
-                    dataSync.logActivity(
-                        entityType: "family_event", entityName: eventTitle, action: "deleted",
-                        actorID: familySession.memberID,
-                        actorName: familySession.memberID.flatMap { modelContext.familyMemberName(id: $0) },
-                        familyID: familyID, modelContext: modelContext
-                    )
-                }
-            }
+            if let event = eventPendingDelete { deleteSeries(original(event)) }
             eventPendingDelete = nil
         }
+        // Repeating events: only this one, or the whole series.
+        .confirmationDialog(
+            eventPendingDelete?.title ?? "",
+            isPresented: Binding(
+                get: { eventPendingDelete?.isRepeating ?? false },
+                set: { if !$0 { eventPendingDelete = nil } }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button("Delete only this event", role: .destructive) {
+                if let event = eventPendingDelete { deleteOccurrence(event) }
+                eventPendingDelete = nil
+            }
+            Button("Delete the whole series", role: .destructive) {
+                if let event = eventPendingDelete { deleteSeries(original(event)) }
+                eventPendingDelete = nil
+            }
+            Button("Cancel", role: .cancel) { eventPendingDelete = nil }
+        } message: {
+            Text("This is a repeating event. Deleting the whole series can't be undone.")
+        }
+    }
+
+    private func logEventActivity(_ title: String, action: String) {
+        guard let familyID = familySession.familyID else { return }
+        dataSync.logActivity(
+            entityType: "family_event", entityName: title, action: action,
+            actorID: familySession.memberID,
+            actorName: familySession.memberID.flatMap { modelContext.familyMemberName(id: $0) },
+            familyID: familyID, modelContext: modelContext
+        )
+    }
+
+    private func deleteSeries(_ event: FamilyEvent) {
+        let eventID = event.id
+        let eventTitle = event.title
+        Track.event("calendar_event_deleted", ["scope": event.isRepeating ? "series" : "single"])
+        modelContext.delete(event)
+        dataSync.deleteFamilyEvent(id: eventID)
+        logEventActivity(eventTitle, action: "deleted")
+    }
+
+    /// Hides just that repetition (stored as an excluded day on the series).
+    private func deleteOccurrence(_ occurrence: FamilyEvent) {
+        let event = original(occurrence)
+        let key = FamilyEvent.dayKey(occurrence.startDate)
+        guard !event.excludedDates.contains(key) else { return }
+        Track.event("calendar_event_deleted", ["scope": "occurrence"])
+        event.excludedDates.append(key)
+        if let familyID = familySession.familyID {
+            dataSync.pushFamilyEvent(event, familyID: familyID)
+        }
+        logEventActivity(event.title, action: "updated")
     }
 
     /// Toggles between the month view and the "by person" matrix. If the
@@ -185,7 +250,7 @@ struct FamilyCalendarScreen: View {
                         ForEach(Array(dayEvents.enumerated()), id: \.element.id) { index, event in
                             EventRow(event: event, attendees: event.attendeesLabel(members: members), canDelete: canDelete, onTap: {
                                 Track.event("calendar_event_open", ["source": "selected_day"])
-                                selectedEvent = event
+                                selectedEvent = original(event)
                             }, onDelete: {
                                 Track.event("calendar_event_delete_tap", ["source": "selected_day"])
                                 eventPendingDelete = event
@@ -201,7 +266,10 @@ struct FamilyCalendarScreen: View {
     }
 
     private var upcomingList: some View {
-        let upcoming = events.filter { $0.endDate >= .now }.sorted { $0.startDate < $1.startDate }
+        // Next occurrence of each event (repeating ones show only the next one).
+        let upcoming = events
+            .compactMap { event in event.nextOccurrence().map { event.occurrenceCopy(start: $0.start, end: $0.end) } }
+            .sorted { $0.startDate < $1.startDate }
         return Group {
             if !upcoming.isEmpty {
                 VStack(alignment: .leading, spacing: 10) {
@@ -214,7 +282,7 @@ struct FamilyCalendarScreen: View {
                             ForEach(Array(upcoming.enumerated()), id: \.element.id) { index, event in
                                 EventRow(event: event, attendees: event.attendeesLabel(members: members), canDelete: canDelete, onTap: {
                                     Track.event("calendar_event_open", ["source": "upcoming"])
-                                    selectedEvent = event
+                                    selectedEvent = original(event)
                                 }, onDelete: {
                                     Track.event("calendar_event_delete_tap", ["source": "upcoming"])
                                     eventPendingDelete = event
@@ -270,11 +338,14 @@ private struct EventRow: View {
         Button(action: onTap) {
             HStack(spacing: 12) {
                 ALIIconView(icon: event.emoji, size: 22, fallback: ALIIcon.calendar)
+                    .frame(width: 36, height: 36)
+                    .background(ALIItemColors.color(event.color, fallback: ALIColors.familyAccent).opacity(0.35))
+                    .clipShape(Circle())
                 VStack(alignment: .leading, spacing: 3) {
                     Text(event.title)
                         .font(ALITypography.bodyLarge)
                         .foregroundStyle(ALIColors.ink)
-                    Text("\(rangeLabel) · \(attendees)")
+                    Text("\(rangeLabel + (event.isRepeating ? " 🔁" : "")) · \(attendees)")
                         .font(ALITypography.labelLarge)
                         .foregroundStyle(ALIColors.mutedInk)
                         .lineLimit(1)

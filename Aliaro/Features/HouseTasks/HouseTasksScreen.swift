@@ -25,6 +25,7 @@ struct HouseTasksScreen: View {
     @State private var selectedTask: HouseTask?
     @State private var viewMode: ViewMode = .list
     @State private var showPaywall = false
+    @State private var showWhatsNew = false
     @State private var showStats = false
 
     /// The calendar view needs a subscription if `houseTasksCalendar`
@@ -56,7 +57,7 @@ struct HouseTasksScreen: View {
             Color.clear.frame(height: 0).trackBottomBarScroll(bottomBarScrollTracker)
 
             VStack(spacing: 16) {
-                ALITopBar(title: "House Tasks", accent: ALIColors.houseTasksAccent) {
+                ALITopBar(title: "Tasks", accent: ALIColors.houseTasksAccent) {
                     HStack(spacing: 10) {
                         statsButton
                         viewModeToggleButton
@@ -101,7 +102,7 @@ struct HouseTasksScreen: View {
                         HouseTasksCalendarView(logs: HouseTasksDemoData.logs)
                             .aliPremiumPreview(true)
                     } else {
-                        HouseTasksCalendarView(logs: logs)
+                        HouseTasksCalendarView(tasks: tasks, logs: logs)
                     }
                 }
             }
@@ -134,6 +135,23 @@ struct HouseTasksScreen: View {
         }
         .sheet(isPresented: $showStats) {
             HouseTasksStatsScreen(tasks: tasks, logs: logs)
+        }
+        .sheet(isPresented: $showWhatsNew) {
+            ALIWhatsNewSheet(
+                title: "New in Tasks",
+                accent: ALIColors.houseTasksAccent,
+                items: [
+                    ALIWhatsNewItem(systemImage: "paintpalette.fill", title: "Colors", text: "Pick from 30 colors so each task stands out on the calendar."),
+                    ALIWhatsNewItem(systemImage: "calendar.badge.checkmark", title: "To-dos on the calendar", text: "See what's to do each day, what's done, and what's coming up next.")
+                ],
+                tip: "Tip: open your existing tasks and edit them to give them a color."
+            )
+        }
+        .onAppear {
+            if ALIShowOnce.consume("whats_new_tasks_colors_v1") {
+                Track.event("whats_new_shown", ["screen": "house_tasks"])
+                showWhatsNew = true
+            }
         }
         .sheet(isPresented: $showPaywall) {
             PaywallView()
