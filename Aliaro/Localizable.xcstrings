@@ -420,6 +420,38 @@
         }
       }
     },
+    "Reset" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restablecer"
+          }
+        }
+      }
+    },
+    "Reset order?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset order?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Restablecer el orden?"
+          }
+        }
+      }
+    },
     "See what's to do each day, what's done, and what's coming up next." : {
       "localizations" : {
         "en" : {
@@ -432,6 +464,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ve lo que toca cada día, lo que ya está hecho y lo que viene después."
+          }
+        }
+      }
+    },
+    "The cards will go back to their original order. This only changes it for you." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The cards will go back to their original order. This only changes it for you."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las tarjetas volverán a su orden original. Solo cambia para ti."
           }
         }
       }
