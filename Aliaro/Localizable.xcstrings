@@ -52,6 +52,22 @@
         }
       }
     },
+    "Couldn't rename the group" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't rename the group"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudo renombrar el grupo"
+          }
+        }
+      }
+    },
     "Delete only this event" : {
       "localizations" : {
         "en" : {
@@ -320,6 +336,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Elige entre 30 colores para distinguir cada tarea de un vistazo en el calendario."
+          }
+        }
+      }
+    },
+    "Rename family group" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rename family group"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Renombrar grupo familiar"
+          }
+        }
+      }
+    },
+    "Rename group" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rename group"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Renombrar grupo"
           }
         }
       }

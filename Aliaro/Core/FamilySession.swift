@@ -96,6 +96,14 @@ final class FamilySession: ObservableObject {
         defaults.set(familyName, forKey: Keys.familyName)
     }
 
+    /// Updates the group's name (after renaming it here, or when another
+    /// device renames it — real time `families` UPDATE).
+    func setFamilyName(_ name: String) {
+        guard !name.isEmpty, familyID != nil else { return }
+        familyName = name
+        defaults.set(name, forKey: Keys.familyName)
+    }
+
     /// Updates which tabs are hidden from the bottom bar for this family
     /// group. Called from `FamilyService` after fetching/pushing/receiving
     /// (real time) the family's settings.
