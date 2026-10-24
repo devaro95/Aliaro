@@ -183,13 +183,6 @@ struct AddFamilyEventSheet: View {
                     .font(ALITypography.labelLarge)
                     .foregroundStyle(ALIColors.mutedInk)
 
-                Toggle(isOn: $isAllDay.animation()) {
-                    Text("All day")
-                        .font(ALITypography.bodyLarge)
-                        .foregroundStyle(ALIColors.ink)
-                }
-                .tint(ALIColors.familyAccent)
-
                 Toggle(isOn: Binding(get: { repeats }, set: { value in
                     withAnimation { repeats = value }
                     if value { keepEndOnStartDay() }
@@ -239,6 +232,13 @@ struct AddFamilyEventSheet: View {
                 }
 
                 Divider().overlay(ALIColors.outline)
+
+                Toggle(isOn: $isAllDay.animation()) {
+                    Text("All day")
+                        .font(ALITypography.bodyLarge)
+                        .foregroundStyle(ALIColors.ink)
+                }
+                .tint(ALIColors.familyAccent)
 
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Starts")
