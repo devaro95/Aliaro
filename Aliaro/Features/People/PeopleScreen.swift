@@ -36,11 +36,6 @@ struct PeopleScreen: View {
     @State private var renameFamilyText = ""
     @State private var renameFamilyError: String?
 
-    #if DEBUG
-    @State private var isSeedingMockData = false
-    @State private var hasMockData = DebugMockData.hasSeededData
-    #endif
-
     var body: some View {
         trackedBody.trackScreen("people")
     }
@@ -66,10 +61,6 @@ struct PeopleScreen: View {
                 notificationsCard
 
                 accountCard
-
-                #if DEBUG
-                debugCard
-                #endif
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 100)
@@ -451,46 +442,6 @@ struct PeopleScreen: View {
         }
         .buttonStyle(.plain)
     }
-
-    #if DEBUG
-    /// Debug-only: fills every tab with sample content so the app is
-    /// ready for App Store screenshots. Local data only, never synced.
-    private var debugCard: some View {
-        ALICard {
-            VStack(alignment: .leading, spacing: 12) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Debug")
-                        .font(ALITypography.bodyLarge)
-                        .foregroundStyle(ALIColors.ink)
-                    Text("Fills every tab with sample content, for App Store screenshots.")
-                        .font(ALITypography.labelLarge)
-                        .foregroundStyle(ALIColors.mutedInk)
-                }
-                ALIPrimaryButton(
-                    text: isSeedingMockData ? "Adding sample data\u{2026}" : "Seed mock data for screenshots",
-                    accent: ALIColors.peopleAccent
-                ) {
-                    isSeedingMockData = true
-                    DebugMockData.seed(modelContext: modelContext)
-                    isSeedingMockData = false
-                    hasMockData = DebugMockData.hasSeededData
-                }
-                .disabled(isSeedingMockData)
-
-                ALISecondaryButton(text: "Delete all mock data") {
-                    DebugMockData.clear(modelContext: modelContext)
-                    hasMockData = DebugMockData.hasSeededData
-                }
-                .disabled(!hasMockData)
-                .opacity(hasMockData ? 1 : 0.5)
-
-                ALISecondaryButton(text: "Preview force update screen") {
-                    ForceUpdate.shared.debugPreview = true
-                }
-            }
-        }
-    }
-    #endif
 
     /// First row of the members card: the group's name, and its two
     /// actions — leave (asks first) and invite someone new.
