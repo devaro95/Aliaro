@@ -453,6 +453,10 @@ struct PeopleScreen: View {
                 }
                 .disabled(!hasMockData)
                 .opacity(hasMockData ? 1 : 0.5)
+
+                ALISecondaryButton(text: "Preview force update screen") {
+                    ForceUpdate.shared.debugPreview = true
+                }
             }
         }
     }
