@@ -1,6 +1,166 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "What's new" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What's new"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Novedades"
+          }
+        }
+      }
+    },
+    "Got it" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Got it"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¡Entendido!"
+          }
+        }
+      }
+    },
+    "New in Aliaro" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New in Aliaro"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Novedades en Aliaro"
+          }
+        }
+      }
+    },
+    "Plan any week" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plan any week"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Planifica cualquier semana"
+          }
+        }
+      }
+    },
+    "Move between past and future weeks and plan as far ahead as you want." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move between past and future weeks and plan as far ahead as you want."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Muévete entre semanas pasadas y futuras y planifica con toda la antelación que quieras."
+          }
+        }
+      }
+    },
+    "Month view and copy weeks" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Month view and copy weeks"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vista mes y copiar semanas"
+          }
+        }
+      }
+    },
+    "See the whole month at a glance and repeat a week in one tap." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See the whole month at a glance and repeat a week in one tap."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ve el mes entero de un vistazo y repite una semana en un toque."
+          }
+        }
+      }
+    },
+    "All your dishes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All your dishes"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todos tus platos"
+          }
+        }
+      }
+    },
+    "Add, rename or delete dishes from the button at the top of the menu." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add, rename or delete dishes from the button at the top of the menu."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añade, renombra o borra platos desde el botón de arriba del menú."
+          }
+        }
+      }
+    },
+    "Make sure everyone in your family group updates Aliaro, so you can all enjoy the new features." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Make sure everyone in your family group updates Aliaro, so you can all enjoy the new features."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Asegúrate de que todos en tu grupo familiar actualicen Aliaro para que podáis disfrutar todos de las novedades."
+          }
+        }
+      }
+    },
     "This is a preview with sample data. Get %@ Premium to plan your menu month by month." : {
       "localizations" : {
         "en" : {
