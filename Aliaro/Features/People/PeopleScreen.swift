@@ -2,7 +2,8 @@ import SwiftUI
 import StoreKit
 import SwiftData
 
-/// "People" tab: who's in the family group, the button to invite
+/// "People" tab: who's in the family group (creator/admins can rename
+/// it by tapping its name), the button to invite
 /// someone else by showing a QR code, a way into `AppFeaturesSheet`
 /// (admin only can actually change it) to pick which tabs show up in
 /// everyone's bottom bar and which one opens first, and the group's
@@ -31,6 +32,9 @@ struct PeopleScreen: View {
     @State private var memberForPermissions: FamilyMember?
     @State private var showAccountScreen = false
     @State private var showNotificationsScreen = false
+    @State private var isRenamingFamily = false
+    @State private var renameFamilyText = ""
+    @State private var renameFamilyError: String?
 
     #if DEBUG
     @State private var isSeedingMockData = false
@@ -133,6 +137,16 @@ struct PeopleScreen: View {
         } message: {
             Text("You'll stop seeing and sharing \(familySession.familyName ?? String(localized: "this group"))'s menu, shopping, tasks, calendar and reminders. This action can't be undone.")
         }
+        .alert("Rename group", isPresented: $isRenamingFamily) {
+            TextField("Name", text: $renameFamilyText)
+            Button("Cancel", role: .cancel) {}
+            Button("Save") { Task { await renameFamily() } }
+        }
+        .alert("Couldn't rename the group", isPresented: .constant(renameFamilyError != nil)) {
+            Button("OK", role: .cancel) { renameFamilyError = nil }
+        } message: {
+            Text(renameFamilyError ?? "")
+        }
         .alert("Couldn't leave the group", isPresented: .constant(leaveError != nil)) {
             Button("OK", role: .cancel) { leaveError = nil }
         } message: {
@@ -157,6 +171,22 @@ struct PeopleScreen: View {
     private func canManagePermissions(_ member: FamilyMember) -> Bool {
         guard !member.isCreator else { return false }
         return members.first(where: { $0.isCurrentDevice })?.canManageOthersPermissions ?? false
+    }
+
+    /// The creator and admins can rename the group (same people who
+    /// manage its settings and permissions).
+    private var canRenameFamily: Bool {
+        members.first(where: { $0.isCurrentDevice })?.canManageOthersPermissions ?? false
+    }
+
+    private func renameFamily() async {
+        let name = renameFamilyText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty, name != familySession.familyName else { return }
+        do {
+            try await familyService.renameFamily(String(name.prefix(40)))
+        } catch {
+            renameFamilyError = error.localizedDescription
+        }
     }
 
     private func removeMember(_ member: FamilyMember) async {
@@ -466,14 +496,35 @@ struct PeopleScreen: View {
     /// actions — leave (asks first) and invite someone new.
     private var familyHeader: some View {
         HStack(spacing: 10) {
-            Text(familySession.familyName ?? String(localized: "Family group"))
-                .font(ALITypography.titleLarge)
-                .foregroundStyle(ALIColors.ink)
-                .lineLimit(1)
+            if canRenameFamily {
+                Button {
+                    Track.event("rename_family_tap")
+                    renameFamilyText = familySession.familyName ?? ""
+                    isRenamingFamily = true
+                } label: {
+                    HStack(spacing: 6) {
+                        familyNameText
+                        Image(systemName: "pencil")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(ALIColors.mutedInk)
+                    }
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Rename family group")
+            } else {
+                familyNameText
+            }
             Spacer(minLength: 8)
             leaveGroupButton
             inviteButton
         }
+    }
+
+    private var familyNameText: some View {
+        Text(familySession.familyName ?? String(localized: "Family group"))
+            .font(ALITypography.titleLarge)
+            .foregroundStyle(ALIColors.ink)
+            .lineLimit(1)
     }
 
     private var leaveGroupButton: some View {

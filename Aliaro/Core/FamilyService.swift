@@ -516,6 +516,23 @@ final class FamilyService: ObservableObject {
         Track.event("member_name_changed")
     }
 
+    /// Creator/admin only: renames the family group. Goes through the
+    /// `rename_family` RPC (security definer, checks the caller is the
+    /// creator or an admin); other devices get it in real time
+    /// (`families` UPDATE, via `startSettingsSync`).
+    func renameFamily(_ name: String) async throws {
+        guard let familyID = session.familyID else {
+            throw NSError(domain: "Aliaro", code: 0, userInfo: [NSLocalizedDescriptionKey: "You don't belong to a family group yet"])
+        }
+        struct Params: Encodable { let p_family_id: UUID; let p_name: String }
+        let newName: String = try await supabase
+            .rpc("rename_family", params: Params(p_family_id: familyID, p_name: name))
+            .execute()
+            .value
+        session.setFamilyName(newName)
+        Track.event("family_renamed")
+    }
+
     // MARK: - Permissions (creator, or an admin, only — never the creator's own)
 
     /// Changes what a member is allowed to do: the creator can change
@@ -635,6 +652,8 @@ final class FamilyService: ObservableObject {
     // MARK: - Family settings (which tabs show up in the bottom bar, and which one opens first)
 
     private struct RemoteFamilySettings: Decodable {
+        /// Optional so a partial realtime payload still decodes.
+        let name: String?
         let disabled_tabs: [String]
         let start_tab: String?
         let is_premium: Bool
@@ -650,11 +669,12 @@ final class FamilyService: ObservableObject {
         do {
             let row: RemoteFamilySettings = try await supabase
                 .from("families")
-                .select("disabled_tabs,start_tab,is_premium,favorite_tabs")
+                .select("name,disabled_tabs,start_tab,is_premium,favorite_tabs")
                 .eq("id", value: familyID)
                 .single()
                 .execute()
                 .value
+            if let name = row.name { session.setFamilyName(name) }
             session.setDisabledTabs(Set(row.disabled_tabs))
             session.setStartTab(row.start_tab)
             session.setFavoriteTabs(row.favorite_tabs ?? [])
@@ -719,6 +739,7 @@ final class FamilyService: ObservableObject {
                 guard let data = try? JSONEncoder().encode(change.record),
                       let row = try? JSONDecoder().decode(RemoteFamilySettings.self, from: data) else { continue }
                 await MainActor.run {
+                    if let name = row.name { self?.session.setFamilyName(name) }
                     self?.session.setDisabledTabs(Set(row.disabled_tabs))
                     self?.session.setStartTab(row.start_tab)
                     self?.session.setFavoriteTabs(row.favorite_tabs ?? [])
