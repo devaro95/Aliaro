@@ -52,27 +52,18 @@ struct ForceUpdateView: View {
         .trackScreen("force_update")
     }
 
-    /// Finds this app's App Store page from its bundle id (Apple's public
-    /// lookup API) so no store id has to be hardcoded.
+    /// Aliaro's App Store id.
+    private static let appStoreID = "6811198825"
+
     private func openAppStore() async {
         isOpeningStore = true
         defer { isOpeningStore = false }
-        let bundleID = Bundle.main.bundleIdentifier?.replacingOccurrences(of: ".dev", with: "") ?? "com.devaro.aliaro"
-        struct Lookup: Decodable {
-            struct Result: Decodable { let trackViewUrl: String? }
-            let results: [Result]
-        }
-        if let url = URL(string: "https://itunes.apple.com/lookup?bundleId=\(bundleID)"),
-           let (data, _) = try? await URLSession.shared.data(from: url),
-           let lookup = try? JSONDecoder().decode(Lookup.self, from: data),
-           let page = lookup.results.first?.trackViewUrl,
-           let pageURL = URL(string: page) {
-            await UIApplication.shared.open(pageURL)
+        if let app = URL(string: "itms-apps://apps.apple.com/app/id\(Self.appStoreID)"),
+           await UIApplication.shared.open(app) {
             return
         }
-        // Fallback: App Store search for the app.
-        if let search = URL(string: "itms-apps://apps.apple.com/search?term=Aliaro") {
-            await UIApplication.shared.open(search)
+        if let web = URL(string: "https://apps.apple.com/app/id\(Self.appStoreID)") {
+            await UIApplication.shared.open(web)
         }
     }
 }
