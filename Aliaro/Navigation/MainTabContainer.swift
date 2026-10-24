@@ -16,6 +16,11 @@ struct MainTabContainer: View {
     /// Screens pushed on top of Home (features that aren't favorites, and People).
     @State private var homePath: [AppTab]
     @StateObject private var bottomBarScrollTracker = BottomBarScrollTracker()
+    /// One-off "What's new" for people updating from an older version.
+    @State private var showWhatsNew = false
+
+    /// Bump the key for the next release's "What's new".
+    static let whatsNewKey = "app_update_dated_menu_v1"
 
     init() {
         let initial = MainTabContainer.initialNavigation()
@@ -42,6 +47,8 @@ struct MainTabContainer: View {
         // First time in after creating/joining/restoring the group: Home.
         if session.opensOnHomeNext {
             session.opensOnHomeNext = false
+            // A group created/joined/restored on this version: nothing is "new" for them.
+            ALIShowOnce.markSeen(whatsNewKey)
             return (.home, [])
         }
         let start = AppTab.start(stored: session.startTab, excluding: session.disabledTabs)
@@ -104,7 +111,42 @@ struct MainTabContainer: View {
         .onChange(of: familySession.favoriteTabs) { _, _ in
             fixNavigationAfterSettingsChange()
         }
+        .sheet(isPresented: $showWhatsNew) {
+            ALIWhatsNewSheet(
+                title: "New in Aliaro",
+                accent: ALIColors.weeklyMenuAccent,
+                items: [
+                    ALIWhatsNewItem(
+                        systemImage: "calendar",
+                        title: "Plan any week",
+                        text: "Move between past and future weeks and plan as far ahead as you want.",
+                        accent: ALIColors.weeklyMenuAccent
+                    ),
+                    ALIWhatsNewItem(
+                        systemImage: "calendar.badge.plus",
+                        title: "Month view and copy weeks",
+                        text: "See the whole month at a glance and repeat a week in one tap.",
+                        accent: ALIColors.mealLunchAccent
+                    ),
+                    ALIWhatsNewItem(
+                        systemImage: "fork.knife",
+                        title: "All your dishes",
+                        text: "Add, rename or delete dishes from the button at the top of the menu.",
+                        accent: ALIColors.mealDinnerAccent
+                    ),
+                ],
+                note: "Make sure everyone in your family group updates Aliaro, so you can all enjoy the new features.",
+                noteIcon: "person.2.fill"
+            ) {
+                Track.event("whats_new_dismissed", ["key": Self.whatsNewKey])
+                showWhatsNew = false
+            }
+        }
         .onAppear {
+            if ALIShowOnce.consume(Self.whatsNewKey) {
+                Track.event("whats_new_shown", ["key": Self.whatsNewKey])
+                showWhatsNew = true
+            }
             Track.event("app_home_shown", [
                 "initial_tab": (homePath.last ?? selected).settingsKey,
                 "visible_tabs": AppTab.visibleFeatures(excluding: familySession.disabledTabs).count,

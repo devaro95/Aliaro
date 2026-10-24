@@ -521,3 +521,136 @@ struct ALIAvatarButton: View {
         .buttonStyle(.plain)
     }
 }
+
+// MARK: - What's new
+
+/// One feature row of `ALIWhatsNewSheet`.
+struct ALIWhatsNewItem: Identifiable {
+    let id = UUID()
+    let systemImage: String
+    let title: LocalizedStringKey
+    let text: LocalizedStringKey
+    var accent: Color = ALIColors.primary
+}
+
+/// One-off "What's new" sheet (same design as Android's `ALIWhatsNewSheet`):
+/// sparkle header, a strip of the item colors, one card per feature and a
+/// highlighted note at the bottom.
+struct ALIWhatsNewSheet: View {
+    let title: LocalizedStringKey
+    var accent: Color = ALIColors.primary
+    let items: [ALIWhatsNewItem]
+    let note: LocalizedStringKey
+    var noteIcon: String = "star.fill"
+    let onDismiss: () -> Void
+
+    @State private var appeared = false
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 24) {
+                VStack(spacing: 14) {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 36, weight: .semibold))
+                        .foregroundStyle(ALIColors.onAccent)
+                        .frame(width: 84, height: 84)
+                        .background(
+                            LinearGradient(colors: [accent, accent.opacity(0.45)], startPoint: .topLeading, endPoint: .bottomTrailing)
+                        )
+                        .clipShape(Circle())
+                        .scaleEffect(appeared ? 1 : 0.6)
+                        .opacity(appeared ? 1 : 0)
+                        .animation(.spring(response: 0.5, dampingFraction: 0.55), value: appeared)
+
+                    Text("What's new")
+                        .font(ALITypography.labelLarge)
+                        .foregroundStyle(ALIColors.mutedInk)
+                        .textCase(.uppercase)
+
+                    Text(title)
+                        .font(.system(size: 24, weight: .bold, design: .rounded))
+                        .foregroundStyle(ALIColors.ink)
+                        .multilineTextAlignment(.center)
+
+                    HStack(spacing: 6) {
+                        ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
+                            Circle()
+                                .fill(item.accent)
+                                .frame(width: 14, height: 14)
+                                .scaleEffect(appeared ? 1 : 0)
+                                .animation(.spring(response: 0.4, dampingFraction: 0.5).delay(0.15 + Double(index) * 0.05), value: appeared)
+                        }
+                    }
+                }
+
+                VStack(spacing: 12) {
+                    ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
+                        ALICard {
+                            HStack(alignment: .top, spacing: 14) {
+                                Image(systemName: item.systemImage)
+                                    .font(.system(size: 18, weight: .semibold))
+                                    .foregroundStyle(ALIColors.onAccent)
+                                    .frame(width: 42, height: 42)
+                                    .background(item.accent)
+                                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(item.title)
+                                        .font(ALITypography.bodyLarge.weight(.semibold))
+                                        .foregroundStyle(ALIColors.ink)
+                                    Text(item.text)
+                                        .font(ALITypography.bodyMedium)
+                                        .foregroundStyle(ALIColors.mutedInk)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+                                Spacer(minLength: 0)
+                            }
+                        }
+                        .opacity(appeared ? 1 : 0)
+                        .offset(y: appeared ? 0 : 30)
+                        .animation(.easeOut(duration: 0.45).delay(0.25 + Double(index) * 0.1), value: appeared)
+                    }
+                }
+
+                HStack(alignment: .top, spacing: 10) {
+                    Image(systemName: noteIcon)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(ALIColors.sun)
+                    Text(note)
+                        .font(ALITypography.bodyMedium)
+                        .foregroundStyle(ALIColors.ink)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 0)
+                }
+                .padding(14)
+                .background(ALIColors.sun.opacity(0.18))
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .opacity(appeared ? 1 : 0)
+                .animation(.easeOut(duration: 0.4).delay(0.5), value: appeared)
+
+                ALIPrimaryButton(text: "Got it", accent: accent) { onDismiss() }
+            }
+            .padding(20)
+        }
+        .background(ALIColors.background)
+        .presentationDetents([.large])
+        .onAppear { appeared = true }
+    }
+}
+
+/// Shows something only once per install: `true` the first time (and
+/// marks it seen right away, however it's then dismissed).
+enum ALIShowOnce {
+    private static let defaults = UserDefaults.standard
+    private static func key(_ base: String) -> String { "aliaro.whatsNew.\(base)" }
+
+    static func consume(_ base: String) -> Bool {
+        guard !defaults.bool(forKey: key(base)) else { return false }
+        defaults.set(true, forKey: key(base))
+        return true
+    }
+
+    /// Marks it seen without showing it (e.g. a brand-new group: nothing is "new" for them).
+    static func markSeen(_ base: String) {
+        defaults.set(true, forKey: key(base))
+    }
+}
