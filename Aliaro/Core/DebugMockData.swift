@@ -194,6 +194,7 @@ enum DebugMockData {
         purge(FamilyEvent.self)
         purge(Reminder.self)
         purge(BoardNote.self)
+        purge(FamilyDocument.self)
         purge(Expense.self)
         purge(ExpenseCategory.self)
         purge(FamilyMember.self)

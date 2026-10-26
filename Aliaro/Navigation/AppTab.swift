@@ -20,6 +20,7 @@ enum AppTab: Int, CaseIterable, Identifiable, Hashable {
     case reminders
     case board
     case economia
+    case documents
     case people
 
     /// Maximum number of favorite features shown in the bottom bar next to Home.
@@ -41,6 +42,7 @@ enum AppTab: Int, CaseIterable, Identifiable, Hashable {
         case .reminders: return "Reminders"
         case .board: return "Board"
         case .economia: return "Finances"
+        case .documents: return "Documents"
         case .people: return "People"
         }
     }
@@ -56,6 +58,7 @@ enum AppTab: Int, CaseIterable, Identifiable, Hashable {
         case .reminders: return "bell.fill"
         case .board: return "pin.fill"
         case .economia: return "eurosign.circle.fill"
+        case .documents: return "doc.text.fill"
         case .people: return "person.2.fill"
         }
     }
@@ -71,6 +74,7 @@ enum AppTab: Int, CaseIterable, Identifiable, Hashable {
         case .reminders: return ALIColors.remindersAccent
         case .board: return ALIColors.boardAccent
         case .economia: return ALIColors.economiaAccent
+        case .documents: return ALIColors.documentsAccent
         case .people: return ALIColors.peopleAccent
         }
     }
@@ -89,6 +93,7 @@ enum AppTab: Int, CaseIterable, Identifiable, Hashable {
         case .reminders: return "reminders"
         case .board: return "board"
         case .economia: return "economia"
+        case .documents: return "documents"
         case .people: return "people"
         }
     }

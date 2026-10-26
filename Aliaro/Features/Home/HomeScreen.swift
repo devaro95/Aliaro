@@ -39,6 +39,7 @@ struct HomeScreen: View {
     @Query(sort: \ShoppingListEntry.addedAt) private var shoppingEntries: [ShoppingListEntry]
     @Query(sort: \Reminder.fireDate) private var reminders: [Reminder]
     @Query private var recipes: [Recipe]
+    @Query private var documents: [FamilyDocument]
     /// Same order as the Board (manual `position`, then newest first).
     @Query(sort: [SortDescriptor(\BoardNote.position), SortDescriptor(\BoardNote.createdAt, order: .reverse)])
     private var boardNotes: [BoardNote]
@@ -584,6 +585,7 @@ struct HomeScreen: View {
     /// preview when locked but still reads as premium from the grid.
     private func showsCrown(_ tab: AppTab) -> Bool {
         isLocked(tab) || (tab == .board && premium.isLocked(.board))
+            || (tab == .documents && premium.isLocked(.documents))
     }
 
     /// Stable stat line for each feature tile — different from the "Today"
@@ -626,6 +628,10 @@ struct HomeScreen: View {
             let count = myBoardNotes.count
             if count == 0 { return String(localized: "No notes") }
             return count == 1 ? String(localized: "1 note") : String(localized: "\(count) notes")
+        case .documents:
+            let count = documents.count
+            if count == 0 { return String(localized: "No documents yet") }
+            return count == 1 ? String(localized: "1 document") : String(localized: "\(count) documents")
         case .home, .people:
             return nil
         }
@@ -649,7 +655,7 @@ struct HomeScreen: View {
         case .shoppingList: return shoppingSummary
         case .reminders: return remindersSummary
         case .economia: return financesSummary
-        case .recipes, .board, .home, .people: return nil
+        case .recipes, .board, .documents, .home, .people: return nil
         }
     }
 

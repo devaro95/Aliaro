@@ -258,6 +258,33 @@ struct RemoteExpenseArchive: FamilySynced {
     var created_at: Date
 }
 
+struct RemoteDocumentCategory: FamilySynced {
+    static let tableName = "document_categories"
+    var id: UUID
+    var family_id: UUID
+    var name: String
+    var icon: String
+    var is_default: Bool
+    var position: Int
+    var created_at: Date
+}
+
+struct RemoteDocument: FamilySynced {
+    static let tableName = "documents"
+    var id: UUID
+    var family_id: UUID
+    var title: String
+    var category_id: UUID?
+    var file_path: String
+    var file_type: String
+    var file_size: Int
+    var page_count: Int
+    var created_at: Date
+    var updated_at: Date
+    var created_by: UUID?
+    var created_by_name: String?
+}
+
 /// Coordinates syncing all of the app's data (menu, shopping, tasks,
 /// calendar, reminders) with Supabase: initial load, real time from any
 /// device in the group, and uploading local changes.
@@ -289,6 +316,8 @@ final class AppDataSyncCoordinator: ObservableObject {
     private let expenses = RemoteSync<RemoteExpense>()
     private let activityLogEntries = RemoteSync<RemoteActivityLogEntry>()
     private let expenseArchives = RemoteSync<RemoteExpenseArchive>()
+    private let documentCategories = RemoteSync<RemoteDocumentCategory>()
+    private let documents = RemoteSync<RemoteDocument>()
 
     private var started = false
     /// Kept so `refreshWidgetSnapshot()` can be called from places (like
@@ -328,6 +357,8 @@ final class AppDataSyncCoordinator: ObservableObject {
         await startExpenses(familyID: familyID, modelContext: modelContext)
         await startActivityLogEntries(familyID: familyID, modelContext: modelContext)
         await startExpenseArchives(familyID: familyID, modelContext: modelContext)
+        await startDocumentCategories(familyID: familyID, modelContext: modelContext)
+        await startDocuments(familyID: familyID, modelContext: modelContext)
         refreshWidgetSnapshot()
     }
 
@@ -351,6 +382,8 @@ final class AppDataSyncCoordinator: ObservableObject {
         await expenses.stop()
         await activityLogEntries.stop()
         await expenseArchives.stop()
+        await documentCategories.stop()
+        await documents.stop()
     }
 
     // MARK: FamilyMembers
@@ -1069,6 +1102,163 @@ final class AppDataSyncCoordinator: ObservableObject {
 
     func deleteBoardNote(id: UUID) {
         Task { try? await boardNotes.remove(id: id) }
+    }
+
+    // MARK: Documents (+ files in Storage)
+
+    /// Storage bucket for family documents; objects live at
+    /// `<family_id>/<document_id>-<random>.(pdf|jpg)`.
+    static let documentsBucket = "family-documents"
+
+    private func startDocumentCategories(familyID: UUID, modelContext: ModelContext) async {
+        do {
+            let remote = try await documentCategories.fetchAll(familyID: familyID)
+            for r in remote { applyDocumentCategory(r, modelContext: modelContext) }
+            // Realtime doesn't deliver deletes filtered by family: purge on fetch.
+            let remoteIDs = Set(remote.map(\.id))
+            let local = (try? modelContext.fetch(FetchDescriptor<DocumentCategory>())) ?? []
+            for category in local where !remoteIDs.contains(category.id) { modelContext.delete(category) }
+        } catch {
+            lastError = error.localizedDescription
+        }
+        await documentCategories.start(
+            familyID: familyID,
+            onUpsert: { [weak self] r in self?.applyDocumentCategory(r, modelContext: modelContext) },
+            onDelete: { id in
+                let descriptor = FetchDescriptor<DocumentCategory>(predicate: #Predicate { $0.id == id })
+                if let existing = try? modelContext.fetch(descriptor).first {
+                    modelContext.delete(existing)
+                }
+            }
+        )
+    }
+
+    private func applyDocumentCategory(_ remote: RemoteDocumentCategory, modelContext: ModelContext) {
+        let descriptor = FetchDescriptor<DocumentCategory>(predicate: #Predicate { $0.id == remote.id })
+        if let existing = try? modelContext.fetch(descriptor).first {
+            existing.name = remote.name
+            existing.icon = remote.icon
+            existing.isDefault = remote.is_default
+            existing.position = remote.position
+        } else {
+            modelContext.insert(DocumentCategory(
+                id: remote.id, name: remote.name, icon: remote.icon, isDefault: remote.is_default,
+                position: remote.position, createdAt: remote.created_at
+            ))
+        }
+    }
+
+    func pushDocumentCategory(_ category: DocumentCategory, familyID: UUID) {
+        let record = RemoteDocumentCategory(
+            id: category.id, family_id: familyID, name: category.name, icon: category.icon,
+            is_default: category.isDefault, position: category.position, created_at: category.createdAt
+        )
+        Task { try? await documentCategories.push(record) }
+    }
+
+    func deleteDocumentCategory(id: UUID) {
+        Task { try? await documentCategories.remove(id: id) }
+    }
+
+    private func startDocuments(familyID: UUID, modelContext: ModelContext) async {
+        do {
+            let remote = try await documents.fetchAll(familyID: familyID)
+            for r in remote { applyDocument(r, modelContext: modelContext) }
+            let remoteIDs = Set(remote.map(\.id))
+            let local = (try? modelContext.fetch(FetchDescriptor<FamilyDocument>())) ?? []
+            for document in local where !remoteIDs.contains(document.id) {
+                DocumentFileCache.shared.remove(path: document.filePath)
+                modelContext.delete(document)
+            }
+        } catch {
+            lastError = error.localizedDescription
+        }
+        await documents.start(
+            familyID: familyID,
+            onUpsert: { [weak self] r in self?.applyDocument(r, modelContext: modelContext) },
+            onDelete: { id in
+                let descriptor = FetchDescriptor<FamilyDocument>(predicate: #Predicate { $0.id == id })
+                if let existing = try? modelContext.fetch(descriptor).first {
+                    DocumentFileCache.shared.remove(path: existing.filePath)
+                    modelContext.delete(existing)
+                }
+            }
+        )
+    }
+
+    private func applyDocument(_ remote: RemoteDocument, modelContext: ModelContext) {
+        let descriptor = FetchDescriptor<FamilyDocument>(predicate: #Predicate { $0.id == remote.id })
+        if let existing = try? modelContext.fetch(descriptor).first {
+            if existing.filePath != remote.file_path { DocumentFileCache.shared.remove(path: existing.filePath) }
+            existing.title = remote.title
+            existing.categoryID = remote.category_id
+            existing.filePath = remote.file_path
+            existing.fileType = remote.file_type
+            existing.fileSize = remote.file_size
+            existing.pageCount = remote.page_count
+            existing.updatedAt = remote.updated_at
+            existing.createdByID = remote.created_by
+            existing.createdByName = remote.created_by_name
+        } else {
+            modelContext.insert(FamilyDocument(
+                id: remote.id, title: remote.title, categoryID: remote.category_id, filePath: remote.file_path,
+                fileType: FamilyDocument.FileType(rawValue: remote.file_type) ?? .pdf,
+                fileSize: remote.file_size, pageCount: remote.page_count,
+                createdAt: remote.created_at, updatedAt: remote.updated_at,
+                createdByID: remote.created_by, createdByName: remote.created_by_name
+            ))
+        }
+    }
+
+    /// Local URL of a document's file, downloading it first if it isn't
+    /// cached yet. `nil` if the download failed (offline…).
+    func documentFile(_ document: FamilyDocument) async -> URL? {
+        let path = document.filePath
+        let type = document.type
+        if let cached = DocumentFileCache.shared.url(path: path, type: type) { return cached }
+        guard let data = try? await supabase.storage.from(Self.documentsBucket).download(path: path) else { return nil }
+        return DocumentFileCache.shared.save(data, path: path, type: type)
+    }
+
+    /// Uploads a new document's file and then its row. Throws so the UI can
+    /// keep the sheet open if the upload fails (the file is the point).
+    func uploadDocument(_ document: FamilyDocument, data: Data, familyID: UUID) async throws {
+        let path = "\(familyID.uuidString.lowercased())/\(document.id.uuidString.lowercased())-\(UUID().uuidString.prefix(8).lowercased()).\(document.type.fileExtension)"
+        _ = try await supabase.storage.from(Self.documentsBucket).upload(
+            path, data: data, options: FileOptions(contentType: document.type.contentType, upsert: true)
+        )
+        document.filePath = path
+        document.fileSize = data.count
+        _ = DocumentFileCache.shared.save(data, path: path, type: document.type)
+        do {
+            try await documents.push(remoteDocument(document, familyID: familyID))
+        } catch {
+            _ = try? await supabase.storage.from(Self.documentsBucket).remove(paths: [path])
+            throw error
+        }
+    }
+
+    /// Saves title/category changes (the file never changes once uploaded).
+    func pushDocument(_ document: FamilyDocument, familyID: UUID) {
+        let record = remoteDocument(document, familyID: familyID)
+        Task { try? await documents.push(record) }
+    }
+
+    func deleteDocument(id: UUID, filePath: String) {
+        DocumentFileCache.shared.remove(path: filePath)
+        Task {
+            try? await documents.remove(id: id)
+            if !filePath.isEmpty { _ = try? await supabase.storage.from(Self.documentsBucket).remove(paths: [filePath]) }
+        }
+    }
+
+    private func remoteDocument(_ document: FamilyDocument, familyID: UUID) -> RemoteDocument {
+        RemoteDocument(
+            id: document.id, family_id: familyID, title: document.title, category_id: document.categoryID,
+            file_path: document.filePath, file_type: document.fileType, file_size: document.fileSize,
+            page_count: document.pageCount, created_at: document.createdAt, updated_at: document.updatedAt,
+            created_by: document.createdByID, created_by_name: document.createdByName
+        )
     }
 
     // MARK: Categories
