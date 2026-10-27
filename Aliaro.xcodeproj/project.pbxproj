@@ -7,6 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		C0A80B32ACCB437AA95DD559 /* CountryPickerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9057702546914207BDD41B34 /* CountryPickerSheet.swift */; };
+		3EF511377C7B486D86801683 /* WorldMapData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88C65B82DF0F46BBBD94CD54 /* WorldMapData.swift */; };
+		79E59370672D4CCDBCC6308D /* WorldMapScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = B298FB3D307A4501AFB7E945 /* WorldMapScreen.swift */; };
+		AAF3DCC7F3B749C2A0FD052B /* VisitedCountry.swift in Sources */ = {isa = PBXBuildFile; fileRef = A55491DB436B4845B8004FEA /* VisitedCountry.swift */; };
+		A00AE11C84C945BDA682C079 /* world_map.json in Resources */ = {isa = PBXBuildFile; fileRef = C2BEEBB106DD40DFB8900509 /* world_map.json */; };
 		0206235065EA416FB89BD1EE /* EventCategory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A8610DA34DD426BBD40DCA5 /* EventCategory.swift */; };
 		024DCCC60B7A494AA419A6CC /* RegisterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDDC2337196E4B9087D33558 /* RegisterView.swift */; };
 		02C3C565E8664F58A7B25E81 /* DurationPickerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9099C51A036C4C97B7EF8C75 /* DurationPickerSheet.swift */; };
@@ -165,6 +170,11 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		9057702546914207BDD41B34 /* CountryPickerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CountryPickerSheet.swift; sourceTree = "<group>"; };
+		88C65B82DF0F46BBBD94CD54 /* WorldMapData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorldMapData.swift; sourceTree = "<group>"; };
+		B298FB3D307A4501AFB7E945 /* WorldMapScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorldMapScreen.swift; sourceTree = "<group>"; };
+		C2BEEBB106DD40DFB8900509 /* world_map.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = world_map.json; sourceTree = "<group>"; };
+		A55491DB436B4845B8004FEA /* VisitedCountry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisitedCountry.swift; sourceTree = "<group>"; };
 		005233AE182643C8B3348713 /* MetaAds.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetaAds.swift; sourceTree = "<group>"; };
 		02C0EEEF749B4E418264F30B /* Products.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = Products.storekit; sourceTree = "<group>"; };
 		04643440A1324614AF349161 /* HouseTasksScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HouseTasksScreen.swift; sourceTree = "<group>"; };
@@ -320,6 +330,17 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		01867BCC94C349589D378375 /* WorldMap */ = {
+			isa = PBXGroup;
+			children = (
+				9057702546914207BDD41B34 /* CountryPickerSheet.swift */,
+				88C65B82DF0F46BBBD94CD54 /* WorldMapData.swift */,
+				B298FB3D307A4501AFB7E945 /* WorldMapScreen.swift */,
+				C2BEEBB106DD40DFB8900509 /* world_map.json */,
+			);
+			path = WorldMap;
+			sourceTree = "<group>";
+		};
 		0CEC2EF3CC884BAB8AD04DC7 /* Debug */ = {
 			isa = PBXGroup;
 			children = (
@@ -551,6 +572,7 @@
 				92CC57C521AB43EA99B53D48 /* Splash */,
 				518278CD9D164677828F4509 /* WeeklyMenu */,
 				8264F41820714BFB8D53BB53 /* Wifi */,
+				01867BCC94C349589D378375 /* WorldMap */,
 			);
 			path = Features;
 			sourceTree = "<group>";
@@ -653,6 +675,7 @@
 				2CB0BEF0701A4F0085780664 /* ShoppingList.swift */,
 				7C6E5073C81B4F2E804EFEF0 /* ShoppingListEntry.swift */,
 				7857B927937B434E924B8A12 /* WifiNetwork.swift */,
+				A55491DB436B4845B8004FEA /* VisitedCountry.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -765,6 +788,7 @@
 				2AEB4967D0BC49068AF446F8 /* GoogleService-Info.plist in Resources */,
 				D5D48015DBAC4A499AB9611F /* Localizable.xcstrings in Resources */,
 				C8B5CDB53ACD44598B18013D /* PrivacyInfo.xcprivacy in Resources */,
+				A00AE11C84C945BDA682C079 /* world_map.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -900,6 +924,9 @@
 				E831E42BA6994F80AC3E2E9D /* WeeklyMenu+Support.swift in Sources */,
 				B46BE46FBAB64071B626CA3C /* WeeklyMenuScreen.swift in Sources */,
 				753E502AC5334FAEB58C6B75 /* WifiScreen.swift in Sources */,
+				C0A80B32ACCB437AA95DD559 /* CountryPickerSheet.swift in Sources */,
+				3EF511377C7B486D86801683 /* WorldMapData.swift in Sources */,
+				79E59370672D4CCDBCC6308D /* WorldMapScreen.swift in Sources */,
 				EF2871F4F246434F921DCFC0 /* ActivityLogEntry.swift in Sources */,
 				3BD20E8D08AF471D88DBF518 /* BoardNote.swift in Sources */,
 				E3EAC5824F18476FAFC2F15B /* Dish.swift in Sources */,
@@ -919,6 +946,7 @@
 				7D3AD02234BE4ACC9D852148 /* ShoppingList.swift in Sources */,
 				1035DE8A96C14B349102BCFD /* ShoppingListEntry.swift in Sources */,
 				F2AAB8E730B84DA1A6779007 /* WifiNetwork.swift in Sources */,
+				AAF3DCC7F3B749C2A0FD052B /* VisitedCountry.swift in Sources */,
 				F436EDA6CABB45D4841E03FC /* ALIBottomBar.swift in Sources */,
 				F1980EBF7F1B4838BA00FC76 /* AppTab.swift in Sources */,
 				9B1D32078D1D4A6D9D6F4E1B /* MainTabContainer.swift in Sources */,

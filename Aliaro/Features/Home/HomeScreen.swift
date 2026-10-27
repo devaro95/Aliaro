@@ -45,6 +45,7 @@ struct HomeScreen: View {
     @Query(sort: \ShoppingListEntry.addedAt) private var shoppingEntries: [ShoppingListEntry]
     @Query(sort: \Reminder.fireDate) private var reminders: [Reminder]
     @Query private var recipes: [Recipe]
+    @Query private var visitedCountries: [VisitedCountry]
     /// Same order as the Board (manual `position`, then newest first).
     @Query(sort: [SortDescriptor(\BoardNote.position), SortDescriptor(\BoardNote.createdAt, order: .reverse)])
     private var boardNotes: [BoardNote]
@@ -718,6 +719,10 @@ struct HomeScreen: View {
             let count = wifiNetworks.count
             if count == 0 { return String(localized: "Add your Wi-Fi") }
             return count == 1 ? String(localized: "1 network") : String(localized: "\(count) networks")
+        case .worldMap:
+            let count = Set(visitedCountries.map(\.countryCode)).count
+            if count == 0 { return String(localized: "No countries yet") }
+            return count == 1 ? String(localized: "1 country") : String(localized: "\(count) countries")
         case .home, .people:
             return nil
         }
@@ -742,7 +747,7 @@ struct HomeScreen: View {
         case .shoppingList: return shoppingSummary
         case .reminders: return remindersSummary
         case .economia: return financesSummary
-        case .recipes, .board, .wifi, .home, .people: return nil
+        case .recipes, .board, .wifi, .worldMap, .home, .people: return nil
         }
     }
 

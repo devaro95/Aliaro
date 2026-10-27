@@ -316,6 +316,15 @@ struct RemoteWifiNetwork: FamilySynced {
     var created_by_name: String?
 }
 
+struct RemoteVisitedCountry: FamilySynced {
+    static let tableName = "visited_countries"
+    var id: UUID
+    var family_id: UUID
+    var member_id: UUID
+    var country_code: String
+    var created_at: Date
+}
+
 /// Coordinates syncing all of the app's data (menu, shopping, tasks,
 /// calendar, reminders) with Supabase: initial load, real time from any
 /// device in the group, and uploading local changes.
@@ -349,6 +358,7 @@ final class AppDataSyncCoordinator: ObservableObject {
     private let activityLogEntries = RemoteSync<RemoteActivityLogEntry>()
     private let expenseArchives = RemoteSync<RemoteExpenseArchive>()
     private let wifiNetworks = RemoteSync<RemoteWifiNetwork>()
+    private let visitedCountries = RemoteSync<RemoteVisitedCountry>()
 
     private var started = false
     /// Kept so `refreshWidgetSnapshot()` can be called from places (like
@@ -391,6 +401,7 @@ final class AppDataSyncCoordinator: ObservableObject {
         await startActivityLogEntries(familyID: familyID, modelContext: modelContext)
         await startExpenseArchives(familyID: familyID, modelContext: modelContext)
         await startWifiNetworks(familyID: familyID, modelContext: modelContext)
+        await startVisitedCountries(familyID: familyID, modelContext: modelContext)
         refreshWidgetSnapshot()
     }
 
@@ -440,6 +451,7 @@ final class AppDataSyncCoordinator: ObservableObject {
         await activityLogEntries.stop()
         await expenseArchives.stop()
         await wifiNetworks.stop()
+        await visitedCountries.stop()
     }
 
     // MARK: FamilyMembers
@@ -1348,6 +1360,31 @@ final class AppDataSyncCoordinator: ObservableObject {
         )
     }
 
+    // MARK: VisitedCountries (World map)
+
+    private func startVisitedCountries(familyID: UUID, modelContext: ModelContext) async {
+        do {
+            let remote = try await visitedCountries.fetchAll(familyID: familyID)
+            for r in remote { applyVisitedCountry(r, modelContext: modelContext) }
+            // Realtime doesn't deliver deletes filtered by family: purge on fetch.
+            let remoteIDs = Set(remote.map(\.id))
+            let local = (try? modelContext.fetch(FetchDescriptor<VisitedCountry>())) ?? []
+            for visit in local where !remoteIDs.contains(visit.id) { modelContext.delete(visit) }
+        } catch {
+            lastError = error.localizedDescription
+        }
+        await visitedCountries.start(
+            familyID: familyID,
+            onUpsert: { [weak self] r in self?.applyVisitedCountry(r, modelContext: modelContext) },
+            onDelete: { id in
+                let descriptor = FetchDescriptor<VisitedCountry>(predicate: #Predicate { $0.id == id })
+                if let existing = try? modelContext.fetch(descriptor).first {
+                    modelContext.delete(existing)
+                }
+            }
+        )
+    }
+
     private func applyWifiNetwork(_ remote: RemoteWifiNetwork, modelContext: ModelContext) {
         let descriptor = FetchDescriptor<WifiNetwork>(predicate: #Predicate { $0.id == remote.id })
         if let existing = try? modelContext.fetch(descriptor).first {
@@ -1380,6 +1417,26 @@ final class AppDataSyncCoordinator: ObservableObject {
 
     func deleteWifiNetwork(id: UUID) {
         Task { try? await wifiNetworks.remove(id: id) }
+    }
+
+    private func applyVisitedCountry(_ remote: RemoteVisitedCountry, modelContext: ModelContext) {
+        let descriptor = FetchDescriptor<VisitedCountry>(predicate: #Predicate { $0.id == remote.id })
+        guard (try? modelContext.fetch(descriptor).first) == nil else { return }
+        modelContext.insert(VisitedCountry(
+            id: remote.id, memberID: remote.member_id, countryCode: remote.country_code, createdAt: remote.created_at
+        ))
+    }
+
+    func pushVisitedCountry(_ visit: VisitedCountry, familyID: UUID) {
+        let record = RemoteVisitedCountry(
+            id: visit.id, family_id: familyID, member_id: visit.memberID,
+            country_code: visit.countryCode, created_at: visit.createdAt
+        )
+        Task { try? await visitedCountries.push(record) }
+    }
+
+    func deleteVisitedCountry(id: UUID) {
+        Task { try? await visitedCountries.remove(id: id) }
     }
 
     // MARK: Categories
