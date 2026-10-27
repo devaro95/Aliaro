@@ -70,10 +70,10 @@ struct ShoppingListScreen: View {
                     )
                 } else {
                     if !pending.isEmpty {
-                        sectionCard(title: "To buy (\(pending.count))", rows: pending)
+                        sectionCard(title: String(localized: "To buy (\(pending.count))"), rows: pending)
                     }
                     if !checked.isEmpty {
-                        sectionCard(title: "Bought (\(checked.count))", rows: checked, dimmed: true)
+                        sectionCard(title: String(localized: "Bought (\(checked.count))"), rows: checked, dimmed: true)
                         if canDelete {
                             ALITextButton(text: "Clear bought") {
                                 Track.event("shopping_clear_bought", ["count": checked.count])
