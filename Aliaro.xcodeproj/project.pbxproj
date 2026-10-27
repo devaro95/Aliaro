@@ -97,6 +97,9 @@
 		E831E42BA6994F80AC3E2E9D /* WeeklyMenu+Support.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E39BAF903C24090A03C95EF /* WeeklyMenu+Support.swift */; };
 		B46BE46FBAB64071B626CA3C /* WeeklyMenuScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F54F2A6C164CBDAE08BF70 /* WeeklyMenuScreen.swift */; };
 		753E502AC5334FAEB58C6B75 /* WifiScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45A98A25DEC24D8496A27A41 /* WifiScreen.swift */; };
+		40589B7B2C7B4EC782F8CDDA /* CountryPickerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59CD2A180CB445C9AD2C2D45 /* CountryPickerSheet.swift */; };
+		97A0E1CF321E464EB5A94ADE /* WorldMapData.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEDE65CB365643B0895C2E89 /* WorldMapData.swift */; };
+		F65189D5FBE54A51A8D64FB5 /* WorldMapScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BE27738DC794EF291FFA7F4 /* WorldMapScreen.swift */; };
 		EF2871F4F246434F921DCFC0 /* ActivityLogEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = F226AC6D5C664C48A389BEF5 /* ActivityLogEntry.swift */; };
 		3BD20E8D08AF471D88DBF518 /* BoardNote.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04D266B8BB5043F2B9774034 /* BoardNote.swift */; };
 		E3EAC5824F18476FAFC2F15B /* Dish.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4950ADBB56A94AD5AE8C9A5F /* Dish.swift */; };
@@ -115,6 +118,7 @@
 		ACB44336B38D42FAB0A961D5 /* Reminder.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAFEEDE3DF3748CB978377B1 /* Reminder.swift */; };
 		7D3AD02234BE4ACC9D852148 /* ShoppingList.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CB0BEF0701A4F0085780664 /* ShoppingList.swift */; };
 		1035DE8A96C14B349102BCFD /* ShoppingListEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C6E5073C81B4F2E804EFEF0 /* ShoppingListEntry.swift */; };
+		318AD88C61034D0784293AAF /* VisitedCountry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CD8DE9DCC7644708B89459E /* VisitedCountry.swift */; };
 		F2AAB8E730B84DA1A6779007 /* WifiNetwork.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7857B927937B434E924B8A12 /* WifiNetwork.swift */; };
 		F436EDA6CABB45D4841E03FC /* ALIBottomBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3ACF6A70E3BD44CB941BE72C /* ALIBottomBar.swift */; };
 		F1980EBF7F1B4838BA00FC76 /* AppTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC7A2775E79F41948F13183E /* AppTab.swift */; };
@@ -125,6 +129,7 @@
 		2AEB4967D0BC49068AF446F8 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = F0BC8C977DEE45FBA096CE36 /* GoogleService-Info.plist */; };
 		D5D48015DBAC4A499AB9611F /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = FFB259A1BEE54ACD98A2413A /* Localizable.xcstrings */; };
 		C8B5CDB53ACD44598B18013D /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 669E921F615C4F7080B5A7DD /* PrivacyInfo.xcprivacy */; };
+		89DEF49D43BF4645A0736C0C /* world_map.json in Resources */ = {isa = PBXBuildFile; fileRef = 96AB683151DE49CC92FCF2E0 /* world_map.json */; };
 		385DFB9F0C764E3C998C81CB /* AppGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C6542FF770F4008830ACD0D /* AppGroup.swift */; };
 		AC85FFC090E64CC98910A9C3 /* WidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3ED9C3EA0DB47D39B10E00A /* WidgetSnapshot.swift */; };
 		96A51F09CC204606A5165DD7 /* AliaroWidgetsBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = E922ABDB7FFE476FBCF53ADA /* AliaroWidgetsBundle.swift */; };
@@ -261,6 +266,10 @@
 		4E39BAF903C24090A03C95EF /* WeeklyMenu+Support.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WeeklyMenu+Support.swift"; sourceTree = "<group>"; };
 		B3F54F2A6C164CBDAE08BF70 /* WeeklyMenuScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyMenuScreen.swift; sourceTree = "<group>"; };
 		45A98A25DEC24D8496A27A41 /* WifiScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WifiScreen.swift; sourceTree = "<group>"; };
+		59CD2A180CB445C9AD2C2D45 /* CountryPickerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CountryPickerSheet.swift; sourceTree = "<group>"; };
+		DEDE65CB365643B0895C2E89 /* WorldMapData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorldMapData.swift; sourceTree = "<group>"; };
+		4BE27738DC794EF291FFA7F4 /* WorldMapScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorldMapScreen.swift; sourceTree = "<group>"; };
+		96AB683151DE49CC92FCF2E0 /* world_map.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = world_map.json; sourceTree = "<group>"; };
 		F226AC6D5C664C48A389BEF5 /* ActivityLogEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityLogEntry.swift; sourceTree = "<group>"; };
 		04D266B8BB5043F2B9774034 /* BoardNote.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardNote.swift; sourceTree = "<group>"; };
 		4950ADBB56A94AD5AE8C9A5F /* Dish.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Dish.swift; sourceTree = "<group>"; };
@@ -279,6 +288,7 @@
 		BAFEEDE3DF3748CB978377B1 /* Reminder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Reminder.swift; sourceTree = "<group>"; };
 		2CB0BEF0701A4F0085780664 /* ShoppingList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingList.swift; sourceTree = "<group>"; };
 		7C6E5073C81B4F2E804EFEF0 /* ShoppingListEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingListEntry.swift; sourceTree = "<group>"; };
+		4CD8DE9DCC7644708B89459E /* VisitedCountry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisitedCountry.swift; sourceTree = "<group>"; };
 		7857B927937B434E924B8A12 /* WifiNetwork.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WifiNetwork.swift; sourceTree = "<group>"; };
 		3ACF6A70E3BD44CB941BE72C /* ALIBottomBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ALIBottomBar.swift; sourceTree = "<group>"; };
 		AC7A2775E79F41948F13183E /* AppTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTab.swift; sourceTree = "<group>"; };
@@ -558,6 +568,17 @@
 			path = Wifi;
 			sourceTree = "<group>";
 		};
+		954FC0E0FFA14EF7B5C90E93 /* WorldMap */ = {
+			isa = PBXGroup;
+			children = (
+				59CD2A180CB445C9AD2C2D45,
+				DEDE65CB365643B0895C2E89,
+				4BE27738DC794EF291FFA7F4,
+				96AB683151DE49CC92FCF2E0
+			);
+			path = WorldMap;
+			sourceTree = "<group>";
+		};
 		BD3DC640FD4643B6ACA38481 /* Features */ = {
 			isa = PBXGroup;
 			children = (
@@ -577,7 +598,8 @@
 				287970F3F6A54726B1711401,
 				92CC57C521AB43EA99B53D48,
 				518278CD9D164677828F4509,
-				8264F41820714BFB8D53BB53
+				8264F41820714BFB8D53BB53,
+				954FC0E0FFA14EF7B5C90E93
 			);
 			path = Features;
 			sourceTree = "<group>";
@@ -603,6 +625,7 @@
 				BAFEEDE3DF3748CB978377B1,
 				2CB0BEF0701A4F0085780664,
 				7C6E5073C81B4F2E804EFEF0,
+				4CD8DE9DCC7644708B89459E,
 				7857B927937B434E924B8A12
 			);
 			path = Models;
@@ -770,6 +793,7 @@
 				2AEB4967D0BC49068AF446F8 /* GoogleService-Info.plist in Resources */,
 				D5D48015DBAC4A499AB9611F /* Localizable.xcstrings in Resources */,
 				C8B5CDB53ACD44598B18013D /* PrivacyInfo.xcprivacy in Resources */,
+				89DEF49D43BF4645A0736C0C /* world_map.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -904,6 +928,9 @@
 				E831E42BA6994F80AC3E2E9D /* WeeklyMenu+Support.swift in Sources */,
 				B46BE46FBAB64071B626CA3C /* WeeklyMenuScreen.swift in Sources */,
 				753E502AC5334FAEB58C6B75 /* WifiScreen.swift in Sources */,
+				40589B7B2C7B4EC782F8CDDA /* CountryPickerSheet.swift in Sources */,
+				97A0E1CF321E464EB5A94ADE /* WorldMapData.swift in Sources */,
+				F65189D5FBE54A51A8D64FB5 /* WorldMapScreen.swift in Sources */,
 				EF2871F4F246434F921DCFC0 /* ActivityLogEntry.swift in Sources */,
 				3BD20E8D08AF471D88DBF518 /* BoardNote.swift in Sources */,
 				E3EAC5824F18476FAFC2F15B /* Dish.swift in Sources */,
@@ -922,6 +949,7 @@
 				ACB44336B38D42FAB0A961D5 /* Reminder.swift in Sources */,
 				7D3AD02234BE4ACC9D852148 /* ShoppingList.swift in Sources */,
 				1035DE8A96C14B349102BCFD /* ShoppingListEntry.swift in Sources */,
+				318AD88C61034D0784293AAF /* VisitedCountry.swift in Sources */,
 				F2AAB8E730B84DA1A6779007 /* WifiNetwork.swift in Sources */,
 				F436EDA6CABB45D4841E03FC /* ALIBottomBar.swift in Sources */,
 				F1980EBF7F1B4838BA00FC76 /* AppTab.swift in Sources */,

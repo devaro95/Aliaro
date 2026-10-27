@@ -32,7 +32,8 @@ struct AliaroApp: App {
             ActivityLogEntry.self,
             ExpenseArchive.self,
             WifiNetwork.self,
-            FamilyPlace.self
+            FamilyPlace.self,
+            VisitedCountry.self
         ])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
         do {

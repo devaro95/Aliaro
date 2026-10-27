@@ -32,6 +32,7 @@ enum ALIPalette {
     static let pistachio = Color(hex: 0xB8D9A0) // finances
     static let apricot = Color(hex: 0xFFC49B)   // recipes
     static let periwinkle = Color(hex: 0xB5C0F5) // board
+    static let seafoam = Color(hex: 0x8EDDD3)    // world map
     static let leaf = Color(hex: 0xA9DFA0)       // places
 }
 
@@ -64,6 +65,7 @@ enum ALIColors {
     static let economiaAccent = ALIPalette.pistachio
     static let recipesAccent = ALIPalette.apricot
     static let boardAccent = ALIPalette.periwinkle
+    static let worldMapAccent = ALIPalette.seafoam
     static let placesAccent = ALIPalette.leaf
     static let wifiAccent = ALIPalette.sky
 

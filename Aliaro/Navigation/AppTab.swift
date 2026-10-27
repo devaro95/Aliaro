@@ -20,6 +20,7 @@ enum AppTab: Int, CaseIterable, Identifiable, Hashable {
     case reminders
     case board
     case economia
+    case worldMap
     case places
     case wifi
     case people
@@ -43,6 +44,7 @@ enum AppTab: Int, CaseIterable, Identifiable, Hashable {
         case .reminders: return "Reminders"
         case .board: return "Board"
         case .economia: return "Finances"
+        case .worldMap: return "World map"
         case .places: return "Places"
         case .wifi: return "Wi-Fi"
         case .people: return "People"
@@ -60,6 +62,7 @@ enum AppTab: Int, CaseIterable, Identifiable, Hashable {
         case .reminders: return "bell.fill"
         case .board: return "pin.fill"
         case .economia: return "eurosign.circle.fill"
+        case .worldMap: return "globe.europe.africa.fill"
         case .places: return "map.fill"
         case .wifi: return "wifi"
         case .people: return "person.2.fill"
@@ -77,6 +80,7 @@ enum AppTab: Int, CaseIterable, Identifiable, Hashable {
         case .reminders: return ALIColors.remindersAccent
         case .board: return ALIColors.boardAccent
         case .economia: return ALIColors.economiaAccent
+        case .worldMap: return ALIColors.worldMapAccent
         case .places: return ALIColors.placesAccent
         case .wifi: return ALIColors.wifiAccent
         case .people: return ALIColors.peopleAccent
@@ -97,6 +101,7 @@ enum AppTab: Int, CaseIterable, Identifiable, Hashable {
         case .reminders: return "reminders"
         case .board: return "board"
         case .economia: return "economia"
+        case .worldMap: return "world_map"
         case .places: return "places"
         case .wifi: return "wifi"
         case .people: return "people"
