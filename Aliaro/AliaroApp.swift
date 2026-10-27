@@ -93,7 +93,10 @@ struct AliaroApp: App {
                     ForceUpdatePresenter.update(required: required, debugPreview: preview)
                 }
                 .onChange(of: scenePhase) { _, phase in
-                    if phase == .active { Task { await ForceUpdate.shared.refresh() } }
+                    if phase == .active {
+                        Task { await ForceUpdate.shared.refresh() }
+                        ReviewPrompt.shared.registerSession()
+                    }
                 }
         }
         .modelContainer(modelContainer)

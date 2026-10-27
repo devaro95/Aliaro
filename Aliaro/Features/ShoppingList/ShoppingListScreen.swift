@@ -265,6 +265,7 @@ struct ShoppingListScreen: View {
             "minutes_in_list": Int(Date.now.timeIntervalSince(entry.addedAt) / 60)
         ])
         if let familyID = familySession.familyID { dataSync.pushShoppingListEntry(entry, familyID: familyID) }
+        if entry.isChecked { ReviewPrompt.shared.registerPositiveAction("shopping_item_checked") }
     }
 
     private func delete(_ entry: ShoppingListEntry) {

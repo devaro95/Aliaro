@@ -1294,6 +1294,9 @@ final class AppDataSyncCoordinator: ObservableObject {
         // Names only for chores (product data), never for personal items.
         let chore = entityType == "house_task" || entityType == "house_task_log"
         Track.event("\(entityType)_\(action)", ["task_name": chore ? entityName : nil])
+        // Creating things (or completing a task: a new task log) is a good
+        // moment to ask for a rating.
+        if action == "created" { ReviewPrompt.shared.registerPositiveAction(entityType) }
 
         let entry = ActivityLogEntry(
             entityType: entityType, entityName: entityName, action: action,
