@@ -641,7 +641,7 @@ final class FamilyService: ObservableObject {
             FamilyMember.self, Dish.self, MealPlanEntry.self, GroceryItem.self,
             ShoppingList.self, ShoppingListEntry.self, HouseTask.self, HouseTaskLog.self,
             FamilyEvent.self, Reminder.self, BoardNote.self, Expense.self, ExpenseCategory.self, ActivityLogEntry.self,
-            ExpenseArchive.self,
+            ExpenseArchive.self, FamilyPlace.self,
         ]
         for type in types {
             try? modelContext.delete(model: type)

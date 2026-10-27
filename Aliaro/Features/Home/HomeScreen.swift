@@ -39,6 +39,7 @@ struct HomeScreen: View {
     @Query(sort: \ShoppingListEntry.addedAt) private var shoppingEntries: [ShoppingListEntry]
     @Query(sort: \Reminder.fireDate) private var reminders: [Reminder]
     @Query private var recipes: [Recipe]
+    @Query private var places: [FamilyPlace]
     /// Same order as the Board (manual `position`, then newest first).
     @Query(sort: [SortDescriptor(\BoardNote.position), SortDescriptor(\BoardNote.createdAt, order: .reverse)])
     private var boardNotes: [BoardNote]
@@ -626,6 +627,10 @@ struct HomeScreen: View {
             let count = myBoardNotes.count
             if count == 0 { return String(localized: "No notes") }
             return count == 1 ? String(localized: "1 note") : String(localized: "\(count) notes")
+        case .places:
+            let count = places.count
+            if count == 0 { return String(localized: "No places yet") }
+            return count == 1 ? String(localized: "1 place") : String(localized: "\(count) places")
         case .home, .people:
             return nil
         }
@@ -649,7 +654,7 @@ struct HomeScreen: View {
         case .shoppingList: return shoppingSummary
         case .reminders: return remindersSummary
         case .economia: return financesSummary
-        case .recipes, .board, .home, .people: return nil
+        case .recipes, .board, .places, .home, .people: return nil
         }
     }
 

@@ -30,7 +30,8 @@ struct AliaroApp: App {
             Expense.self,
             ExpenseCategory.self,
             ActivityLogEntry.self,
-            ExpenseArchive.self
+            ExpenseArchive.self,
+            FamilyPlace.self
         ])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
         do {
