@@ -52,6 +52,22 @@
         }
       }
     },
+    "Add documents" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add documents"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir documentos"
+          }
+        }
+      }
+    },
     "Check your connection and try again." : {
       "localizations" : {
         "en" : {
@@ -96,6 +112,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No se pudo guardar el documento"
+          }
+        }
+      }
+    },
+    "Delete documents" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete documents"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar documentos"
           }
         }
       }
@@ -160,6 +192,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Editar documento"
+          }
+        }
+      }
+    },
+    "Edit documents" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit documents"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Editar documentos"
           }
         }
       }

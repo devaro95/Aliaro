@@ -19,6 +19,7 @@ struct DocumentsScreen: View {
     @Query(sort: \FamilyDocument.createdAt, order: .reverse) private var documents: [FamilyDocument]
     @Query(sort: [SortDescriptor(\DocumentCategory.position), SortDescriptor(\DocumentCategory.createdAt)])
     private var categories: [DocumentCategory]
+    @Query(sort: \FamilyMember.createdAt) private var members: [FamilyMember]
 
     @State private var searchText = ""
     @State private var selectedCategoryID: UUID?
@@ -34,6 +35,11 @@ struct DocumentsScreen: View {
     @State private var openFailed = false
 
     private var isLocked: Bool { premium.isLocked(.documents) }
+
+    private var currentMember: FamilyMember? { members.first(where: \.isCurrentDevice) }
+    private var canAdd: Bool { currentMember?.can(.documentsAdd) ?? true }
+    private var canEdit: Bool { currentMember?.can(.documentsEdit) ?? true }
+    private var canDelete: Bool { currentMember?.can(.documentsDelete) ?? true }
 
     private var filteredDocuments: [FamilyDocument] {
         let query = searchText.trimmed
@@ -59,12 +65,14 @@ struct DocumentsScreen: View {
 
             VStack(alignment: .leading, spacing: 16) {
                 ALITopBar(title: "Documents", accent: ALIColors.documentsAccent) {
-                    ALIFloatingButton(accent: ALIColors.documentsAccent) {
-                        Track.event("document_add_tap", ["documents": documents.count])
-                        showAddSheet = true
+                    if canAdd {
+                        ALIFloatingButton(accent: ALIColors.documentsAccent) {
+                            Track.event("document_add_tap", ["documents": documents.count])
+                            showAddSheet = true
+                        }
+                        .scaleEffect(0.72)
+                        .aliPremiumPreview(isLocked)
                     }
-                    .scaleEffect(0.72)
-                    .aliPremiumPreview(isLocked)
                 }
 
                 if isLocked {
@@ -148,6 +156,7 @@ struct DocumentsScreen: View {
                         selectedCategoryID = selectedCategoryID == category.id ? nil : category.id
                     }
                 }
+                if canEdit {
                 Button {
                     showCategories = true
                 } label: {
@@ -161,6 +170,7 @@ struct DocumentsScreen: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(Text("Categories"))
+                }
             }
             .padding(.horizontal, 20)
         }
@@ -178,8 +188,12 @@ struct DocumentsScreen: View {
         )
         .contextMenu {
             Button { open(document) } label: { Label("Open", systemImage: "doc.text") }
-            Button { documentToEdit = document } label: { Label("Edit", systemImage: "pencil") }
-            Button(role: .destructive) { documentPendingDelete = document } label: { Label("Delete", systemImage: "trash") }
+            if canEdit {
+                Button { documentToEdit = document } label: { Label("Edit", systemImage: "pencil") }
+            }
+            if canDelete {
+                Button(role: .destructive) { documentPendingDelete = document } label: { Label("Delete", systemImage: "trash") }
+            }
         }
     }
 

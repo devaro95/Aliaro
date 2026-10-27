@@ -28,6 +28,9 @@ enum FamilyPermission: String, CaseIterable, Identifiable {
     case boardAdd = "board_add"
     case boardEdit = "board_edit"
     case boardDelete = "board_delete"
+    case documentsAdd = "documents_add"
+    case documentsEdit = "documents_edit"
+    case documentsDelete = "documents_delete"
 
     var id: String { rawValue }
 
@@ -54,6 +57,9 @@ enum FamilyPermission: String, CaseIterable, Identifiable {
         case .boardAdd: return "Pin notes"
         case .boardEdit: return "Edit notes"
         case .boardDelete: return "Delete notes"
+        case .documentsAdd: return "Add documents"
+        case .documentsEdit: return "Edit documents"
+        case .documentsDelete: return "Delete documents"
         }
     }
 
@@ -67,12 +73,13 @@ enum FamilyPermission: String, CaseIterable, Identifiable {
         case .financesAdd, .financesEdit, .financesDelete, .financesArchive: return .finances
         case .shoppingAdd, .shoppingDelete: return .shopping
         case .boardAdd, .boardEdit, .boardDelete: return .board
+        case .documentsAdd, .documentsEdit, .documentsDelete: return .documents
         }
     }
 
     /// Feature section a permission belongs to, for grouping in the UI.
     enum Section: String, CaseIterable, Identifiable {
-        case weeklyMenu, recipes, shopping, calendar, reminders, tasks, board, finances
+        case weeklyMenu, recipes, shopping, calendar, reminders, tasks, board, finances, documents
 
         var id: String { rawValue }
 
@@ -86,6 +93,7 @@ enum FamilyPermission: String, CaseIterable, Identifiable {
             case .reminders: return "Reminders"
             case .tasks: return "House tasks"
             case .finances: return "Finances"
+            case .documents: return "Documents"
             }
         }
 
@@ -99,6 +107,7 @@ enum FamilyPermission: String, CaseIterable, Identifiable {
             case .reminders: return ALIColors.remindersAccent
             case .tasks: return ALIColors.houseTasksAccent
             case .finances: return ALIColors.economiaAccent
+            case .documents: return ALIColors.documentsAccent
             }
         }
 
