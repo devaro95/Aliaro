@@ -147,6 +147,7 @@ struct MainTabContainer: View {
         case .board: BoardScreen()
         case .economia: EconomiaScreen()
         case .wifi: WifiScreen()
+        case .places: PlacesScreen()
         case .people: PeopleScreen()
         }
     }
