@@ -17,4 +17,13 @@ final class ShoppingList {
         self.position = position
         self.createdAt = createdAt
     }
+
+    /// English name of the default list. Groups created from iOS before
+    /// 1.2 stored it untranslated, so it's shown translated.
+    static let defaultName = "Shopping list"
+
+    /// Name to show: the default list translated, any other as typed.
+    var displayName: String {
+        name == ShoppingList.defaultName ? String(localized: "Shopping list") : name
+    }
 }

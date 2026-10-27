@@ -125,7 +125,7 @@ struct ShoppingListScreen: View {
         }
         .aliDeleteConfirmDialog(
             isPresented: Binding(get: { listPendingDelete != nil }, set: { if !$0 { listPendingDelete = nil } }),
-            itemName: listPendingDelete?.name ?? ""
+            itemName: listPendingDelete?.displayName ?? ""
         ) {
             if let list = listPendingDelete { deleteList(list) }
         }
@@ -197,7 +197,7 @@ struct ShoppingListScreen: View {
                 withAnimation(.easeInOut(duration: 0.2)) { selectedListID = list.id }
             }
         } label: {
-            Text(list.name)
+            Text(list.displayName)
                 .font(ALITypography.labelLarge)
                 .foregroundStyle(isSelected ? ALIColors.onAccent : ALIColors.ink)
                 .lineLimit(1)
@@ -212,7 +212,7 @@ struct ShoppingListScreen: View {
             if canAdd {
                 Button {
                     Track.event("shopping_list_menu", ["action": "rename"])
-                    renameListText = list.name
+                    renameListText = list.displayName
                     renamingList = list
                 } label: {
                     Label("Rename", systemImage: "pencil")

@@ -121,7 +121,7 @@ final class FamilyService: ObservableObject {
         await dataSync.startAll(familyID: response.familyId, currentMemberID: response.memberId, modelContext: modelContext)
         await startSettingsSync(familyID: response.familyId)
         // Every family starts out with a default shopping list.
-        let defaultShoppingList = ShoppingList(name: "Shopping list", position: 0)
+        let defaultShoppingList = ShoppingList(name: String(localized: "Shopping list"), position: 0)
         modelContext.insert(defaultShoppingList)
         dataSync.pushShoppingList(defaultShoppingList, familyID: response.familyId)
         // ...and its 10 default spending categories, editable/extendable later.

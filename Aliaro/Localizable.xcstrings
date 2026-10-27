@@ -68,6 +68,22 @@
         }
       }
     },
+    "Join group" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Join group"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unirse al grupo"
+          }
+        }
+      }
+    },
     "Transport" : {
       "localizations" : {
         "en" : {
