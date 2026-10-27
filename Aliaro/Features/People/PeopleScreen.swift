@@ -338,7 +338,7 @@ struct PeopleScreen: View {
         .padding(.vertical, 10)
     }
 
-    private func memberBadge(_ text: String) -> some View {
+    private func memberBadge(_ text: LocalizedStringKey) -> some View {
         Text(text)
             .font(ALITypography.labelLarge)
             .foregroundStyle(ALIColors.mutedInk)

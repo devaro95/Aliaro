@@ -4,6 +4,38 @@
     "" : {
 
     },
+    "Admin" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Admin"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Admin"
+          }
+        }
+      }
+    },
+    "Creator" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Creator"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Creador"
+          }
+        }
+      }
+    },
     "Dining out" : {
       "localizations" : {
         "en" : {
@@ -96,6 +128,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Transporte"
+          }
+        }
+      }
+    },
+    "You" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tú"
           }
         }
       }

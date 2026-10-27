@@ -155,7 +155,7 @@ struct EconomiaStatsScreen: View {
         }
     }
 
-    private func summaryItem(title: String, value: Double, color: Color) -> some View {
+    private func summaryItem(title: LocalizedStringKey, value: Double, color: Color) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(title)
                 .font(ALITypography.labelLarge)
