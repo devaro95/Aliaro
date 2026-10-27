@@ -76,6 +76,8 @@
 		C095CEDAB41F438C9FBAB8C3 /* MemberPermissionsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6FB9C86F00644BF9F4814A1 /* MemberPermissionsSheet.swift */; };
 		7E83740A36EC4A26B7741E29 /* NotificationsScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FEB83123B824C32BAE246FD /* NotificationsScreen.swift */; };
 		238A7784ACEE4DFBBC63284B /* PeopleScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEBE32FFD8C5496F914C78F8 /* PeopleScreen.swift */; };
+		DE45DA99E1744584A8E12C74 /* AddPlaceSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB39985E9FA84D4DBA139AA8 /* AddPlaceSheet.swift */; };
+		F88EAC0E87324DFAA732941E /* PlacesScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BE1C0F8901E467895552AC9 /* PlacesScreen.swift */; };
 		034FFF67776F4D5D9EA82A45 /* ForceUpdateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07AB71D6273940C192E7B48A /* ForceUpdateView.swift */; };
 		3F360B5AEF024C3E95098C11 /* PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3580E6C8E7C43FCA9FA59D6 /* PaywallView.swift */; };
 		24A47C007A184EB1B25DB4DE /* AddRecipeSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4662AFD8BC14D8892F79526 /* AddRecipeSheet.swift */; };
@@ -104,6 +106,7 @@
 		E7EFE7DF4E9C423B9CDBC6DD /* FamilyEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEDD0BB67EAF4267971C1048 /* FamilyEvent.swift */; };
 		6BF84D5D5DCF4900B73008F1 /* FamilyMember.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29688D001B0B485583473C84 /* FamilyMember.swift */; };
 		F7DED3A93AA74D0F83A177AC /* FamilyPermission.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1163A5A36934F67AFD2CDFC /* FamilyPermission.swift */; };
+		E33AE15B2F214260A0F75B2B /* FamilyPlace.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5590DB81D7554B5AAF6FA313 /* FamilyPlace.swift */; };
 		054EB83E354C467AAFBA9DBB /* GroceryItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = F206ADBCF55F43A1A5DBD1B4 /* GroceryItem.swift */; };
 		2E782ACD882C4266BA33F39F /* HouseTask.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48FF222C62F94C6FB0F72357 /* HouseTask.swift */; };
 		B57736F0B12146438CD7B657 /* HouseTaskLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 137900C545FF4C1C8E19CBA5 /* HouseTaskLog.swift */; };
@@ -237,6 +240,8 @@
 		C6FB9C86F00644BF9F4814A1 /* MemberPermissionsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemberPermissionsSheet.swift; sourceTree = "<group>"; };
 		3FEB83123B824C32BAE246FD /* NotificationsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationsScreen.swift; sourceTree = "<group>"; };
 		AEBE32FFD8C5496F914C78F8 /* PeopleScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeopleScreen.swift; sourceTree = "<group>"; };
+		EB39985E9FA84D4DBA139AA8 /* AddPlaceSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddPlaceSheet.swift; sourceTree = "<group>"; };
+		6BE1C0F8901E467895552AC9 /* PlacesScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlacesScreen.swift; sourceTree = "<group>"; };
 		07AB71D6273940C192E7B48A /* ForceUpdateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForceUpdateView.swift; sourceTree = "<group>"; };
 		F3580E6C8E7C43FCA9FA59D6 /* PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallView.swift; sourceTree = "<group>"; };
 		C4662AFD8BC14D8892F79526 /* AddRecipeSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddRecipeSheet.swift; sourceTree = "<group>"; };
@@ -265,6 +270,7 @@
 		BEDD0BB67EAF4267971C1048 /* FamilyEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilyEvent.swift; sourceTree = "<group>"; };
 		29688D001B0B485583473C84 /* FamilyMember.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilyMember.swift; sourceTree = "<group>"; };
 		C1163A5A36934F67AFD2CDFC /* FamilyPermission.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilyPermission.swift; sourceTree = "<group>"; };
+		5590DB81D7554B5AAF6FA313 /* FamilyPlace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilyPlace.swift; sourceTree = "<group>"; };
 		F206ADBCF55F43A1A5DBD1B4 /* GroceryItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroceryItem.swift; sourceTree = "<group>"; };
 		48FF222C62F94C6FB0F72357 /* HouseTask.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HouseTask.swift; sourceTree = "<group>"; };
 		137900C545FF4C1C8E19CBA5 /* HouseTaskLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HouseTaskLog.swift; sourceTree = "<group>"; };
@@ -475,6 +481,15 @@
 			path = People;
 			sourceTree = "<group>";
 		};
+		285539BD908D41019C9D8277 /* Places */ = {
+			isa = PBXGroup;
+			children = (
+				EB39985E9FA84D4DBA139AA8,
+				6BE1C0F8901E467895552AC9
+			);
+			path = Places;
+			sourceTree = "<group>";
+		};
 		444A97DC39EA41BD9360288F /* Premium */ = {
 			isa = PBXGroup;
 			children = (
@@ -555,6 +570,7 @@
 				9D3B985B684849C59CA4085B,
 				CFEBC02B105A401D9B515AA8,
 				54930405C2FF4F81A89A7194,
+				285539BD908D41019C9D8277,
 				444A97DC39EA41BD9360288F,
 				F9B219B1741A438293AFF28F,
 				5D87C9D6A97246F5A567529B,
@@ -578,6 +594,7 @@
 				BEDD0BB67EAF4267971C1048,
 				29688D001B0B485583473C84,
 				C1163A5A36934F67AFD2CDFC,
+				5590DB81D7554B5AAF6FA313,
 				F206ADBCF55F43A1A5DBD1B4,
 				48FF222C62F94C6FB0F72357,
 				137900C545FF4C1C8E19CBA5,
@@ -866,6 +883,8 @@
 				C095CEDAB41F438C9FBAB8C3 /* MemberPermissionsSheet.swift in Sources */,
 				7E83740A36EC4A26B7741E29 /* NotificationsScreen.swift in Sources */,
 				238A7784ACEE4DFBBC63284B /* PeopleScreen.swift in Sources */,
+				DE45DA99E1744584A8E12C74 /* AddPlaceSheet.swift in Sources */,
+				F88EAC0E87324DFAA732941E /* PlacesScreen.swift in Sources */,
 				034FFF67776F4D5D9EA82A45 /* ForceUpdateView.swift in Sources */,
 				3F360B5AEF024C3E95098C11 /* PaywallView.swift in Sources */,
 				24A47C007A184EB1B25DB4DE /* AddRecipeSheet.swift in Sources */,
@@ -894,6 +913,7 @@
 				E7EFE7DF4E9C423B9CDBC6DD /* FamilyEvent.swift in Sources */,
 				6BF84D5D5DCF4900B73008F1 /* FamilyMember.swift in Sources */,
 				F7DED3A93AA74D0F83A177AC /* FamilyPermission.swift in Sources */,
+				E33AE15B2F214260A0F75B2B /* FamilyPlace.swift in Sources */,
 				054EB83E354C467AAFBA9DBB /* GroceryItem.swift in Sources */,
 				2E782ACD882C4266BA33F39F /* HouseTask.swift in Sources */,
 				B57736F0B12146438CD7B657 /* HouseTaskLog.swift in Sources */,
