@@ -193,7 +193,7 @@ struct AddExpenseSheet: View {
         } label: {
             HStack(spacing: 12) {
                 ALIIconView(icon: category.emoji, size: 20)
-                Text(category.name)
+                Text(category.displayName)
                     .font(ALITypography.bodyMedium)
                     .foregroundStyle(ALIColors.ink)
                 Spacer()

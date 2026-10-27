@@ -189,7 +189,7 @@ struct EconomiaScreen: View {
                 personName: expense.personName,
                 occurredAt: expense.occurredAt,
                 emoji: cats.first?.emoji ?? (expense.isIncome ? ALIIcon.coins : ALIIcon.receipt),
-                categoryNames: cats.map(\.name)
+                categoryNames: cats.map(\.displayName)
             )
         }
     }

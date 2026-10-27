@@ -29,6 +29,23 @@ final class ExpenseCategory {
 }
 
 extension ExpenseCategory {
+    /// Name to show. Default categories are stored with their English key
+    /// ("Groceries") and shown translated; the family's own ones as typed.
+    var displayName: String {
+        guard isDefault else { return name }
+        switch name {
+        case "Groceries": return String(localized: "Groceries")
+        case "Housing": return String(localized: "Housing")
+        case "Transport": return String(localized: "Transport")
+        case "Dining out": return String(localized: "Dining out")
+        case "Entertainment": return String(localized: "Entertainment")
+        // Own key: "Shopping" alone is the shopping list tab ("Compra").
+        case "Shopping": return String(localized: "expense_category_shopping", defaultValue: "Shopping")
+        case "Other": return String(localized: "Other")
+        default: return name
+        }
+    }
+
     /// The 7 categories every family group starts out with.
     static let defaults: [(name: String, emoji: String)] = [
         ("Groceries", ALIIcon.cart),
