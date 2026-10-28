@@ -53,6 +53,8 @@
 		6B32F04899F549C88AFA882C /* FamilyCalendarMonthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6086B62CC7614F3E8089726C /* FamilyCalendarMonthView.swift */; };
 		2D142F83AF2E41AD923F2914 /* FamilyCalendarPeopleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43C17772DA7E44E6B8EF42C4 /* FamilyCalendarPeopleView.swift */; };
 		A2E46F3F881C452195D59AF3 /* FamilyCalendarScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1ED2A7ACC064488A9AAC9D77 /* FamilyCalendarScreen.swift */; };
+		4976D9DF53904CC087091F60 /* HomeCustomizeSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAE38F4125CC49F5AE305D54 /* HomeCustomizeSheet.swift */; };
+		ADEBC46BD5E745508B15323B /* HomeLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A845FE3676B4E119A857DE8 /* HomeLayout.swift */; };
 		6DCF4CB2913D4A5A87A72B1F /* HomeScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C838987A8BD0451DAD4FFDD9 /* HomeScreen.swift */; };
 		BE0265D76B084252A74278F9 /* AddHouseTaskSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 671350D37BD841D3A85B8CD2 /* AddHouseTaskSheet.swift */; };
 		55E33E09FB474DEC83DB2B03 /* HouseTaskDetailSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C185877ED034D829EF7F392 /* HouseTaskDetailSheet.swift */; };
@@ -209,6 +211,8 @@
 		6086B62CC7614F3E8089726C /* FamilyCalendarMonthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilyCalendarMonthView.swift; sourceTree = "<group>"; };
 		43C17772DA7E44E6B8EF42C4 /* FamilyCalendarPeopleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilyCalendarPeopleView.swift; sourceTree = "<group>"; };
 		1ED2A7ACC064488A9AAC9D77 /* FamilyCalendarScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilyCalendarScreen.swift; sourceTree = "<group>"; };
+		DAE38F4125CC49F5AE305D54 /* HomeCustomizeSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeCustomizeSheet.swift; sourceTree = "<group>"; };
+		8A845FE3676B4E119A857DE8 /* HomeLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeLayout.swift; sourceTree = "<group>"; };
 		C838987A8BD0451DAD4FFDD9 /* HomeScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeScreen.swift; sourceTree = "<group>"; };
 		671350D37BD841D3A85B8CD2 /* AddHouseTaskSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddHouseTaskSheet.swift; sourceTree = "<group>"; };
 		2C185877ED034D829EF7F392 /* HouseTaskDetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HouseTaskDetailSheet.swift; sourceTree = "<group>"; };
@@ -417,6 +421,8 @@
 		D16404F4408C4ECDA3A248B6 /* Home */ = {
 			isa = PBXGroup;
 			children = (
+				DAE38F4125CC49F5AE305D54,
+				8A845FE3676B4E119A857DE8,
 				C838987A8BD0451DAD4FFDD9
 			);
 			path = Home;
@@ -820,6 +826,8 @@
 				6B32F04899F549C88AFA882C /* FamilyCalendarMonthView.swift in Sources */,
 				2D142F83AF2E41AD923F2914 /* FamilyCalendarPeopleView.swift in Sources */,
 				A2E46F3F881C452195D59AF3 /* FamilyCalendarScreen.swift in Sources */,
+				4976D9DF53904CC087091F60 /* HomeCustomizeSheet.swift in Sources */,
+				ADEBC46BD5E745508B15323B /* HomeLayout.swift in Sources */,
 				6DCF4CB2913D4A5A87A72B1F /* HomeScreen.swift in Sources */,
 				BE0265D76B084252A74278F9 /* AddHouseTaskSheet.swift in Sources */,
 				55E33E09FB474DEC83DB2B03 /* HouseTaskDetailSheet.swift in Sources */,
