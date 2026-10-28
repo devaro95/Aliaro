@@ -6,6 +6,7 @@ import SwiftData
 struct RecipeDetailSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.openURL) private var openURL
     @EnvironmentObject private var dataSync: AppDataSyncCoordinator
     @EnvironmentObject private var familySession: FamilySession
 
@@ -119,6 +120,16 @@ struct RecipeDetailSheet: View {
                         }
                     }
 
+                    if !recipe.links.isEmpty {
+                        section("Links") {
+                            VStack(spacing: 8) {
+                                ForEach(recipe.links, id: \.self) { link in
+                                    linkRow(link)
+                                }
+                            }
+                        }
+                    }
+
                     if let name = recipe.createdByName, !name.isEmpty {
                         Text("Added by \(name)")
                             .font(ALITypography.labelLarge)
@@ -181,6 +192,47 @@ struct RecipeDetailSheet: View {
         .padding(.vertical, 6)
         .background(ALIColors.recipesAccent.opacity(0.3))
         .clipShape(Capsule())
+    }
+
+    /// A link: site name, the rest of the address, opens in the browser.
+    private func linkRow(_ link: String) -> some View {
+        Button {
+            Track.event("recipe_link_open", ["host": RecipeLink.host(link)])
+            if let url = URL(string: link) { openURL(url) }
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "link")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(ALIColors.onAccent)
+                    .frame(width: 34, height: 34)
+                    .background(ALIColors.recipesAccent)
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(RecipeLink.host(link))
+                        .font(ALITypography.bodyLarge.weight(.semibold))
+                        .foregroundStyle(ALIColors.ink)
+                        .lineLimit(1)
+                    let path = RecipeLink.path(link)
+                    if !path.isEmpty {
+                        Text(path)
+                            .font(ALITypography.labelLarge)
+                            .foregroundStyle(ALIColors.mutedInk)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                    }
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "arrow.up.right")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(ALIColors.mutedInk)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .contextMenu {
+            Button { UIPasteboard.general.string = link } label: { Label("Copy link", systemImage: "doc.on.doc") }
+            ShareLink(item: link) { Label("Share", systemImage: "square.and.arrow.up") }
+        }
     }
 
     private func section<Content: View>(_ title: LocalizedStringKey, @ViewBuilder content: () -> Content) -> some View {
