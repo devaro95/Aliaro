@@ -9,6 +9,7 @@ import SwiftData
 ///   who owes whom). Only features with something to say get a card.
 /// - The family Board: notes pinned by anyone, always shown here until
 ///   someone deletes them.
+/// - The family Wi-Fi (`WifiHomeSection`): password, copy and a QR for guests.
 /// - A 2-column grid with a shortcut to **every** visible feature, so new
 ///   ones never need a bottom-bar slot.
 ///
@@ -159,6 +160,13 @@ struct HomeScreen: View {
                     }
                     .homeEntrance(hidden: isEntranceHidden, revealed: entranceRevealed, step: 2)
                 }
+
+                VStack(alignment: .leading, spacing: 16) {
+                    sectionTitle("Wi-Fi")
+                    WifiHomeSection()
+                        .padding(.horizontal, 20)
+                }
+                .homeEntrance(hidden: isEntranceHidden, revealed: entranceRevealed, step: 2)
 
                 featuresHeader
                     .homeEntrance(hidden: isEntranceHidden, revealed: entranceRevealed, step: 3)

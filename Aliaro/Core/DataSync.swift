@@ -258,6 +258,21 @@ struct RemoteExpenseArchive: FamilySynced {
     var created_at: Date
 }
 
+struct RemoteWifiNetwork: FamilySynced {
+    static let tableName = "wifi_networks"
+    var id: UUID
+    var family_id: UUID
+    var label: String
+    var ssid: String
+    var password: String
+    var security: String
+    var position: Int
+    var created_at: Date
+    var updated_at: Date
+    var created_by: UUID?
+    var created_by_name: String?
+}
+
 /// Coordinates syncing all of the app's data (menu, shopping, tasks,
 /// calendar, reminders) with Supabase: initial load, real time from any
 /// device in the group, and uploading local changes.
@@ -289,6 +304,7 @@ final class AppDataSyncCoordinator: ObservableObject {
     private let expenses = RemoteSync<RemoteExpense>()
     private let activityLogEntries = RemoteSync<RemoteActivityLogEntry>()
     private let expenseArchives = RemoteSync<RemoteExpenseArchive>()
+    private let wifiNetworks = RemoteSync<RemoteWifiNetwork>()
 
     private var started = false
     /// Kept so `refreshWidgetSnapshot()` can be called from places (like
@@ -328,6 +344,7 @@ final class AppDataSyncCoordinator: ObservableObject {
         await startExpenses(familyID: familyID, modelContext: modelContext)
         await startActivityLogEntries(familyID: familyID, modelContext: modelContext)
         await startExpenseArchives(familyID: familyID, modelContext: modelContext)
+        await startWifiNetworks(familyID: familyID, modelContext: modelContext)
         refreshWidgetSnapshot()
     }
 
@@ -351,6 +368,7 @@ final class AppDataSyncCoordinator: ObservableObject {
         await expenses.stop()
         await activityLogEntries.stop()
         await expenseArchives.stop()
+        await wifiNetworks.stop()
     }
 
     // MARK: FamilyMembers
@@ -1069,6 +1087,65 @@ final class AppDataSyncCoordinator: ObservableObject {
 
     func deleteBoardNote(id: UUID) {
         Task { try? await boardNotes.remove(id: id) }
+    }
+
+    // MARK: WifiNetworks
+
+    private func startWifiNetworks(familyID: UUID, modelContext: ModelContext) async {
+        do {
+            let remote = try await wifiNetworks.fetchAll(familyID: familyID)
+            for r in remote { applyWifiNetwork(r, modelContext: modelContext) }
+            // Realtime doesn't deliver deletes filtered by family: purge on fetch.
+            let remoteIDs = Set(remote.map(\.id))
+            let local = (try? modelContext.fetch(FetchDescriptor<WifiNetwork>())) ?? []
+            for network in local where !remoteIDs.contains(network.id) { modelContext.delete(network) }
+        } catch {
+            lastError = error.localizedDescription
+        }
+        await wifiNetworks.start(
+            familyID: familyID,
+            onUpsert: { [weak self] r in self?.applyWifiNetwork(r, modelContext: modelContext) },
+            onDelete: { id in
+                let descriptor = FetchDescriptor<WifiNetwork>(predicate: #Predicate { $0.id == id })
+                if let existing = try? modelContext.fetch(descriptor).first {
+                    modelContext.delete(existing)
+                }
+            }
+        )
+    }
+
+    private func applyWifiNetwork(_ remote: RemoteWifiNetwork, modelContext: ModelContext) {
+        let descriptor = FetchDescriptor<WifiNetwork>(predicate: #Predicate { $0.id == remote.id })
+        if let existing = try? modelContext.fetch(descriptor).first {
+            existing.label = remote.label
+            existing.ssid = remote.ssid
+            existing.password = remote.password
+            existing.security = remote.security
+            existing.position = remote.position
+            existing.updatedAt = remote.updated_at
+            existing.createdByID = remote.created_by
+            existing.createdByName = remote.created_by_name
+        } else {
+            modelContext.insert(WifiNetwork(
+                id: remote.id, label: remote.label, ssid: remote.ssid, password: remote.password,
+                security: WifiNetwork.Security(rawValue: remote.security) ?? .wpa, position: remote.position,
+                createdAt: remote.created_at, updatedAt: remote.updated_at,
+                createdByID: remote.created_by, createdByName: remote.created_by_name
+            ))
+        }
+    }
+
+    func pushWifiNetwork(_ network: WifiNetwork, familyID: UUID) {
+        let record = RemoteWifiNetwork(
+            id: network.id, family_id: familyID, label: network.label, ssid: network.ssid, password: network.password,
+            security: network.security, position: network.position, created_at: network.createdAt,
+            updated_at: network.updatedAt, created_by: network.createdByID, created_by_name: network.createdByName
+        )
+        Task { try? await wifiNetworks.push(record) }
+    }
+
+    func deleteWifiNetwork(id: UUID) {
+        Task { try? await wifiNetworks.remove(id: id) }
     }
 
     // MARK: Categories
