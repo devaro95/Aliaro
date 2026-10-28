@@ -41,6 +41,8 @@ struct RemoteRecipe: FamilySynced {
     var updated_at: Date
     var created_by: UUID?
     var created_by_name: String?
+    /// Optional so rows from before the column existed still decode.
+    var links: [String]?
 }
 
 struct RemoteMealPlanEntry: FamilySynced {
@@ -497,6 +499,7 @@ final class AppDataSyncCoordinator: ObservableObject {
             existing.updatedAt = remote.updated_at
             existing.createdByID = remote.created_by
             existing.createdByName = remote.created_by_name
+            existing.links = remote.links ?? []
             if existing.photoPath != remote.photo_path {
                 existing.photoPath = remote.photo_path
                 existing.photoData = nil
@@ -508,7 +511,8 @@ final class AppDataSyncCoordinator: ObservableObject {
                 ingredients: remote.ingredients, steps: remote.steps, servings: remote.servings,
                 prepMinutes: remote.prep_minutes, cookMinutes: remote.cook_minutes, photoPath: remote.photo_path,
                 createdAt: remote.created_at, updatedAt: remote.updated_at,
-                createdByID: remote.created_by, createdByName: remote.created_by_name
+                createdByID: remote.created_by, createdByName: remote.created_by_name,
+                links: remote.links ?? []
             )
             modelContext.insert(recipe)
         }
@@ -571,7 +575,8 @@ final class AppDataSyncCoordinator: ObservableObject {
             ingredients: recipe.ingredients, steps: recipe.steps, servings: recipe.servings,
             prep_minutes: recipe.prepMinutes, cook_minutes: recipe.cookMinutes, photo_path: recipe.photoPath,
             created_at: recipe.createdAt, updated_at: recipe.updatedAt,
-            created_by: recipe.createdByID, created_by_name: recipe.createdByName
+            created_by: recipe.createdByID, created_by_name: recipe.createdByName,
+            links: recipe.links
         )
     }
 

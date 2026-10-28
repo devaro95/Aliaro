@@ -28,6 +28,8 @@ final class Recipe {
     var updatedAt: Date
     var createdByID: UUID?
     var createdByName: String?
+    /// Web links (the original recipe, a video…), already normalized with a scheme.
+    var links: [String] = []
 
     init(
         id: UUID = UUID(),
@@ -43,7 +45,8 @@ final class Recipe {
         createdAt: Date = .now,
         updatedAt: Date = .now,
         createdByID: UUID? = nil,
-        createdByName: String? = nil
+        createdByName: String? = nil,
+        links: [String] = []
     ) {
         self.id = id
         self.name = name
@@ -58,6 +61,7 @@ final class Recipe {
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.createdByID = createdByID
+        self.links = links
         self.createdByName = createdByName
     }
 
@@ -127,4 +131,33 @@ enum IngredientUnit: String, CaseIterable, Identifiable {
 
     /// "To taste" has no amount.
     var needsQuantity: Bool { self != .toTaste }
+}
+
+/// Helpers for a recipe's web links.
+enum RecipeLink {
+    static let maxCount = 10
+    static let maxLength = 500
+
+    /// Adds "https://" when missing; nil if it isn't a usable web address.
+    static func normalized(_ raw: String) -> String? {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, !trimmed.contains(" "), trimmed.count <= maxLength else { return nil }
+        let withScheme = trimmed.lowercased().hasPrefix("http://") || trimmed.lowercased().hasPrefix("https://") ? trimmed : "https://" + trimmed
+        guard let url = URL(string: withScheme), let host = url.host, host.contains(".") else { return nil }
+        return withScheme
+    }
+
+    /// "youtube.com" (without "www.").
+    static func host(_ link: String) -> String {
+        guard let host = URL(string: link)?.host else { return link }
+        return host.hasPrefix("www.") ? String(host.dropFirst(4)) : host
+    }
+
+    /// The rest of the address after the host, for a second line ("/watch?v=…").
+    static func path(_ link: String) -> String {
+        guard let url = URL(string: link) else { return "" }
+        var rest = url.path
+        if let query = url.query { rest += "?" + query }
+        return rest == "/" ? "" : rest
+    }
 }
