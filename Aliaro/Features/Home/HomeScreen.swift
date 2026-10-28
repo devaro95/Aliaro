@@ -9,6 +9,7 @@ import SwiftData
 ///   who owes whom). Only features with something to say get a card.
 /// - The family Board: notes pinned by anyone, always shown here until
 ///   someone deletes them.
+/// - The family Wi-Fi (`WifiHomeSection`): password, copy and a QR for guests.
 /// - A 2-column grid with a shortcut to **every** visible feature, so new
 ///   ones never need a bottom-bar slot.
 ///
@@ -190,6 +191,7 @@ struct HomeScreen: View {
             switch block {
             case .today: return !summaryCards.isEmpty
             case .board: return visibleFeatures.contains(.board) && (premium.isLocked(.board) || !myBoardNotes.isEmpty)
+            case .wifi: return true
             case .features: return true
             }
         }
@@ -215,6 +217,12 @@ struct HomeScreen: View {
                 } else {
                     boardSection
                 }
+            }
+        case .wifi:
+            VStack(alignment: .leading, spacing: 16) {
+                sectionTitle("Wi-Fi")
+                WifiHomeSection()
+                    .padding(.horizontal, 20)
             }
         case .features:
             VStack(alignment: .leading, spacing: 16) {

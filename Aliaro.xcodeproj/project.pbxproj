@@ -93,6 +93,7 @@
 		804865D3EAB6470D95AAB6DD /* SelectDishSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3422181FCA794E2B8C5DADBB /* SelectDishSheet.swift */; };
 		E831E42BA6994F80AC3E2E9D /* WeeklyMenu+Support.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E39BAF903C24090A03C95EF /* WeeklyMenu+Support.swift */; };
 		B46BE46FBAB64071B626CA3C /* WeeklyMenuScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F54F2A6C164CBDAE08BF70 /* WeeklyMenuScreen.swift */; };
+		D1AFBED9B147479AB8064C1A /* WifiHomeSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACCCCFF20B104165A9A1951F /* WifiHomeSection.swift */; };
 		EF2871F4F246434F921DCFC0 /* ActivityLogEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = F226AC6D5C664C48A389BEF5 /* ActivityLogEntry.swift */; };
 		3BD20E8D08AF471D88DBF518 /* BoardNote.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04D266B8BB5043F2B9774034 /* BoardNote.swift */; };
 		E3EAC5824F18476FAFC2F15B /* Dish.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4950ADBB56A94AD5AE8C9A5F /* Dish.swift */; };
@@ -110,6 +111,7 @@
 		ACB44336B38D42FAB0A961D5 /* Reminder.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAFEEDE3DF3748CB978377B1 /* Reminder.swift */; };
 		7D3AD02234BE4ACC9D852148 /* ShoppingList.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CB0BEF0701A4F0085780664 /* ShoppingList.swift */; };
 		1035DE8A96C14B349102BCFD /* ShoppingListEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C6E5073C81B4F2E804EFEF0 /* ShoppingListEntry.swift */; };
+		F2AAB8E730B84DA1A6779007 /* WifiNetwork.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7857B927937B434E924B8A12 /* WifiNetwork.swift */; };
 		F436EDA6CABB45D4841E03FC /* ALIBottomBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3ACF6A70E3BD44CB941BE72C /* ALIBottomBar.swift */; };
 		F1980EBF7F1B4838BA00FC76 /* AppTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC7A2775E79F41948F13183E /* AppTab.swift */; };
 		9B1D32078D1D4A6D9D6F4E1B /* MainTabContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1C56C8DF2A64E43A8BE7BF5 /* MainTabContainer.swift */; };
@@ -251,6 +253,7 @@
 		3422181FCA794E2B8C5DADBB /* SelectDishSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectDishSheet.swift; sourceTree = "<group>"; };
 		4E39BAF903C24090A03C95EF /* WeeklyMenu+Support.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WeeklyMenu+Support.swift"; sourceTree = "<group>"; };
 		B3F54F2A6C164CBDAE08BF70 /* WeeklyMenuScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyMenuScreen.swift; sourceTree = "<group>"; };
+		ACCCCFF20B104165A9A1951F /* WifiHomeSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WifiHomeSection.swift; sourceTree = "<group>"; };
 		F226AC6D5C664C48A389BEF5 /* ActivityLogEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityLogEntry.swift; sourceTree = "<group>"; };
 		04D266B8BB5043F2B9774034 /* BoardNote.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardNote.swift; sourceTree = "<group>"; };
 		4950ADBB56A94AD5AE8C9A5F /* Dish.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Dish.swift; sourceTree = "<group>"; };
@@ -268,6 +271,7 @@
 		BAFEEDE3DF3748CB978377B1 /* Reminder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Reminder.swift; sourceTree = "<group>"; };
 		2CB0BEF0701A4F0085780664 /* ShoppingList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingList.swift; sourceTree = "<group>"; };
 		7C6E5073C81B4F2E804EFEF0 /* ShoppingListEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingListEntry.swift; sourceTree = "<group>"; };
+		7857B927937B434E924B8A12 /* WifiNetwork.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WifiNetwork.swift; sourceTree = "<group>"; };
 		3ACF6A70E3BD44CB941BE72C /* ALIBottomBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ALIBottomBar.swift; sourceTree = "<group>"; };
 		AC7A2775E79F41948F13183E /* AppTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTab.swift; sourceTree = "<group>"; };
 		E1C56C8DF2A64E43A8BE7BF5 /* MainTabContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabContainer.swift; sourceTree = "<group>"; };
@@ -528,6 +532,14 @@
 			path = WeeklyMenu;
 			sourceTree = "<group>";
 		};
+		8264F41820714BFB8D53BB53 /* Wifi */ = {
+			isa = PBXGroup;
+			children = (
+				ACCCCFF20B104165A9A1951F
+			);
+			path = Wifi;
+			sourceTree = "<group>";
+		};
 		BD3DC640FD4643B6ACA38481 /* Features */ = {
 			isa = PBXGroup;
 			children = (
@@ -545,7 +557,8 @@
 				5D87C9D6A97246F5A567529B,
 				287970F3F6A54726B1711401,
 				92CC57C521AB43EA99B53D48,
-				518278CD9D164677828F4509
+				518278CD9D164677828F4509,
+				8264F41820714BFB8D53BB53
 			);
 			path = Features;
 			sourceTree = "<group>";
@@ -569,7 +582,8 @@
 				AB5D878038E44E339F6834FA,
 				BAFEEDE3DF3748CB978377B1,
 				2CB0BEF0701A4F0085780664,
-				7C6E5073C81B4F2E804EFEF0
+				7C6E5073C81B4F2E804EFEF0,
+				7857B927937B434E924B8A12
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -866,6 +880,7 @@
 				804865D3EAB6470D95AAB6DD /* SelectDishSheet.swift in Sources */,
 				E831E42BA6994F80AC3E2E9D /* WeeklyMenu+Support.swift in Sources */,
 				B46BE46FBAB64071B626CA3C /* WeeklyMenuScreen.swift in Sources */,
+				D1AFBED9B147479AB8064C1A /* WifiHomeSection.swift in Sources */,
 				EF2871F4F246434F921DCFC0 /* ActivityLogEntry.swift in Sources */,
 				3BD20E8D08AF471D88DBF518 /* BoardNote.swift in Sources */,
 				E3EAC5824F18476FAFC2F15B /* Dish.swift in Sources */,
@@ -883,6 +898,7 @@
 				ACB44336B38D42FAB0A961D5 /* Reminder.swift in Sources */,
 				7D3AD02234BE4ACC9D852148 /* ShoppingList.swift in Sources */,
 				1035DE8A96C14B349102BCFD /* ShoppingListEntry.swift in Sources */,
+				F2AAB8E730B84DA1A6779007 /* WifiNetwork.swift in Sources */,
 				F436EDA6CABB45D4841E03FC /* ALIBottomBar.swift in Sources */,
 				F1980EBF7F1B4838BA00FC76 /* AppTab.swift in Sources */,
 				9B1D32078D1D4A6D9D6F4E1B /* MainTabContainer.swift in Sources */,

@@ -20,6 +20,38 @@
         }
       }
     },
+    "Add Wi-Fi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add Wi-Fi"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir wifi"
+          }
+        }
+      }
+    },
+    "Add your home Wi-Fi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add your home Wi-Fi"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añade el wifi de casa"
+          }
+        }
+      }
+    },
     "Always" : {
       "localizations" : {
         "en" : {
@@ -32,6 +64,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Siempre"
+          }
+        }
+      }
+    },
+    "Copy password" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy password"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copiar contraseña"
           }
         }
       }
@@ -52,6 +100,22 @@
         }
       }
     },
+    "Delete network" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete network"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar red"
+          }
+        }
+      }
+    },
     "Drag to change the order. \"All features\" is always shown: it's how you reach everything." : {
       "localizations" : {
         "en" : {
@@ -64,6 +128,134 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Arrastra para cambiar el orden. «Todas las funciones» siempre se muestra: es desde donde llegas a todo."
+          }
+        }
+      }
+    },
+    "Edit Wi-Fi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit Wi-Fi"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Editar wifi"
+          }
+        }
+      }
+    },
+    "Everyone (and your guests) will have the password at hand." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Everyone (and your guests) will have the password at hand."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toda la familia (y tus invitados) tendrá la contraseña a mano."
+          }
+        }
+      }
+    },
+    "Everyone in the family group will see it on Home." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Everyone in the family group will see it on Home."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todo el grupo familiar la verá en el inicio."
+          }
+        }
+      }
+    },
+    "Hide password" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide password"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ocultar contraseña"
+          }
+        }
+      }
+    },
+    "Name (e.g. Home)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Name (e.g. Home)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nombre (p. ej. Casa)"
+          }
+        }
+      }
+    },
+    "Network name (SSID)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Network name (SSID)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nombre de la red (SSID)"
+          }
+        }
+      }
+    },
+    "No password" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No password"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sin contraseña"
+          }
+        }
+      }
+    },
+    "Open network, no password" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open network, no password"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Red abierta, sin contraseña"
           }
         }
       }
@@ -100,6 +292,22 @@
         }
       }
     },
+    "Scan it with the phone's camera to join the Wi-Fi." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scan it with the phone's camera to join the Wi-Fi."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escanéalo con la cámara del móvil para conectarte al wifi."
+          }
+        }
+      }
+    },
     "Sections" : {
       "localizations" : {
         "en" : {
@@ -132,6 +340,54 @@
         }
       }
     },
+    "Security" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Security"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seguridad"
+          }
+        }
+      }
+    },
+    "Show password" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show password"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar contraseña"
+          }
+        }
+      }
+    },
+    "Show QR for guests" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show QR for guests"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar QR para invitados"
+          }
+        }
+      }
+    },
     "Today cards" : {
       "localizations" : {
         "en" : {
@@ -144,6 +400,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tarjetas de «Hoy»"
+          }
+        }
+      }
+    },
+    "Wi-Fi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wi-Fi"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wi-Fi"
           }
         }
       }
