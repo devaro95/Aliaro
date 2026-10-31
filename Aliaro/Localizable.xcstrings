@@ -323,6 +323,22 @@
         }
       }
     },
+    "%lld h before" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld h before"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld h antes"
+          }
+        }
+      }
+    },
     "%lld items to buy" : {
       "localizations" : {
         "en" : {
@@ -367,6 +383,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld min"
+          }
+        }
+      }
+    },
+    "%lld min before" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld min before"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld min antes"
           }
         }
       }
@@ -617,6 +649,22 @@
         }
       }
     },
+    "1 day before" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 day before"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 día antes"
+          }
+        }
+      }
+    },
     "1 event this week" : {
       "localizations" : {
         "en" : {
@@ -629,6 +677,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "1 evento esta semana"
+          }
+        }
+      }
+    },
+    "1 hour before" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 hour before"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 hora antes"
           }
         }
       }
@@ -803,6 +867,86 @@
         }
       }
     },
+    "1 week before" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 week before"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 semana antes"
+          }
+        }
+      }
+    },
+    "2 days before" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2 days before"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2 días antes"
+          }
+        }
+      }
+    },
+    "2 hours before" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2 hours before"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2 horas antes"
+          }
+        }
+      }
+    },
+    "5 minutes before" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "5 minutes before"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "5 minutos antes"
+          }
+        }
+      }
+    },
+    "10 minutes before" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "10 minutes before"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "10 minutos antes"
+          }
+        }
+      }
+    },
     "12 Oct, 17:00 · Mum" : {
       "localizations" : {
         "es" : {
@@ -813,12 +957,44 @@
         }
       }
     },
+    "15 minutes before" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "15 minutes before"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "15 minutos antes"
+          }
+        }
+      }
+    },
     "17 Oct · All day" : {
       "localizations" : {
         "es" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "17 oct · Todo el día"
+          }
+        }
+      }
+    },
+    "30 minutes before" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "30 minutes before"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "30 minutos antes"
           }
         }
       }
@@ -891,6 +1067,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Añadir %lld ingredientes"
+          }
+        }
+      }
+    },
+    "Add alert" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add alert"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir aviso"
           }
         }
       }
@@ -1549,6 +1741,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Mínimo %lld caracteres"
+          }
+        }
+      }
+    },
+    "At the time" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "At the time"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A la hora"
           }
         }
       }
@@ -6254,6 +6462,22 @@
         }
       }
     },
+    "No alerts" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No alerts"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sin avisos"
+          }
+        }
+      }
+    },
     "No commitment" : {
       "localizations" : {
         "es" : {
@@ -6777,6 +7001,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tortilla"
+          }
+        }
+      }
+    },
+    "On the day (9:00)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On the day (9:00)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El mismo día (9:00)"
           }
         }
       }
@@ -7697,6 +7937,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "¿Eliminar a %@ del grupo?"
+          }
+        }
+      }
+    },
+    "Remove alert" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove alert"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quitar aviso"
           }
         }
       }
@@ -10055,6 +10311,22 @@
         }
       }
     },
+    "Up to 2. Only the people it's for get them." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Up to 2. Only the people it's for get them."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hasta 2. Solo los reciben las personas a las que va dirigido."
+          }
+        }
+      }
+    },
     "Up to date · %lld days ago" : {
       "localizations" : {
         "en" : {
@@ -10254,6 +10526,7 @@
       }
     },
     "We'll notify them at that time." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

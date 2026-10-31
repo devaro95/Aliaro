@@ -22,6 +22,7 @@ struct AddHouseTaskSheet: View {
     @State private var intervalMonths = 0
     @State private var intervalDaysPart = 7
     @State private var color: String?
+    @State private var alertOffsets: [Int] = ALIAlerts.defaultOffsets(isEvent: false, isAllDay: false)
 
     private var isEditing: Bool { taskToEdit != nil }
 
@@ -52,6 +53,9 @@ struct AddHouseTaskSheet: View {
                     ALITextField(placeholder: "Task name", text: $name)
 
                     scheduleCard
+                    if scheduleEnabled {
+                        ALIAlertsCard(offsets: $alertOffsets, accent: ALIColors.houseTasksAccent)
+                    }
                     assigneesCard
                     intervalCard
                     ALIColorPickerCard(selection: $color)
@@ -82,6 +86,7 @@ struct AddHouseTaskSheet: View {
                     forEveryone = task.forEveryone
                     selectedMemberIDs = Set(task.memberIDs)
                     color = task.color
+                    alertOffsets = task.effectiveAlertOffsets
                 }
             }
         }
@@ -103,10 +108,6 @@ struct AddHouseTaskSheet: View {
                         .font(ALITypography.bodyMedium)
                         .foregroundStyle(ALIColors.mutedInk)
                         .tint(ALIColors.houseTasksAccent)
-                    Text("We'll notify them at that time.")
-                        .font(ALITypography.bodyMedium)
-                        .foregroundStyle(ALIColors.mutedInk)
-                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
         }
@@ -222,7 +223,8 @@ struct AddHouseTaskSheet: View {
             "has_interval": reminderEnabled,
             "interval_days": reminderEnabled ? totalIntervalDays : nil,
             "scheduled": scheduleEnabled,
-            "assignees": forEveryone ? 0 : assignees.count
+            "assignees": forEveryone ? 0 : assignees.count,
+            "alerts": scheduleEnabled ? alertOffsets.count : 0
         ])
         if let existing = taskToEdit {
             existing.name = trimmedName
@@ -231,6 +233,7 @@ struct AddHouseTaskSheet: View {
             existing.forEveryone = forEveryone
             existing.memberIDs = assignees
             existing.color = color
+            existing.alertOffsets = alertOffsets
             task = existing
         } else {
             task = HouseTask(
@@ -241,7 +244,8 @@ struct AddHouseTaskSheet: View {
                 memberIDs: assignees,
                 createdByID: familySession.memberID,
                 createdByName: familySession.memberID.flatMap { modelContext.familyMemberName(id: $0) },
-                color: color
+                color: color,
+                alertOffsets: alertOffsets
             )
             modelContext.insert(task)
         }

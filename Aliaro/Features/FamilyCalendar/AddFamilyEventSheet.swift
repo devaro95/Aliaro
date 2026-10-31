@@ -29,6 +29,7 @@ struct AddFamilyEventSheet: View {
     @State private var color: String?
     @State private var hasUntil = false
     @State private var repeatUntil = Calendar.current.date(byAdding: .month, value: 1, to: .now) ?? .now
+    @State private var alertOffsets: [Int] = ALIAlerts.defaultOffsets(isEvent: true, isAllDay: false)
 
     private static let emojiOptions = [
         ALIIcon.party, ALIIcon.cake, ALIIcon.plane, ALIIcon.beach, ALIIcon.xmas,
@@ -66,6 +67,7 @@ struct AddFamilyEventSheet: View {
                     emojiCard
                     ALIColorPickerCard(selection: $color, enabled: canEdit)
                     datesCard
+                    ALIAlertsCard(offsets: $alertOffsets, isAllDay: isAllDay, accent: ALIColors.familyAccent, enabled: canEdit)
 
                     if canEdit {
                         ALIPrimaryButton(
@@ -239,6 +241,13 @@ struct AddFamilyEventSheet: View {
                         .foregroundStyle(ALIColors.ink)
                 }
                 .tint(ALIColors.familyAccent)
+                .onChange(of: isAllDay) { _, allDay in
+                    // Timed and all-day events offer different alert times.
+                    let options = allDay ? ALIAlerts.allDayOptions : ALIAlerts.timedOptions
+                    if !alertOffsets.allSatisfy(options.contains) {
+                        alertOffsets = ALIAlerts.defaultOffsets(isEvent: true, isAllDay: allDay)
+                    }
+                }
 
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Starts")
@@ -319,6 +328,7 @@ struct AddFamilyEventSheet: View {
             color = event.color
             hasUntil = event.repeatUntil != nil
             if let until = event.repeatUntil { repeatUntil = until }
+            alertOffsets = event.effectiveAlertOffsets
         } else if let day = defaultDay {
             let calendar = Calendar.current
             startDate = calendar.date(bySettingHour: 9, minute: 0, second: 0, of: day) ?? day
@@ -358,7 +368,8 @@ struct AddFamilyEventSheet: View {
             "repeat": repeats ? "\(repeatEvery)_\(repeatUnit.rawValue)" : "none",
             "multi_day": !Calendar.current.isDate(startDate, inSameDayAs: endDate),
             "duration_hours": Int(endDate.timeIntervalSince(startDate) / 3600),
-            "days_ahead": Calendar.current.dateComponents([.day], from: .now, to: startDate).day ?? 0
+            "days_ahead": Calendar.current.dateComponents([.day], from: .now, to: startDate).day ?? 0,
+            "alerts": alertOffsets.count
         ])
 
         let event: FamilyEvent
@@ -375,6 +386,7 @@ struct AddFamilyEventSheet: View {
             existing.repeatUnit = repeatUnit.rawValue
             existing.color = color
             existing.repeatUntil = finalUntil
+            existing.alertOffsets = alertOffsets
             event = existing
         } else {
             event = FamilyEvent(
@@ -391,7 +403,8 @@ struct AddFamilyEventSheet: View {
                 repeatInterval: repeats ? repeatEvery : 0,
                 repeatUnit: repeatUnit.rawValue,
                 color: color,
-                repeatUntil: finalUntil
+                repeatUntil: finalUntil,
+                alertOffsets: alertOffsets
             )
             modelContext.insert(event)
         }

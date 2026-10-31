@@ -31,6 +31,7 @@
 		989D6925F0B34B879C392D02 /* Supabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = A47F9D59A4EF4AA18B2F9DE2 /* Supabase.swift */; };
 		5CD9072D74F94E339D78C6CA /* SupabaseConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 115C461A2A664C6F85BD7172 /* SupabaseConfig.swift */; };
 		E0F23FFDBC69450B8B7CE540 /* WidgetSnapshotWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 157F9C0E717D4C0290C39D86 /* WidgetSnapshotWriter.swift */; };
+		328FE93197CD4CB58F4465C9 /* ALIAlertsCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = D326F28C95E24B21B4BBC983 /* ALIAlertsCard.swift */; };
 		89C6E66729514F9781574B9E /* ALIColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71AAD6CD149549B08DB15AE2 /* ALIColors.swift */; };
 		461DBD51F96045C79EE0091F /* ALIComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9239FCF6B711401194BB8A60 /* ALIComponents.swift */; };
 		F5A5D04C696A4FBBAD760C75 /* ALIIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2D31EA75DB34C6E9E491819 /* ALIIcon.swift */; };
@@ -191,6 +192,7 @@
 		A47F9D59A4EF4AA18B2F9DE2 /* Supabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Supabase.swift; sourceTree = "<group>"; };
 		115C461A2A664C6F85BD7172 /* SupabaseConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseConfig.swift; sourceTree = "<group>"; };
 		157F9C0E717D4C0290C39D86 /* WidgetSnapshotWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetSnapshotWriter.swift; sourceTree = "<group>"; };
+		D326F28C95E24B21B4BBC983 /* ALIAlertsCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ALIAlertsCard.swift; sourceTree = "<group>"; };
 		71AAD6CD149549B08DB15AE2 /* ALIColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ALIColors.swift; sourceTree = "<group>"; };
 		9239FCF6B711401194BB8A60 /* ALIComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ALIComponents.swift; sourceTree = "<group>"; };
 		F2D31EA75DB34C6E9E491819 /* ALIIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ALIIcon.swift; sourceTree = "<group>"; };
@@ -361,6 +363,7 @@
 		13D2ACAF7DEB431995EFF9BC /* DesignSystem */ = {
 			isa = PBXGroup;
 			children = (
+				D326F28C95E24B21B4BBC983,
 				71AAD6CD149549B08DB15AE2,
 				9239FCF6B711401194BB8A60,
 				F2D31EA75DB34C6E9E491819,
@@ -818,6 +821,7 @@
 				989D6925F0B34B879C392D02 /* Supabase.swift in Sources */,
 				5CD9072D74F94E339D78C6CA /* SupabaseConfig.swift in Sources */,
 				E0F23FFDBC69450B8B7CE540 /* WidgetSnapshotWriter.swift in Sources */,
+				328FE93197CD4CB58F4465C9 /* ALIAlertsCard.swift in Sources */,
 				89C6E66729514F9781574B9E /* ALIColors.swift in Sources */,
 				461DBD51F96045C79EE0091F /* ALIComponents.swift in Sources */,
 				F5A5D04C696A4FBBAD760C75 /* ALIIcon.swift in Sources */,
