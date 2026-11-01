@@ -637,16 +637,18 @@ final class FamilyService: ObservableObject {
     }
 
     private func clearAllLocalData(modelContext: ModelContext) {
-        let types: [any PersistentModel.Type] = [
-            FamilyMember.self, Dish.self, MealPlanEntry.self, GroceryItem.self,
-            ShoppingList.self, ShoppingListEntry.self, HouseTask.self, HouseTaskLog.self,
-            FamilyEvent.self, Reminder.self, BoardNote.self, Expense.self, ExpenseCategory.self, ActivityLogEntry.self,
-            ExpenseArchive.self,
-        ]
-        for type in types {
-            try? modelContext.delete(model: type)
+        // One by one instead of `delete(model:)`: the batch delete fails
+        // silently (hidden by `try?`) and left previous families' data behind.
+        func wipe<M: PersistentModel>(_ type: M.Type) {
+            guard let items = try? modelContext.fetch(FetchDescriptor<M>()) else { return }
+            for item in items { modelContext.delete(item) }
         }
-        try? modelContext.save()
+        wipe(FamilyMember.self); wipe(Dish.self); wipe(Recipe.self); wipe(MealPlanEntry.self)
+        wipe(GroceryItem.self); wipe(ShoppingList.self); wipe(ShoppingListEntry.self)
+        wipe(HouseTask.self); wipe(HouseTaskLog.self); wipe(FamilyEvent.self); wipe(Reminder.self)
+        wipe(BoardNote.self); wipe(Expense.self); wipe(ExpenseCategory.self); wipe(ExpenseArchive.self)
+        wipe(ActivityLogEntry.self)
+        do { try modelContext.save() } catch { print("clearAllLocalData save failed: \(error)") }
     }
 
     // MARK: - Family settings (which tabs show up in the bottom bar, and which one opens first)

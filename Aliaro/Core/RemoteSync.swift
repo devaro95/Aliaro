@@ -43,13 +43,28 @@ final class RemoteSync<Remote: FamilySynced> {
     private var channel: RealtimeChannelV2?
     private var listenTask: Task<Void, Never>?
 
+    /// Rows per request. Supabase caps responses at 1000 rows by default, so
+    /// we page until a short page arrives: callers prune local data against
+    /// this result, and a truncated list would delete real records locally.
+    private static var pageSize: Int { 1000 }
+
     func fetchAll(familyID: UUID) async throws -> [Remote] {
-        try await supabase
-            .from(Remote.tableName)
-            .select()
-            .eq("family_id", value: familyID)
-            .execute()
-            .value
+        var all: [Remote] = []
+        var from = 0
+        while true {
+            let page: [Remote] = try await supabase
+                .from(Remote.tableName)
+                .select()
+                .eq("family_id", value: familyID)
+                .order("id")
+                .range(from: from, to: from + Self.pageSize - 1)
+                .execute()
+                .value
+            all.append(contentsOf: page)
+            if page.count < Self.pageSize { break }
+            from += Self.pageSize
+        }
+        return all
     }
 
     func push(_ record: Remote) async throws {

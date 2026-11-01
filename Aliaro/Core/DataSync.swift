@@ -331,6 +331,30 @@ final class AppDataSyncCoordinator: ObservableObject {
         refreshWidgetSnapshot()
     }
 
+    /// Deletes local records of `type` that no longer exist on the server:
+    /// deletes missed while offline/suspended, or leftovers from another
+    /// family. The server is the source of truth after a full fetch.
+    private func pruneLocal<M: PersistentModel>(_ type: M.Type, id: KeyPath<M, UUID>, keeping remoteIDs: [UUID], modelContext: ModelContext) {
+        let keep = Set(remoteIDs)
+        guard let local = try? modelContext.fetch(FetchDescriptor<M>()) else { return }
+        for item in local where !keep.contains(item[keyPath: id]) {
+            modelContext.delete(item)
+        }
+    }
+
+    private var isResyncing = false
+
+    /// Re-fetches everything and reconnects the real-time channels when the
+    /// app returns from the background: iOS drops the socket while
+    /// suspended and changes made in that window are never replayed.
+    func resyncAfterBackground(familyID: UUID, currentMemberID: UUID, modelContext: ModelContext) async {
+        guard started, !isResyncing else { return }
+        isResyncing = true
+        defer { isResyncing = false }
+        await stopAll()
+        await startAll(familyID: familyID, currentMemberID: currentMemberID, modelContext: modelContext)
+    }
+
     /// Closes all real-time channels (when leaving the family group).
     func stopAll() async {
         guard started else { return }
@@ -426,6 +450,7 @@ final class AppDataSyncCoordinator: ObservableObject {
         do {
             let remote = try await dishes.fetchAll(familyID: familyID)
             for r in remote { applyDish(r, modelContext: modelContext) }
+            pruneLocal(Dish.self, id: \.id, keeping: remote.map(\.id), modelContext: modelContext)
         } catch {
             lastError = error.localizedDescription
         }
@@ -468,6 +493,7 @@ final class AppDataSyncCoordinator: ObservableObject {
         do {
             let remote = try await recipes.fetchAll(familyID: familyID)
             for r in remote { applyRecipe(r, modelContext: modelContext) }
+            pruneLocal(Recipe.self, id: \.id, keeping: remote.map(\.id), modelContext: modelContext)
         } catch {
             lastError = error.localizedDescription
         }
@@ -581,6 +607,15 @@ final class AppDataSyncCoordinator: ObservableObject {
         do {
             let remote = try await mealPlanEntries.fetchAll(familyID: familyID)
             for r in remote { applyMealPlanEntry(r, modelContext: modelContext) }
+            // Prune local entries deleted remotely while this device was offline
+            // (missed realtime deletes leave stale duplicates for the same slot).
+            let remoteIDs = Set(remote.map(\.id))
+            if let local = try? modelContext.fetch(FetchDescriptor<MealPlanEntry>()) {
+                for entry in local where !remoteIDs.contains(entry.id) {
+                    modelContext.delete(entry)
+                }
+            }
+            refreshWidgetSnapshot()
         } catch {
             lastError = error.localizedDescription
         }
@@ -623,8 +658,41 @@ final class AppDataSyncCoordinator: ObservableObject {
             id: entry.id, family_id: familyID, weekday: entry.weekday, meal_type: entry.mealType,
             dish_id: entry.dishID, dish_name: entry.dishName, updated_at: entry.updatedAt
         )
-        Task { try? await mealPlanEntries.push(record) }
+        Task {
+            do {
+                try await mealPlanEntries.push(record)
+            } catch let error as PostgrestError where error.code == "23505" {
+                // Another device already filled this slot (day + meal) with a
+                // different id: adopt that row's id and overwrite its dish.
+                await resolveMealSlotConflict(record, localEntry: entry)
+            } catch {
+                lastError = error.localizedDescription
+            }
+        }
         refreshWidgetSnapshot()
+    }
+
+    private func resolveMealSlotConflict(_ record: RemoteMealPlanEntry, localEntry: MealPlanEntry) async {
+        do {
+            let existing: RemoteMealPlanEntry = try await supabase
+                .from(RemoteMealPlanEntry.tableName)
+                .select()
+                .eq("family_id", value: record.family_id)
+                .eq("weekday", value: record.weekday)
+                .eq("meal_type", value: record.meal_type)
+                .single()
+                .execute()
+                .value
+            var merged = record
+            merged.id = existing.id
+            merged.updated_at = .now
+            try await mealPlanEntries.push(merged)
+            localEntry.id = existing.id
+            localEntry.updatedAt = merged.updated_at
+            refreshWidgetSnapshot()
+        } catch {
+            lastError = error.localizedDescription
+        }
     }
 
     func deleteMealPlanEntry(id: UUID) {
@@ -638,6 +706,7 @@ final class AppDataSyncCoordinator: ObservableObject {
         do {
             let remote = try await groceryItems.fetchAll(familyID: familyID)
             for r in remote { applyGroceryItem(r, modelContext: modelContext) }
+            pruneLocal(GroceryItem.self, id: \.id, keeping: remote.map(\.id), modelContext: modelContext)
         } catch {
             lastError = error.localizedDescription
         }
@@ -677,6 +746,7 @@ final class AppDataSyncCoordinator: ObservableObject {
         do {
             let remote = try await shoppingLists.fetchAll(familyID: familyID)
             for r in remote { applyShoppingList(r, modelContext: modelContext) }
+            pruneLocal(ShoppingList.self, id: \.id, keeping: remote.map(\.id), modelContext: modelContext)
         } catch {
             lastError = error.localizedDescription
         }
@@ -717,6 +787,7 @@ final class AppDataSyncCoordinator: ObservableObject {
         do {
             let remote = try await shoppingListEntries.fetchAll(familyID: familyID)
             for r in remote { applyShoppingListEntry(r, modelContext: modelContext) }
+            pruneLocal(ShoppingListEntry.self, id: \.id, keeping: remote.map(\.id), modelContext: modelContext)
         } catch {
             lastError = error.localizedDescription
         }
@@ -767,6 +838,7 @@ final class AppDataSyncCoordinator: ObservableObject {
         do {
             let remote = try await houseTasks.fetchAll(familyID: familyID)
             for r in remote { applyHouseTask(r, modelContext: modelContext) }
+            pruneLocal(HouseTask.self, id: \.id, keeping: remote.map(\.id), modelContext: modelContext)
         } catch {
             lastError = error.localizedDescription
         }
@@ -821,6 +893,7 @@ final class AppDataSyncCoordinator: ObservableObject {
         do {
             let remote = try await houseTaskLogs.fetchAll(familyID: familyID)
             for r in remote { applyHouseTaskLog(r, modelContext: modelContext) }
+            pruneLocal(HouseTaskLog.self, id: \.id, keeping: remote.map(\.id), modelContext: modelContext)
         } catch {
             lastError = error.localizedDescription
         }
@@ -873,6 +946,7 @@ final class AppDataSyncCoordinator: ObservableObject {
         do {
             let remote = try await familyEvents.fetchAll(familyID: familyID)
             for r in remote { applyFamilyEvent(r, modelContext: modelContext) }
+            pruneLocal(FamilyEvent.self, id: \.id, keeping: remote.map(\.id), modelContext: modelContext)
         } catch {
             lastError = error.localizedDescription
         }
@@ -951,6 +1025,7 @@ final class AppDataSyncCoordinator: ObservableObject {
         do {
             let remote = try await reminders.fetchAll(familyID: familyID)
             for r in remote { applyReminder(r, modelContext: modelContext) }
+            pruneLocal(Reminder.self, id: \.id, keeping: remote.map(\.id), modelContext: modelContext)
         } catch {
             lastError = error.localizedDescription
         }
@@ -1077,6 +1152,7 @@ final class AppDataSyncCoordinator: ObservableObject {
         do {
             let remote = try await categories.fetchAll(familyID: familyID)
             for r in remote { applyCategory(r, modelContext: modelContext) }
+            pruneLocal(ExpenseCategory.self, id: \.id, keeping: remote.map(\.id), modelContext: modelContext)
         } catch {
             lastError = error.localizedDescription
         }
@@ -1124,6 +1200,7 @@ final class AppDataSyncCoordinator: ObservableObject {
         do {
             let remote = try await expenses.fetchAll(familyID: familyID)
             for r in remote { applyExpense(r, modelContext: modelContext) }
+            pruneLocal(Expense.self, id: \.id, keeping: remote.map(\.id), modelContext: modelContext)
         } catch {
             lastError = error.localizedDescription
         }
@@ -1180,6 +1257,7 @@ final class AppDataSyncCoordinator: ObservableObject {
         do {
             let remote = try await expenseArchives.fetchAll(familyID: familyID)
             for r in remote { applyExpenseArchive(r, modelContext: modelContext) }
+            pruneLocal(ExpenseArchive.self, id: \.id, keeping: remote.map(\.id), modelContext: modelContext)
         } catch {
             lastError = error.localizedDescription
         }
@@ -1242,6 +1320,7 @@ final class AppDataSyncCoordinator: ObservableObject {
         do {
             let remote = try await activityLogEntries.fetchAll(familyID: familyID)
             for r in remote { applyActivityLogEntry(r, modelContext: modelContext) }
+            pruneLocal(ActivityLogEntry.self, id: \.id, keeping: remote.map(\.id), modelContext: modelContext)
         } catch {
             lastError = error.localizedDescription
         }
