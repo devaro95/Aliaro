@@ -321,11 +321,6 @@ struct WifiEditorSheet: View {
                             .onChange(of: password) { _, new in if new.count > WifiNetwork.maxPasswordLength { password = String(new.prefix(WifiNetwork.maxPasswordLength)) } }
                     }
 
-                    Text("Everyone in the family group will see it.")
-                        .font(ALITypography.labelLarge)
-                        .foregroundStyle(ALIColors.mutedInk)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-
                     ALIPrimaryButton(text: "Save", enabled: canSave, accent: ALIColors.wifiAccent) { save() }
 
                     if networkToEdit != nil {
