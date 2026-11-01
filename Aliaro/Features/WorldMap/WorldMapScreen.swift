@@ -18,7 +18,6 @@ struct WorldMapScreen: View {
     /// `nil` = everyone.
     @State private var selectedMemberID: UUID?
     @State private var showPicker = false
-    @State private var showFullScreen = false
     /// Last country toggled from the map, shown for a moment.
     @State private var toast: Toast?
 
@@ -88,13 +87,6 @@ struct WorldMapScreen: View {
         .sensoryFeedback(.selection, trigger: toast)
         .sheet(isPresented: $showPicker) {
             CountryPickerSheet()
-        }
-        .fullScreenCover(isPresented: $showFullScreen) {
-            WorldMapFullScreen(
-                fill: { fillAmount(visitors[$0]?.count ?? 0, of: memberCount) },
-                canEdit: canEdit,
-                onTap: toggle
-            )
         }
     }
 
@@ -171,22 +163,6 @@ struct WorldMapScreen: View {
                 }
             }
             .aspectRatio(WorldMapData.shared.size.width / WorldMapData.shared.size.height, contentMode: .fit)
-            .overlay(alignment: .topTrailing) {
-                Button {
-                    Track.event("world_map_fullscreen")
-                    showFullScreen = true
-                } label: {
-                    Image(systemName: "arrow.up.left.and.arrow.down.right")
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(ALIColors.ink)
-                        .frame(width: 32, height: 32)
-                        .background(ALIColors.surface.opacity(0.9))
-                        .clipShape(Circle())
-                        .overlay(Circle().stroke(ALIColors.outline, lineWidth: 1))
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(Text("Expand map"))
-            }
             .overlay(alignment: .bottom) {
                 if let toast {
                     ToastLabel(toast: toast)
@@ -318,97 +294,5 @@ enum WorldMapActions {
         dataSync.pushVisitedCountry(visit, familyID: familyID)
         Track.event("world_map_country_added", ["source": source, "country": code])
         return true
-    }
-}
-
-/// The map full screen, with pinch to zoom and drag to move.
-private struct WorldMapFullScreen: View {
-    @Environment(\.dismiss) private var dismiss
-    let fill: (String) -> Double
-    let canEdit: Bool
-    let onTap: (String) -> Void
-
-    @State private var zoom: CGFloat = 1
-    @State private var lastZoom: CGFloat = 1
-    @State private var offset: CGSize = .zero
-    @State private var lastOffset: CGSize = .zero
-
-    var body: some View {
-        GeometryReader { proxy in
-            let data = WorldMapData.shared
-            let fitted = CGSize(width: proxy.size.width, height: proxy.size.width * data.size.height / data.size.width)
-            ZStack {
-                ALIColors.background.ignoresSafeArea()
-                WorldMapCanvas(fill: fill, zoom: zoom)
-                    .frame(width: fitted.width, height: fitted.height)
-                    .scaleEffect(zoom)
-                    .offset(offset)
-            }
-            .frame(width: proxy.size.width, height: proxy.size.height)
-            .contentShape(Rectangle())
-            .gesture(
-                MagnificationGesture()
-                    .onChanged { value in zoom = min(max(lastZoom * value, 1), 12) }
-                    .onEnded { _ in
-                        lastZoom = zoom
-                        clampOffset(fitted: fitted, container: proxy.size)
-                    }
-                    .simultaneously(with: DragGesture()
-                        .onChanged { value in
-                            offset = CGSize(width: lastOffset.width + value.translation.width, height: lastOffset.height + value.translation.height)
-                        }
-                        .onEnded { _ in clampOffset(fitted: fitted, container: proxy.size) }
-                    )
-            )
-            .onTapGesture(count: 2) {
-                withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
-                    zoom = zoom > 1 ? 1 : 3
-                    lastZoom = zoom
-                    if zoom == 1 { offset = .zero; lastOffset = .zero }
-                }
-            }
-            .onTapGesture { location in
-                guard canEdit else { return }
-                // Screen point → map coordinates (undo offset and zoom around the center).
-                let center = CGPoint(x: proxy.size.width / 2, y: proxy.size.height / 2)
-                let local = CGPoint(
-                    x: (location.x - center.x - offset.width) / zoom + fitted.width / 2,
-                    y: (location.y - center.y - offset.height) / zoom + fitted.height / 2
-                )
-                let scale = data.size.width / fitted.width
-                if let code = data.country(at: CGPoint(x: local.x * scale, y: local.y * scale)) { onTap(code) }
-            }
-        }
-        .overlay(alignment: .topTrailing) {
-            Button {
-                dismiss()
-            } label: {
-                Image(systemName: "xmark")
-                    .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(ALIColors.ink)
-                    .frame(width: 40, height: 40)
-                    .background(ALIColors.surface)
-                    .clipShape(Circle())
-                    .overlay(Circle().stroke(ALIColors.outline, lineWidth: 1))
-            }
-            .buttonStyle(.plain)
-            .padding(16)
-            .accessibilityLabel(Text("Close"))
-        }
-        .overlay(alignment: .bottom) {
-            Text(canEdit ? LocalizedStringKey("Pinch to zoom. Tap a country to mark it as visited.") : LocalizedStringKey("Pinch to zoom."))
-                .font(ALITypography.labelLarge)
-                .foregroundStyle(ALIColors.mutedInk)
-                .padding(.bottom, 24)
-        }
-    }
-
-    private func clampOffset(fitted: CGSize, container: CGSize) {
-        let maxX = max(0, (fitted.width * zoom - container.width) / 2)
-        let maxY = max(0, (fitted.height * zoom - container.height) / 2)
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.9)) {
-            offset = CGSize(width: min(max(offset.width, -maxX), maxX), height: min(max(offset.height, -maxY), maxY))
-        }
-        lastOffset = offset
     }
 }

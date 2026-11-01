@@ -136,22 +136,6 @@
         }
       }
     },
-    "Expand map" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Expand map"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ampliar mapa"
-          }
-        }
-      }
-    },
     "Mark the countries you've visited and watch the family map fill up." : {
       "localizations" : {
         "en" : {
@@ -180,38 +164,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Aún no hay países"
-          }
-        }
-      }
-    },
-    "Pinch to zoom." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pinch to zoom."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pellizca para hacer zoom."
-          }
-        }
-      }
-    },
-    "Pinch to zoom. Tap a country to mark it as visited." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pinch to zoom. Tap a country to mark it as visited."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pellizca para hacer zoom. Toca un país para marcarlo como visitado."
           }
         }
       }
