@@ -268,6 +268,22 @@ struct RemoteExpenseArchive: FamilySynced {
     var created_at: Date
 }
 
+struct RemoteFamilyPlace: FamilySynced {
+    static let tableName = "family_places"
+    var id: UUID
+    var family_id: UUID
+    var name: String
+    var category: String
+    var latitude: Double
+    var longitude: Double
+    var address: String
+    var notes: String
+    var created_at: Date
+    var updated_at: Date
+    var created_by: UUID?
+    var created_by_name: String?
+}
+
 struct RemoteWifiNetwork: FamilySynced {
     static let tableName = "wifi_networks"
     var id: UUID
@@ -314,6 +330,7 @@ final class AppDataSyncCoordinator: ObservableObject {
     private let expenses = RemoteSync<RemoteExpense>()
     private let activityLogEntries = RemoteSync<RemoteActivityLogEntry>()
     private let expenseArchives = RemoteSync<RemoteExpenseArchive>()
+    private let familyPlaces = RemoteSync<RemoteFamilyPlace>()
     private let wifiNetworks = RemoteSync<RemoteWifiNetwork>()
 
     private var started = false
@@ -354,6 +371,7 @@ final class AppDataSyncCoordinator: ObservableObject {
         await startExpenses(familyID: familyID, modelContext: modelContext)
         await startActivityLogEntries(familyID: familyID, modelContext: modelContext)
         await startExpenseArchives(familyID: familyID, modelContext: modelContext)
+        await startFamilyPlaces(familyID: familyID, modelContext: modelContext)
         await startWifiNetworks(familyID: familyID, modelContext: modelContext)
         refreshWidgetSnapshot()
     }
@@ -402,6 +420,7 @@ final class AppDataSyncCoordinator: ObservableObject {
         await expenses.stop()
         await activityLogEntries.stop()
         await expenseArchives.stop()
+        await familyPlaces.stop()
         await wifiNetworks.stop()
     }
 
@@ -1184,6 +1203,67 @@ final class AppDataSyncCoordinator: ObservableObject {
 
     func deleteBoardNote(id: UUID) {
         Task { try? await boardNotes.remove(id: id) }
+    }
+
+    // MARK: FamilyPlaces (Places map)
+
+    private func startFamilyPlaces(familyID: UUID, modelContext: ModelContext) async {
+        do {
+            let remote = try await familyPlaces.fetchAll(familyID: familyID)
+            for r in remote { applyFamilyPlace(r, modelContext: modelContext) }
+            // Realtime doesn't deliver deletes filtered by family: purge on fetch.
+            let remoteIDs = Set(remote.map(\.id))
+            let local = (try? modelContext.fetch(FetchDescriptor<FamilyPlace>())) ?? []
+            for place in local where !remoteIDs.contains(place.id) { modelContext.delete(place) }
+        } catch {
+            lastError = error.localizedDescription
+        }
+        await familyPlaces.start(
+            familyID: familyID,
+            onUpsert: { [weak self] r in self?.applyFamilyPlace(r, modelContext: modelContext) },
+            onDelete: { id in
+                let descriptor = FetchDescriptor<FamilyPlace>(predicate: #Predicate { $0.id == id })
+                if let existing = try? modelContext.fetch(descriptor).first {
+                    modelContext.delete(existing)
+                }
+            }
+        )
+    }
+
+    private func applyFamilyPlace(_ remote: RemoteFamilyPlace, modelContext: ModelContext) {
+        let descriptor = FetchDescriptor<FamilyPlace>(predicate: #Predicate { $0.id == remote.id })
+        if let existing = try? modelContext.fetch(descriptor).first {
+            existing.name = remote.name
+            existing.category = remote.category
+            existing.latitude = remote.latitude
+            existing.longitude = remote.longitude
+            existing.address = remote.address
+            existing.notes = remote.notes
+            existing.updatedAt = remote.updated_at
+            existing.createdByID = remote.created_by
+            existing.createdByName = remote.created_by_name
+        } else {
+            modelContext.insert(FamilyPlace(
+                id: remote.id, name: remote.name, category: PlaceCategory(rawValue: remote.category) ?? .other,
+                latitude: remote.latitude, longitude: remote.longitude, address: remote.address, notes: remote.notes,
+                createdAt: remote.created_at, updatedAt: remote.updated_at,
+                createdByID: remote.created_by, createdByName: remote.created_by_name
+            ))
+        }
+    }
+
+    func pushFamilyPlace(_ place: FamilyPlace, familyID: UUID) {
+        let record = RemoteFamilyPlace(
+            id: place.id, family_id: familyID, name: place.name, category: place.category,
+            latitude: place.latitude, longitude: place.longitude, address: place.address, notes: place.notes,
+            created_at: place.createdAt, updated_at: place.updatedAt,
+            created_by: place.createdByID, created_by_name: place.createdByName
+        )
+        Task { try? await familyPlaces.push(record) }
+    }
+
+    func deleteFamilyPlace(id: UUID) {
+        Task { try? await familyPlaces.remove(id: id) }
     }
 
     // MARK: WifiNetworks
