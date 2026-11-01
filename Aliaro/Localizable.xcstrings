@@ -1249,6 +1249,22 @@
         }
       }
     },
+    "Admin" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Admin"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Admin"
+          }
+        }
+      }
+    },
     "Alerts" : {
       "localizations" : {
         "es" : {
@@ -1647,7 +1663,6 @@
       }
     },
     "Bought (%lld)" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2796,6 +2811,22 @@
         }
       }
     },
+    "Creator" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Creator"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Creador"
+          }
+        }
+      }
+    },
     "cup" : {
       "localizations" : {
         "en" : {
@@ -3273,6 +3304,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Postres"
+          }
+        }
+      }
+    },
+    "Dining out" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dining out"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comer fuera"
           }
         }
       }
@@ -3852,6 +3899,22 @@
         }
       }
     },
+    "Entertainment" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entertainment"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ocio"
+          }
+        }
+      }
+    },
     "Every" : {
       "localizations" : {
         "en" : {
@@ -4133,8 +4196,23 @@
         }
       }
     },
+    "expense_category_shopping" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shopping"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compras"
+          }
+        }
+      }
+    },
     "Expenses" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4798,6 +4876,22 @@
         }
       }
     },
+    "Housing" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Housing"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vivienda"
+          }
+        }
+      }
+    },
     "How do I cancel?" : {
       "localizations" : {
         "es" : {
@@ -5063,6 +5157,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Unirse al grupo familiar"
+          }
+        }
+      }
+    },
+    "Join group" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Join group"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unirse al grupo"
           }
         }
       }
@@ -6827,7 +6938,6 @@
       }
     },
     "Other" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -9339,7 +9449,6 @@
       }
     },
     "To buy (%lld)" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -9565,6 +9674,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Movimientos (%lld)"
+          }
+        }
+      }
+    },
+    "Transport" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transport"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transporte"
           }
         }
       }
@@ -10753,6 +10878,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ayer, %@"
+          }
+        }
+      }
+    },
+    "You" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tú"
           }
         }
       }
