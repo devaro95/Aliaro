@@ -77,16 +77,15 @@ struct WorldMapCanvas: View {
     var accent: Color = ALIColors.worldMapAccent
     /// Highlighted for a moment after a tap.
     var highlighted: String? = nil
-    /// Line width in screen points (kept constant while zooming).
+    /// Line width in screen points.
     var lineWidth: CGFloat = 0.6
-    var zoom: CGFloat = 1
 
     var body: some View {
         let data = WorldMapData.shared
         Canvas { context, canvasSize in
             let scale = canvasSize.width / data.size.width
             context.scaleBy(x: scale, y: scale)
-            let stroke = lineWidth / (scale * zoom)
+            let stroke = lineWidth / scale
             for country in data.countries {
                 let amount = fill(country.code)
                 if amount > 0 {
