@@ -444,6 +444,11 @@ struct HomeScreen: View {
         HStack(alignment: .firstTextBaseline) {
             sectionTitle("All features")
             Spacer()
+            if !isReordering {
+                featureStyleToggle
+                    .padding(.trailing, visibleFeatures.count > 1 ? 0 : 20)
+                    .transition(.opacity)
+            }
             if visibleFeatures.count > 1 {
                 if isReordering {
                     Button {
@@ -481,6 +486,33 @@ struct HomeScreen: View {
                 .padding(.top, 4)
             }
         }
+    }
+
+    /// Cards ↔ icons, right where the change shows up.
+    private var featureStyleToggle: some View {
+        HStack(spacing: 2) {
+            ForEach(HomeFeatureStyle.allCases) { style in
+                let selected = layout.featureStyle == style
+                Button {
+                    guard !selected else { return }
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) { layout.setFeatureStyle(style) }
+                    Track.event("home_feature_style", ["style": style.rawValue, "source": "home"])
+                } label: {
+                    Image(systemName: style == .cards ? "square.grid.2x2.fill" : "square.grid.3x3.fill")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(selected ? ALIColors.ink : ALIColors.mutedInk)
+                        .frame(width: 34, height: 28)
+                        .background(selected ? ALIColors.surface : .clear, in: Capsule())
+                        .shadow(color: .black.opacity(selected ? 0.08 : 0), radius: 3, y: 1)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text(style.label))
+            }
+        }
+        .padding(2)
+        .background(ALIColors.surfaceVariant, in: Capsule())
+        .padding(.top, 4)
+        .sensoryFeedback(.selection, trigger: layout.featureStyle)
     }
 
     private var featureGrid: some View {

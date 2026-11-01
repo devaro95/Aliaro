@@ -43,6 +43,9 @@ struct HomeCustomizeSheet: View {
                     .pickerStyle(.segmented)
                     .listRowBackground(Color.clear)
                     .listRowInsets(EdgeInsets())
+
+                    HomeFeatureStylePreview(style: layout.featureStyle, tabs: visibleFeatures)
+                        .listRowBackground(ALIColors.surface)
                 } header: {
                     Text("All features")
                 } footer: {
@@ -171,5 +174,60 @@ struct HomeCustomizeSheet: View {
             .frame(width: 30, height: 30)
             .background(color)
             .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+    }
+}
+
+/// Small live sketch of the features grid in the chosen style, so the
+/// change is visible without closing the sheet.
+private struct HomeFeatureStylePreview: View {
+    let style: HomeFeatureStyle
+    let tabs: [AppTab]
+
+    var body: some View {
+        Group {
+            if style == .icons {
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 4), spacing: 10) {
+                    ForEach(Array(tabs.prefix(8))) { tab in
+                        VStack(spacing: 4) {
+                            Image(systemName: tab.systemImage)
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(ALIColors.onAccent)
+                                .frame(width: 34, height: 34)
+                                .background(tab.accent, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            Text(tab.label)
+                                .font(.system(size: 9, weight: .medium))
+                                .foregroundStyle(ALIColors.ink)
+                                .lineLimit(1)
+                        }
+                    }
+                }
+            } else {
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 2), spacing: 8) {
+                    ForEach(Array(tabs.prefix(4))) { tab in
+                        VStack(alignment: .leading, spacing: 8) {
+                            Image(systemName: tab.systemImage)
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundStyle(ALIColors.onAccent)
+                                .frame(width: 24, height: 24)
+                                .background(tab.accent, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+                            Text(tab.label)
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundStyle(ALIColors.ink)
+                                .lineLimit(1)
+                            Capsule()
+                                .fill(ALIColors.mutedInk.opacity(0.25))
+                                .frame(width: 44, height: 5)
+                        }
+                        .padding(10)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(ALIColors.background, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(ALIColors.outline, lineWidth: 1))
+                    }
+                }
+            }
+        }
+        .padding(.vertical, 6)
+        .animation(.spring(response: 0.4, dampingFraction: 0.85), value: style)
+        .accessibilityHidden(true)
     }
 }
