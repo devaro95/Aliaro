@@ -9,7 +9,6 @@ import SwiftData
 ///   who owes whom). Only features with something to say get a card.
 /// - The family Board: notes pinned by anyone, always shown here until
 ///   someone deletes them.
-/// - The family Wi-Fi (`WifiHomeSection`): password, copy and a QR for guests.
 /// - A 2-column grid with a shortcut to **every** visible feature, so new
 ///   ones never need a bottom-bar slot.
 ///
@@ -40,6 +39,7 @@ struct HomeScreen: View {
     @Query(sort: \FamilyMember.createdAt) private var members: [FamilyMember]
     @Query private var houseTasks: [HouseTask]
     @Query private var houseTaskLogs: [HouseTaskLog]
+    @Query private var wifiNetworks: [WifiNetwork]
     @Query(sort: \FamilyEvent.startDate) private var events: [FamilyEvent]
     @Query private var mealPlan: [MealPlanEntry]
     @Query(sort: \ShoppingListEntry.addedAt) private var shoppingEntries: [ShoppingListEntry]
@@ -191,7 +191,6 @@ struct HomeScreen: View {
             switch block {
             case .today: return !summaryCards.isEmpty
             case .board: return visibleFeatures.contains(.board) && (premium.isLocked(.board) || !myBoardNotes.isEmpty)
-            case .wifi: return true
             case .features: return true
             }
         }
@@ -217,12 +216,6 @@ struct HomeScreen: View {
                 } else {
                     boardSection
                 }
-            }
-        case .wifi:
-            VStack(alignment: .leading, spacing: 16) {
-                sectionTitle("Wi-Fi")
-                WifiHomeSection()
-                    .padding(.horizontal, 20)
             }
         case .features:
             VStack(alignment: .leading, spacing: 16) {
@@ -674,6 +667,10 @@ struct HomeScreen: View {
             let count = myBoardNotes.count
             if count == 0 { return String(localized: "No notes") }
             return count == 1 ? String(localized: "1 note") : String(localized: "\(count) notes")
+        case .wifi:
+            let count = wifiNetworks.count
+            if count == 0 { return String(localized: "Add your Wi-Fi") }
+            return count == 1 ? String(localized: "1 network") : String(localized: "\(count) networks")
         case .home, .people:
             return nil
         }
@@ -698,7 +695,7 @@ struct HomeScreen: View {
         case .shoppingList: return shoppingSummary
         case .reminders: return remindersSummary
         case .economia: return financesSummary
-        case .recipes, .board, .home, .people: return nil
+        case .recipes, .board, .wifi, .home, .people: return nil
         }
     }
 

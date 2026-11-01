@@ -2,10 +2,10 @@ import SwiftUI
 import SwiftData
 import CoreImage.CIFilterBuiltins
 
-/// Home's Wi-Fi section: the family's networks with the password (hidden
-/// until tapped), copy and a QR code guests can scan to join. With none
-/// saved, a small card invites to add the home Wi-Fi.
-struct WifiHomeSection: View {
+/// Wi-Fi feature: the family's networks (as many as they want: home, the
+/// village house, the office…) with the password hidden until tapped, copy
+/// and a QR code guests can scan to join. Opens from its card on Home.
+struct WifiScreen: View {
     @Query(sort: [SortDescriptor(\WifiNetwork.position), SortDescriptor(\WifiNetwork.createdAt)])
     private var networks: [WifiNetwork]
 
@@ -14,22 +14,41 @@ struct WifiHomeSection: View {
     @State private var networkForQR: WifiNetwork?
 
     var body: some View {
-        VStack(spacing: 10) {
-            if networks.isEmpty {
-                emptyCard
-            } else {
-                ForEach(networks) { network in
-                    WifiCard(
-                        network: network,
-                        onQR: {
-                            Track.event("wifi_qr_open")
-                            networkForQR = network
-                        },
-                        onEdit: { networkToEdit = network }
-                    )
+        trackedBody.trackScreen("wifi")
+    }
+
+    @ViewBuilder
+    private var trackedBody: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            ALITopBar(title: "Wi-Fi", accent: ALIColors.wifiAccent) {
+                ALIFloatingButton(accent: ALIColors.wifiAccent) {
+                    Track.event("wifi_add_tap", ["source": "top_bar", "networks": networks.count])
+                    showAdd = true
                 }
+                .scaleEffect(0.72)
+                .frame(width: 44, height: 44)
+            }
+            .padding(.horizontal, 20)
+
+            ScrollView {
+                VStack(spacing: 10) {
+                    ForEach(networks) { network in
+                        WifiCard(
+                            network: network,
+                            onQR: {
+                                Track.event("wifi_qr_open")
+                                networkForQR = network
+                            },
+                            onEdit: { networkToEdit = network }
+                        )
+                    }
+                    addCard
+                }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 100) // clears the floating bottom bar
             }
         }
+        .background(ALIColors.background)
         .sheet(isPresented: $showAdd) {
             WifiEditorSheet(networkToEdit: nil)
         }
@@ -41,18 +60,21 @@ struct WifiHomeSection: View {
         }
     }
 
-    private var emptyCard: some View {
+    /// Dashed card to add a network: the home one when there's none yet, or another one.
+    private var addCard: some View {
         Button {
-            Track.event("wifi_add_tap", ["source": "home_empty"])
+            Track.event("wifi_add_tap", ["source": networks.isEmpty ? "empty" : "list", "networks": networks.count])
             showAdd = true
         } label: {
             HStack(spacing: 12) {
                 WifiIcon()
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Add your home Wi-Fi")
+                    Text(networks.isEmpty ? "Add your home Wi-Fi" : "Add another network")
                         .font(ALITypography.titleLarge)
                         .foregroundStyle(ALIColors.ink)
-                    Text("Everyone (and your guests) will have the password at hand.")
+                    Text(networks.isEmpty
+                         ? "Everyone (and your guests) will have the password at hand."
+                         : "The village house, grandma's, the office…")
                         .font(ALITypography.labelLarge)
                         .foregroundStyle(ALIColors.mutedInk)
                         .multilineTextAlignment(.leading)
