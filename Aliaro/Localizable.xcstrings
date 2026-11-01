@@ -660,6 +660,22 @@
         }
       }
     },
+    "Search a country to mark it as visited." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search a country to mark it as visited."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Busca un país para marcarlo como visitado."
+          }
+        }
+      }
+    },
     "Search a place or address" : {
       "localizations" : {
         "en" : {
