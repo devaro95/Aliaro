@@ -260,22 +260,6 @@
         }
       }
     },
-    "Expand map" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Expand map"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ampliar mapa"
-          }
-        }
-      }
-    },
     "Fun & kids" : {
       "localizations" : {
         "en" : {
@@ -532,38 +516,6 @@
         }
       }
     },
-    "Pinch to zoom." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pinch to zoom."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pellizca para hacer zoom."
-          }
-        }
-      }
-    },
-    "Pinch to zoom. Tap a country to mark it as visited." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pinch to zoom. Tap a country to mark it as visited."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pellizca para hacer zoom. Toca un país para marcarlo como visitado."
-          }
-        }
-      }
-    },
     "Place" : {
       "localizations" : {
         "en" : {
@@ -768,22 +720,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Países de %@."
-          }
-        }
-      }
-    },
-    "Tap a country to mark it as visited." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tap a country to mark it as visited."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Toca un país para marcarlo como visitado."
           }
         }
       }
