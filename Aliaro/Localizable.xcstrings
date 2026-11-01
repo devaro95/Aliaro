@@ -260,6 +260,22 @@
         }
       }
     },
+    "Nearest first" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nearest first"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Más cerca primero"
+          }
+        }
+      }
+    },
     "New place" : {
       "localizations" : {
         "en" : {

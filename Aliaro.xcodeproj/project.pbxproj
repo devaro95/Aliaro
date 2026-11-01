@@ -1039,6 +1039,7 @@
 					},
 				);
 				INFOPLIST_KEY_NSCameraUsageDescription = "Aliaro necesita la cámara para escanear el código QR de invitación al grupo familiar y para hacer fotos de tus recetas.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Aliaro usa tu ubicación para mostrarte en el mapa de lugares y ordenar los sitios de la familia por cercanía.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -1089,6 +1090,7 @@
 					},
 				);
 				INFOPLIST_KEY_NSCameraUsageDescription = "Aliaro necesita la cámara para escanear el código QR de invitación al grupo familiar y para hacer fotos de tus recetas.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Aliaro usa tu ubicación para mostrarte en el mapa de lugares y ordenar los sitios de la familia por cercanía.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
