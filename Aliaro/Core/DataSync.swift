@@ -326,6 +326,9 @@ final class AppDataSyncCoordinator: ObservableObject {
     /// Last network seen ("offline", "wifi", "cellular"…), to notice changes.
     private var lastNetwork: String?
     private var networkResync: Task<Void, Never>?
+    /// When the last full reload started, to skip a network one right after
+    /// (e.g. coming back from the background, which already reloads).
+    private var lastResyncAt: Date = .distantPast
     private var lastSession: (familyID: UUID, memberID: UUID)?
 
     /// Reloads everything from the server (e.g. after discarding an edit
@@ -385,7 +388,7 @@ final class AppDataSyncCoordinator: ObservableObject {
         networkResync?.cancel()
         networkResync = Task {
             try? await Task.sleep(for: .seconds(2)) // let the new connection settle
-            guard !Task.isCancelled else { return }
+            guard !Task.isCancelled, Date.now.timeIntervalSince(lastResyncAt) > 30 else { return }
             Track.event("sync_network_resync", ["from": previous, "to": network])
             reloadFromServer()
         }
@@ -485,6 +488,7 @@ final class AppDataSyncCoordinator: ObservableObject {
     func resyncAfterBackground(familyID: UUID, currentMemberID: UUID, modelContext: ModelContext) async {
         guard started, !isResyncing else { return }
         isResyncing = true
+        lastResyncAt = .now
         defer { isResyncing = false }
         await stopAll()
         await startAll(familyID: familyID, currentMemberID: currentMemberID, modelContext: modelContext)
