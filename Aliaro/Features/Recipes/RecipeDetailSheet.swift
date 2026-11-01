@@ -123,8 +123,8 @@ struct RecipeDetailSheet: View {
                     if !recipe.links.isEmpty {
                         section("Links") {
                             VStack(spacing: 8) {
-                                ForEach(recipe.links, id: \.self) { link in
-                                    linkRow(link)
+                                ForEach(Array(recipe.links.enumerated()), id: \.offset) { index, link in
+                                    linkRow(link, name: recipe.linkName(at: index))
                                 }
                             }
                         }
@@ -194,8 +194,9 @@ struct RecipeDetailSheet: View {
         .clipShape(Capsule())
     }
 
-    /// A link: site name, the rest of the address, opens in the browser.
-    private func linkRow(_ link: String) -> some View {
+    /// A link: its name (if it has one) with the site below, or the site and
+    /// the rest of the address; opens in the browser.
+    private func linkRow(_ link: String, name: String?) -> some View {
         Button {
             Track.event("recipe_link_open", ["host": RecipeLink.host(link)])
             if let url = URL(string: link) { openURL(url) }
@@ -208,11 +209,11 @@ struct RecipeDetailSheet: View {
                     .background(ALIColors.recipesAccent)
                     .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(RecipeLink.host(link))
+                    Text(name ?? RecipeLink.host(link))
                         .font(ALITypography.bodyLarge.weight(.semibold))
                         .foregroundStyle(ALIColors.ink)
                         .lineLimit(1)
-                    let path = RecipeLink.path(link)
+                    let path = name == nil ? RecipeLink.path(link) : RecipeLink.host(link)
                     if !path.isEmpty {
                         Text(path)
                             .font(ALITypography.labelLarge)

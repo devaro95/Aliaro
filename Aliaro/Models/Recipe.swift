@@ -30,6 +30,16 @@ final class Recipe {
     var createdByName: String?
     /// Web links (the original recipe, a video…), already normalized with a scheme.
     var links: [String] = []
+    /// Optional name shown instead of the address ("Video", "Grandma's recipe"),
+    /// one per link in the same order ("" = no name).
+    var linkNames: [String] = []
+
+    /// Name for the link at `index`, if it has one.
+    func linkName(at index: Int) -> String? {
+        guard linkNames.indices.contains(index) else { return nil }
+        let name = linkNames[index].trimmingCharacters(in: .whitespacesAndNewlines)
+        return name.isEmpty ? nil : name
+    }
 
     init(
         id: UUID = UUID(),
@@ -46,7 +56,8 @@ final class Recipe {
         updatedAt: Date = .now,
         createdByID: UUID? = nil,
         createdByName: String? = nil,
-        links: [String] = []
+        links: [String] = [],
+        linkNames: [String] = []
     ) {
         self.id = id
         self.name = name
@@ -62,6 +73,7 @@ final class Recipe {
         self.updatedAt = updatedAt
         self.createdByID = createdByID
         self.links = links
+        self.linkNames = linkNames
         self.createdByName = createdByName
     }
 
@@ -137,6 +149,7 @@ enum IngredientUnit: String, CaseIterable, Identifiable {
 enum RecipeLink {
     static let maxCount = 10
     static let maxLength = 500
+    static let maxNameLength = 60
 
     /// Adds "https://" when missing; nil if it isn't a usable web address.
     static func normalized(_ raw: String) -> String? {
