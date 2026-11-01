@@ -20,6 +20,38 @@
         }
       }
     },
+    "Big cards with a summary of each feature." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Big cards with a summary of each feature."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tarjetas grandes con un resumen de cada función."
+          }
+        }
+      }
+    },
+    "Cards" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cards"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tarjetas"
+          }
+        }
+      }
+    },
     "Copy link" : {
       "localizations" : {
         "en" : {
@@ -36,6 +68,22 @@
         }
       }
     },
+    "Features" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Features"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Funciones"
+          }
+        }
+      }
+    },
     "https://…" : {
       "localizations" : {
         "en" : {
@@ -48,6 +96,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "https://…"
+          }
+        }
+      }
+    },
+    "Icons" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Icons"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Iconos"
+          }
+        }
+      }
+    },
+    "Just the icons with their name: many more fit in each row." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Just the icons with their name: many more fit in each row."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solo los iconos con su nombre: caben muchos más en cada fila."
           }
         }
       }

@@ -29,6 +29,29 @@ struct HomeCustomizeSheet: View {
         NavigationStack {
             List {
                 Section {
+                    Picker("Features", selection: Binding(
+                        get: { layout.featureStyle },
+                        set: { style in
+                            withAnimation { layout.setFeatureStyle(style) }
+                            Track.event("home_feature_style", ["style": style.rawValue])
+                        }
+                    )) {
+                        ForEach(HomeFeatureStyle.allCases) { style in
+                            Text(style.label).tag(style)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets())
+                } header: {
+                    Text("All features")
+                } footer: {
+                    Text(layout.featureStyle == .cards
+                         ? "Big cards with a summary of each feature."
+                         : "Just the icons with their name: many more fit in each row.")
+                }
+
+                Section {
                     ForEach(blocks) { block in
                         blockRow(block)
                     }
