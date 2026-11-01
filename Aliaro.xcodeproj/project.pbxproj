@@ -35,6 +35,7 @@
 		89C6E66729514F9781574B9E /* ALIColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71AAD6CD149549B08DB15AE2 /* ALIColors.swift */; };
 		461DBD51F96045C79EE0091F /* ALIComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9239FCF6B711401194BB8A60 /* ALIComponents.swift */; };
 		F5A5D04C696A4FBBAD760C75 /* ALIIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2D31EA75DB34C6E9E491819 /* ALIIcon.swift */; };
+		AB96B44D368E4378A631BF10 /* ALISaveFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47EE17A686E142FD8113BA9B /* ALISaveFlow.swift */; };
 		BA02149F93A94CB185B208D8 /* ALITypography.swift in Sources */ = {isa = PBXBuildFile; fileRef = 741A465DA75442DE8C325399 /* ALITypography.swift */; };
 		9C1F25C5AD7C4534AADCBFE0 /* AliaroWordmark.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6BA36FD78324975B3E2C2D2 /* AliaroWordmark.swift */; };
 		EA225687C021481C8C757413 /* AuthWelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B49D090E6094A6A922C4211 /* AuthWelcomeView.swift */; };
@@ -196,6 +197,7 @@
 		71AAD6CD149549B08DB15AE2 /* ALIColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ALIColors.swift; sourceTree = "<group>"; };
 		9239FCF6B711401194BB8A60 /* ALIComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ALIComponents.swift; sourceTree = "<group>"; };
 		F2D31EA75DB34C6E9E491819 /* ALIIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ALIIcon.swift; sourceTree = "<group>"; };
+		47EE17A686E142FD8113BA9B /* ALISaveFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ALISaveFlow.swift; sourceTree = "<group>"; };
 		741A465DA75442DE8C325399 /* ALITypography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ALITypography.swift; sourceTree = "<group>"; };
 		F6BA36FD78324975B3E2C2D2 /* AliaroWordmark.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AliaroWordmark.swift; sourceTree = "<group>"; };
 		8B49D090E6094A6A922C4211 /* AuthWelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthWelcomeView.swift; sourceTree = "<group>"; };
@@ -367,6 +369,7 @@
 				71AAD6CD149549B08DB15AE2,
 				9239FCF6B711401194BB8A60,
 				F2D31EA75DB34C6E9E491819,
+				47EE17A686E142FD8113BA9B,
 				741A465DA75442DE8C325399,
 				F6BA36FD78324975B3E2C2D2
 			);
@@ -825,6 +828,7 @@
 				89C6E66729514F9781574B9E /* ALIColors.swift in Sources */,
 				461DBD51F96045C79EE0091F /* ALIComponents.swift in Sources */,
 				F5A5D04C696A4FBBAD760C75 /* ALIIcon.swift in Sources */,
+				AB96B44D368E4378A631BF10 /* ALISaveFlow.swift in Sources */,
 				BA02149F93A94CB185B208D8 /* ALITypography.swift in Sources */,
 				9C1F25C5AD7C4534AADCBFE0 /* AliaroWordmark.swift in Sources */,
 				EA225687C021481C8C757413 /* AuthWelcomeView.swift in Sources */,

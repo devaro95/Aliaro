@@ -111,6 +111,18 @@ struct MainTabContainer: View {
                 "visible_tabs": AppTab.visibleFeatures(excluding: familySession.disabledTabs).count,
             ])
         }
+        .overlay(alignment: .top) {
+            if dataSync.saveFailureNotice {
+                ALISaveFailureToast()
+                    .padding(.top, 8)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                    .task {
+                        try? await Task.sleep(for: .seconds(3))
+                        withAnimation { dataSync.saveFailureNotice = false }
+                    }
+            }
+        }
+        .animation(.easeInOut(duration: 0.25), value: dataSync.saveFailureNotice)
         .onChange(of: scenePhase) { oldPhase, newPhase in
             // Back from the background: catch up on changes missed while suspended.
             guard oldPhase == .background, newPhase != .background,

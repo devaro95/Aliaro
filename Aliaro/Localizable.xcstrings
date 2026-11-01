@@ -4,6 +4,22 @@
     "" : {
 
     },
+    "A change couldn't be saved. Try again." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A change couldn't be saved. Try again."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se ha podido guardar un cambio. Inténtalo de nuevo."
+          }
+        }
+      }
+    },
     "Add link" : {
       "localizations" : {
         "en" : {
@@ -32,6 +48,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Copiar enlace"
+          }
+        }
+      }
+    },
+    "Discard" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Discard"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Descartar"
           }
         }
       }
@@ -84,6 +116,22 @@
         }
       }
     },
+    "Retry" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retry"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reintentar"
+          }
+        }
+      }
+    },
     "Save where the recipe comes from (a website, a video…) to check it any time." : {
       "localizations" : {
         "en" : {
@@ -112,6 +160,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Compartir"
+          }
+        }
+      }
+    },
+    "Something went wrong while saving it. Try again in a moment." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Something went wrong while saving it. Try again in a moment."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ha habido un error al guardarlo. Inténtalo de nuevo en un momento."
+          }
+        }
+      }
+    },
+    "There's no connection. It's saved on this device and will upload by itself when you're back online." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "There's no connection. It's saved on this device and will upload by itself when you're back online."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No hay conexión. Se ha guardado en este dispositivo y se subirá solo cuando vuelva la conexión."
           }
         }
       }

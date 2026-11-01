@@ -8,6 +8,7 @@ struct AddHouseTaskSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var dataSync: AppDataSyncCoordinator
+    @StateObject private var saveFlow = ALISaveFlow()
     @EnvironmentObject private var familySession: FamilySession
     @Query(sort: \FamilyMember.createdAt) private var members: [FamilyMember]
 
@@ -68,6 +69,7 @@ struct AddHouseTaskSheet: View {
             }
             .background(ALIColors.background)
             .navigationTitle(isEditing ? "Edit task" : "New task")
+            .aliSaveFlow(saveFlow)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -211,6 +213,8 @@ struct AddHouseTaskSheet: View {
     }
 
     private func save() {
+        var firstUpload: Task<Void, Error>?
+        var retryUpload: (() -> Task<Void, Error>)?
         let trimmedName = name.trimmed
         guard canSave else { return }
         let task: HouseTask
@@ -250,7 +254,9 @@ struct AddHouseTaskSheet: View {
             modelContext.insert(task)
         }
         if let familyID = familySession.familyID {
-            dataSync.pushHouseTask(task, familyID: familyID)
+            let upload = { dataSync.pushHouseTask(task, familyID: familyID) }
+            firstUpload = upload()
+            retryUpload = upload
             dataSync.logActivity(
                 entityType: "house_task",
                 entityName: trimmedName,
@@ -261,6 +267,15 @@ struct AddHouseTaskSheet: View {
                 modelContext: modelContext
             )
         }
-        dismiss()
+        let savedID = task.id
+        let wasNew = !isEditing
+        saveFlow.track(firstUpload, id: savedID, retry: retryUpload, onDone: { dismiss() }, onDiscard: {
+            if wasNew {
+                modelContext.delete(task); try? modelContext.save()
+            } else {
+                dataSync.reloadFromServer()
+            }
+            dismiss()
+        })
     }
 }

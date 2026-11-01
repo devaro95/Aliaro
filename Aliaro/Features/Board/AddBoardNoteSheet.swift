@@ -8,6 +8,7 @@ struct AddBoardNoteSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var dataSync: AppDataSyncCoordinator
+    @StateObject private var saveFlow = ALISaveFlow()
     @EnvironmentObject private var familySession: FamilySession
     @Query(sort: \FamilyMember.createdAt) private var members: [FamilyMember]
 
@@ -83,6 +84,7 @@ struct AddBoardNoteSheet: View {
             }
             .background(ALIColors.background)
             .navigationTitle(isEditing ? "Edit note" : "New note")
+            .aliSaveFlow(saveFlow)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -162,6 +164,8 @@ struct AddBoardNoteSheet: View {
     }
 
     private func save() {
+        var firstUpload: Task<Void, Error>?
+        var retryUpload: (() -> Task<Void, Error>)?
         let clean = text.trimmed
         guard canSave, let familyID = familySession.familyID else { return }
         // Keep only people still in the group.
@@ -187,13 +191,24 @@ struct AddBoardNoteSheet: View {
             modelContext.insert(note)
         }
         try? modelContext.save()
-        dataSync.pushBoardNote(note, familyID: familyID)
+        let upload = { dataSync.pushBoardNote(note, familyID: familyID) }
+        firstUpload = upload()
+        retryUpload = upload
         dataSync.logActivity(
             entityType: "board_note", entityName: String(clean.prefix(60)),
             action: isEditing ? "updated" : "created",
             actorID: familySession.memberID, actorName: actorName,
             familyID: familyID, modelContext: modelContext
         )
-        dismiss()
+        let savedID = note.id
+        let wasNew = !isEditing
+        saveFlow.track(firstUpload, id: savedID, retry: retryUpload, onDone: { dismiss() }, onDiscard: {
+            if wasNew {
+                modelContext.delete(note); try? modelContext.save()
+            } else {
+                dataSync.reloadFromServer()
+            }
+            dismiss()
+        })
     }
 }

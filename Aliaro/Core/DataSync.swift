@@ -1,6 +1,7 @@
 import Foundation
 import SwiftData
 import Supabase
+import Network
 
 // MARK: - Remote rows (Supabase) — one per table, flat snake_case shape
 // so it matches Postgres's columns exactly.
@@ -297,6 +298,10 @@ final class AppDataSyncCoordinator: ObservableObject {
     /// family group (detected in real time on `family_members`). The
     /// root view observes this to clear the local session.
     @Published var wasRemovedFromFamily = false
+    /// Set when Supabase rejects a change made outside a form (marking a
+    /// product, completing a task…): shown as a short notice
+    /// (`ALISaveFailureToast`). Forms show their own dialog instead.
+    @Published var saveFailureNotice = false
 
     private let familyMembers = RemoteSync<RemoteFamilyMember>()
     private let dishes = RemoteSync<RemoteDish>()
@@ -317,6 +322,87 @@ final class AppDataSyncCoordinator: ObservableObject {
     private let wifiNetworks = RemoteSync<RemoteWifiNetwork>()
 
     private var started = false
+    private let pathMonitor = NWPathMonitor()
+    private var wasOffline = false
+    private var lastSession: (familyID: UUID, memberID: UUID)?
+
+    /// Reloads everything from the server (e.g. after discarding an edit
+    /// Supabase rejected, so the screen shows the saved version again).
+    func reloadFromServer() {
+        guard let lastSession, let modelContext = widgetModelContext else { return }
+        Task { await resyncAfterBackground(familyID: lastSession.familyID, currentMemberID: lastSession.memberID, modelContext: modelContext) }
+    }
+
+    /// Every table, in the order they're synced (parents before the rows
+    /// that point to them), to retry what's pending on this device.
+    private var allSyncs: [() async -> Void] {
+        [
+            { await self.familyMembers.retryPending() }, { await self.dishes.retryPending() },
+            { await self.recipes.retryPending() }, { await self.mealPlanEntries.retryPending() },
+            { await self.groceryItems.retryPending() }, { await self.shoppingLists.retryPending() },
+            { await self.shoppingListEntries.retryPending() }, { await self.houseTasks.retryPending() },
+            { await self.houseTaskLogs.retryPending() }, { await self.familyEvents.retryPending() },
+            { await self.reminders.retryPending() }, { await self.boardNotes.retryPending() },
+            { await self.categories.retryPending() }, { await self.expenses.retryPending() },
+            { await self.activityLogEntries.retryPending() }, { await self.expenseArchives.retryPending() },
+        ]
+    }
+
+    init() {
+        let reject: (Error) -> Void = { [weak self] _ in self?.showSaveFailure() }
+        familyMembers.onRejected = reject; dishes.onRejected = reject; recipes.onRejected = reject
+        mealPlanEntries.onRejected = reject; groceryItems.onRejected = reject; shoppingLists.onRejected = reject
+        shoppingListEntries.onRejected = reject; houseTasks.onRejected = reject; houseTaskLogs.onRejected = reject
+        familyEvents.onRejected = reject; reminders.onRejected = reject; boardNotes.onRejected = reject
+        categories.onRejected = reject; expenses.onRejected = reject; activityLogEntries.onRejected = reject
+        expenseArchives.onRejected = reject
+        // Back online: upload what was saved on the device meanwhile.
+        pathMonitor.pathUpdateHandler = { [weak self] path in
+            let online = path.status == .satisfied
+            Task { @MainActor in self?.connectivityChanged(online: online) }
+        }
+        pathMonitor.start(queue: DispatchQueue(label: "aliaro.sync.path"))
+    }
+
+    private func connectivityChanged(online: Bool) {
+        defer { wasOffline = !online }
+        guard online, wasOffline, started else { return }
+        Task { await retryAllPending() }
+    }
+
+    /// Uploads the changes waiting on this device (saved while offline).
+    func retryAllPending() async {
+        guard !PendingSync.isEmpty else { return }
+        for retry in allSyncs { await retry() }
+    }
+
+    private func showSaveFailure() {
+        Track.event("sync_save_rejected")
+        saveFailureNotice = true
+    }
+
+    /// Saves a record without waiting (quick actions). Offline → kept on the
+    /// device and uploaded later; rejected by Supabase → general notice,
+    /// unless a form claims the failure (`SyncErrors.claim`) to show its dialog.
+    @discardableResult
+    private func save<R: FamilySynced>(_ sync: RemoteSync<R>, _ record: R) -> Task<Void, Error> {
+        watch(Task { try await sync.push(record) }, id: record.id)
+    }
+
+    private func remove<R: FamilySynced>(_ sync: RemoteSync<R>, id: UUID) {
+        watch(Task { try await sync.remove(id: id) }, id: id)
+    }
+
+    @discardableResult
+    private func watch(_ task: Task<Void, Error>, id: UUID) -> Task<Void, Error> {
+        Task { [weak self] in
+            guard case .failure(let error) = await task.result, !SyncErrors.isRetryable(error) else { return }
+            try? await Task.sleep(for: .milliseconds(500))
+            if SyncErrors.claimed.remove(id) != nil { return }
+            self?.showSaveFailure()
+        }
+        return task
+    }
     /// Kept so `refreshWidgetSnapshot()` can be called from places (like
     /// `pushReminder`) that don't receive a `modelContext` themselves.
     private var widgetModelContext: ModelContext?
@@ -330,6 +416,7 @@ final class AppDataSyncCoordinator: ObservableObject {
         guard !started else { return }
         started = true
         widgetModelContext = modelContext
+        lastSession = (familyID, currentMemberID)
 
         // Before fetching anything, we confirm we're still members of the
         // group: if we were removed while the app was closed, there's no
@@ -505,11 +592,11 @@ final class AppDataSyncCoordinator: ObservableObject {
 
     func pushDish(_ dish: Dish, familyID: UUID) {
         let record = RemoteDish(id: dish.id, family_id: familyID, name: dish.name, created_at: dish.createdAt)
-        Task { try? await dishes.push(record) }
+        save(dishes, record)
     }
 
     func deleteDish(id: UUID) {
-        Task { try? await dishes.remove(id: id) }
+        remove(dishes, id: id)
     }
 
     // MARK: Recipes
@@ -586,41 +673,49 @@ final class AppDataSyncCoordinator: ObservableObject {
     /// Saves a recipe. With `newPhoto`, uploads it first (a fresh path per
     /// upload, so other devices notice the change) and removes the old
     /// file; with `removePhoto`, clears it.
-    func pushRecipe(_ recipe: Recipe, familyID: UUID, newPhoto: Data? = nil, removePhoto: Bool = false) {
+    @discardableResult
+    func pushRecipe(_ recipe: Recipe, familyID: UUID, newPhoto: Data? = nil, removePhoto: Bool = false) -> Task<Void, Error> {
         let oldPath = recipe.photoPath
         if let newPhoto {
             let path = "\(familyID.uuidString.lowercased())/\(recipe.id.uuidString.lowercased())-\(UUID().uuidString.prefix(8).lowercased()).jpg"
             recipe.photoData = newPhoto
             recipe.photoPath = path
-            Task {
+            let initialRecord = remoteRecipe(recipe, familyID: familyID)
+            return watch(Task {
+                var record = initialRecord
+                var photoUploaded = true
                 do {
                     _ = try await supabase.storage.from(Self.recipePhotosBucket).upload(
                         path, data: newPhoto, options: FileOptions(contentType: "image/jpeg", upsert: true)
                     )
                 } catch {
                     lastError = error.localizedDescription
+                    // Don't point the recipe to a photo that isn't uploaded (other
+                    // devices would show it broken): keep the previous one there.
+                    photoUploaded = false
+                    record.photo_path = oldPath
+                    recipe.photoPath = oldPath
                 }
-                try? await recipes.push(remoteRecipe(recipe, familyID: familyID))
-                if let oldPath { _ = try? await supabase.storage.from(Self.recipePhotosBucket).remove(paths: [oldPath]) }
-            }
-            return
+                try await recipes.push(record)
+                if photoUploaded, let oldPath { _ = try? await supabase.storage.from(Self.recipePhotosBucket).remove(paths: [oldPath]) }
+            }, id: recipe.id)
         }
         if removePhoto {
             recipe.photoData = nil
             recipe.photoPath = nil
         }
         let record = remoteRecipe(recipe, familyID: familyID)
-        Task {
-            try? await recipes.push(record)
+        return watch(Task {
+            try await recipes.push(record)
             if removePhoto, let oldPath { _ = try? await supabase.storage.from(Self.recipePhotosBucket).remove(paths: [oldPath]) }
-        }
+        }, id: recipe.id)
     }
 
     func deleteRecipe(id: UUID, photoPath: String?) {
-        Task {
-            try? await recipes.remove(id: id)
+        watch(Task {
+            try await recipes.remove(id: id)
             if let photoPath { _ = try? await supabase.storage.from(Self.recipePhotosBucket).remove(paths: [photoPath]) }
-        }
+        }, id: id)
     }
 
     private func remoteRecipe(_ recipe: Recipe, familyID: UUID) -> RemoteRecipe {
@@ -730,7 +825,7 @@ final class AppDataSyncCoordinator: ObservableObject {
     }
 
     func deleteMealPlanEntry(id: UUID) {
-        Task { try? await mealPlanEntries.remove(id: id) }
+        remove(mealPlanEntries, id: id)
         refreshWidgetSnapshot()
     }
 
@@ -767,11 +862,11 @@ final class AppDataSyncCoordinator: ObservableObject {
 
     func pushGroceryItem(_ item: GroceryItem, familyID: UUID) {
         let record = RemoteGroceryItem(id: item.id, family_id: familyID, name: item.name, created_at: item.createdAt)
-        Task { try? await groceryItems.push(record) }
+        save(groceryItems, record)
     }
 
     func deleteGroceryItem(id: UUID) {
-        Task { try? await groceryItems.remove(id: id) }
+        remove(groceryItems, id: id)
     }
 
     // MARK: ShoppingLists
@@ -808,11 +903,11 @@ final class AppDataSyncCoordinator: ObservableObject {
 
     func pushShoppingList(_ list: ShoppingList, familyID: UUID) {
         let record = RemoteShoppingList(id: list.id, family_id: familyID, name: list.name, position: list.position, created_at: list.createdAt)
-        Task { try? await shoppingLists.push(record) }
+        save(shoppingLists, record)
     }
 
     func deleteShoppingList(id: UUID) {
-        Task { try? await shoppingLists.remove(id: id) }
+        remove(shoppingLists, id: id)
     }
 
     // MARK: ShoppingListEntries
@@ -859,11 +954,11 @@ final class AppDataSyncCoordinator: ObservableObject {
             id: entry.id, family_id: familyID, item_id: entry.itemID, list_id: entry.listID, name: entry.name,
             is_checked: entry.isChecked, added_at: entry.addedAt, checked_at: entry.checkedAt
         )
-        Task { try? await shoppingListEntries.push(record) }
+        save(shoppingListEntries, record)
     }
 
     func deleteShoppingListEntry(id: UUID) {
-        Task { try? await shoppingListEntries.remove(id: id) }
+        remove(shoppingListEntries, id: id)
     }
 
     // MARK: HouseTasks
@@ -910,18 +1005,19 @@ final class AppDataSyncCoordinator: ObservableObject {
         }
     }
 
-    func pushHouseTask(_ task: HouseTask, familyID: UUID) {
+    @discardableResult
+    func pushHouseTask(_ task: HouseTask, familyID: UUID) -> Task<Void, Error> {
         let record = RemoteHouseTask(
             id: task.id, family_id: familyID, name: task.name, interval_days: task.intervalDays,
             scheduled_at: task.scheduledAt, for_everyone: task.forEveryone, member_ids: task.memberIDs,
             created_by: task.createdByID, created_by_name: task.createdByName, color: task.color,
             alert_offsets: task.alertOffsets
         )
-        Task { try? await houseTasks.push(record) }
+        return save(houseTasks, record)
     }
 
     func deleteHouseTask(id: UUID) {
-        Task { try? await houseTasks.remove(id: id) }
+        remove(houseTasks, id: id)
     }
 
     // MARK: HouseTaskLogs
@@ -970,11 +1066,11 @@ final class AppDataSyncCoordinator: ObservableObject {
             completed_at: log.completedAt, note: log.note,
             created_by: log.createdByID, created_by_name: log.createdByName
         )
-        Task { try? await houseTaskLogs.push(record) }
+        save(houseTaskLogs, record)
     }
 
     func deleteHouseTaskLog(id: UUID) {
-        Task { try? await houseTaskLogs.remove(id: id) }
+        remove(houseTaskLogs, id: id)
     }
 
     // MARK: FamilyEvents
@@ -1038,7 +1134,8 @@ final class AppDataSyncCoordinator: ObservableObject {
         refreshWidgetSnapshot()
     }
 
-    func pushFamilyEvent(_ event: FamilyEvent, familyID: UUID) {
+    @discardableResult
+    func pushFamilyEvent(_ event: FamilyEvent, familyID: UUID) -> Task<Void, Error> {
         let record = RemoteFamilyEvent(
             id: event.id, family_id: familyID, title: event.title, note: event.note,
             start_date: event.startDate, end_date: event.endDate, emoji: event.emoji, created_at: event.createdAt,
@@ -1050,12 +1147,13 @@ final class AppDataSyncCoordinator: ObservableObject {
             repeat_until: event.repeatUntil, excluded_dates: event.excludedDates,
             alert_offsets: event.alertOffsets
         )
-        Task { try? await familyEvents.push(record) }
+        let task = save(familyEvents, record)
         refreshWidgetSnapshot()
+        return task
     }
 
     func deleteFamilyEvent(id: UUID) {
-        Task { try? await familyEvents.remove(id: id) }
+        remove(familyEvents, id: id)
         refreshWidgetSnapshot()
     }
 
@@ -1106,7 +1204,8 @@ final class AppDataSyncCoordinator: ObservableObject {
         refreshWidgetSnapshot()
     }
 
-    func pushReminder(_ reminder: Reminder, familyID: UUID) {
+    @discardableResult
+    func pushReminder(_ reminder: Reminder, familyID: UUID) -> Task<Void, Error> {
         let record = RemoteReminder(
             id: reminder.id, family_id: familyID, title: reminder.title, note: reminder.note,
             fire_date: reminder.fireDate, notify_everyone: reminder.notifyEveryone,
@@ -1117,12 +1216,13 @@ final class AppDataSyncCoordinator: ObservableObject {
             notified_offsets: [],
             created_by: reminder.createdByID, created_by_name: reminder.createdByName
         )
-        Task { try? await reminders.push(record) }
+        let task = save(reminders, record)
         refreshWidgetSnapshot()
+        return task
     }
 
     func deleteReminder(id: UUID) {
-        Task { try? await reminders.remove(id: id) }
+        remove(reminders, id: id)
         refreshWidgetSnapshot()
     }
 
@@ -1172,18 +1272,19 @@ final class AppDataSyncCoordinator: ObservableObject {
         }
     }
 
-    func pushBoardNote(_ note: BoardNote, familyID: UUID) {
+    @discardableResult
+    func pushBoardNote(_ note: BoardNote, familyID: UUID) -> Task<Void, Error> {
         let record = RemoteBoardNote(
             id: note.id, family_id: familyID, text: note.text, color_index: note.colorIndex, position: note.position,
             for_everyone: note.forEveryone, member_ids: note.memberIDs,
             created_at: note.createdAt, updated_at: note.updatedAt,
             created_by: note.createdByID, created_by_name: note.createdByName
         )
-        Task { try? await boardNotes.push(record) }
+        return save(boardNotes, record)
     }
 
     func deleteBoardNote(id: UUID) {
-        Task { try? await boardNotes.remove(id: id) }
+        remove(boardNotes, id: id)
     }
 
     // MARK: WifiNetworks
@@ -1286,11 +1387,11 @@ final class AppDataSyncCoordinator: ObservableObject {
             id: category.id, family_id: familyID, name: category.name, emoji: category.emoji,
             is_default: category.isDefault, created_at: category.createdAt
         )
-        Task { try? await categories.push(record) }
+        save(categories, record)
     }
 
     func deleteCategory(id: UUID) {
-        Task { try? await categories.remove(id: id) }
+        remove(categories, id: id)
     }
 
     // MARK: Expenses
@@ -1336,18 +1437,19 @@ final class AppDataSyncCoordinator: ObservableObject {
         }
     }
 
-    func pushExpense(_ expense: Expense, familyID: UUID) {
+    @discardableResult
+    func pushExpense(_ expense: Expense, familyID: UUID) -> Task<Void, Error> {
         let record = RemoteExpense(
             id: expense.id, family_id: familyID, name: expense.name, amount: expense.amount,
             is_income: expense.isIncome, person_id: expense.personID, person_name: expense.personName,
             category_ids: expense.categoryIDs,
             occurred_at: expense.occurredAt, created_at: expense.createdAt
         )
-        Task { try? await expenses.push(record) }
+        return save(expenses, record)
     }
 
     func deleteExpense(id: UUID) {
-        Task { try? await expenses.remove(id: id) }
+        remove(expenses, id: id)
     }
 
     // MARK: ExpenseArchives (archived finances)
@@ -1410,7 +1512,7 @@ final class AppDataSyncCoordinator: ObservableObject {
     }
 
     func deleteExpenseArchive(id: UUID) {
-        Task { try? await expenseArchives.remove(id: id) }
+        remove(expenseArchives, id: id)
     }
 
     // MARK: ActivityLogEntries ("History")
@@ -1486,6 +1588,6 @@ final class AppDataSyncCoordinator: ObservableObject {
             id: entry.id, family_id: familyID, entity_type: entityType, entity_name: entityName,
             action: action, actor_id: actorID, actor_name: actorName, created_at: entry.createdAt
         )
-        Task { try? await activityLogEntries.push(record) }
+        save(activityLogEntries, record)
     }
 }

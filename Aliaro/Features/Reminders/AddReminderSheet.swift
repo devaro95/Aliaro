@@ -28,6 +28,7 @@ struct AddReminderSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var dataSync: AppDataSyncCoordinator
+    @StateObject private var saveFlow = ALISaveFlow()
     @EnvironmentObject private var familySession: FamilySession
     @Query(sort: \FamilyMember.createdAt) private var members: [FamilyMember]
 
@@ -106,6 +107,7 @@ struct AddReminderSheet: View {
             }
             .background(ALIColors.background)
             .navigationTitle(isEditing ? "Edit reminder" : "New reminder")
+            .aliSaveFlow(saveFlow)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -302,6 +304,8 @@ struct AddReminderSheet: View {
     }
 
     private func save() {
+        var firstUpload: Task<Void, Error>?
+        var retryUpload: (() -> Task<Void, Error>)?
         let trimmedTitle = title.trimmed
         guard !trimmedTitle.isEmpty else { return }
         let trimmedNote = note.trimmed
@@ -346,7 +350,9 @@ struct AddReminderSheet: View {
         // all of the recipients' devices) is handled by the server; here
         // we only need to save and sync the reminder.
         if let familyID = familySession.familyID {
-            dataSync.pushReminder(reminder, familyID: familyID)
+            let upload = { dataSync.pushReminder(reminder, familyID: familyID) }
+            firstUpload = upload()
+            retryUpload = upload
             dataSync.logActivity(
                 entityType: "reminder",
                 entityName: trimmedTitle,
@@ -357,6 +363,15 @@ struct AddReminderSheet: View {
                 modelContext: modelContext
             )
         }
-        dismiss()
+        let savedID = reminder.id
+        let wasNew = !isEditing
+        saveFlow.track(firstUpload, id: savedID, retry: retryUpload, onDone: { dismiss() }, onDiscard: {
+            if wasNew {
+                modelContext.delete(reminder); try? modelContext.save()
+            } else {
+                dataSync.reloadFromServer()
+            }
+            dismiss()
+        })
     }
 }

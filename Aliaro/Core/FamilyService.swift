@@ -637,6 +637,8 @@ final class FamilyService: ObservableObject {
     }
 
     private func clearAllLocalData(modelContext: ModelContext) {
+        // Changes still waiting to be uploaded belonged to that group.
+        PendingSync.clearAll()
         // One by one instead of `delete(model:)`: the batch delete fails
         // silently (hidden by `try?`) and left previous families' data behind.
         func wipe<M: PersistentModel>(_ type: M.Type) {

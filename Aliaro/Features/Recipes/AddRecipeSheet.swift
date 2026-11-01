@@ -9,6 +9,7 @@ struct AddRecipeSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var dataSync: AppDataSyncCoordinator
+    @StateObject private var saveFlow = ALISaveFlow()
     @EnvironmentObject private var familySession: FamilySession
 
     let recipeToEdit: Recipe?
@@ -130,6 +131,7 @@ struct AddRecipeSheet: View {
             .scrollDismissesKeyboard(.interactively)
             .background(ALIColors.background)
             .navigationTitle(isEditing ? "Edit recipe" : "New recipe")
+            .aliSaveFlow(saveFlow)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -630,6 +632,8 @@ struct AddRecipeSheet: View {
     }
 
     private func save() {
+        var firstUpload: Task<Void, Error>?
+        var retryUpload: (() -> Task<Void, Error>)?
         let cleanIngredients = ingredients.map(\.ingredient).filter { !$0.name.isEmpty }
         let cleanSteps = steps.map(\.text.trimmed).filter { !$0.isEmpty }.joined(separator: "\n")
         var cleanLinks: [String] = []
@@ -673,7 +677,9 @@ struct AddRecipeSheet: View {
         }
 
         if let familyID {
-            dataSync.pushRecipe(recipe, familyID: familyID, newPhoto: newPhotoData, removePhoto: removePhoto && newPhotoData == nil)
+            let upload = { dataSync.pushRecipe(recipe, familyID: familyID, newPhoto: newPhotoData, removePhoto: removePhoto && newPhotoData == nil) }
+            firstUpload = upload()
+            retryUpload = upload
             dataSync.logActivity(
                 entityType: "recipe", entityName: recipe.name, action: isEditing ? "updated" : "created",
                 actorID: familySession.memberID,
@@ -691,6 +697,15 @@ struct AddRecipeSheet: View {
             "ingredients": cleanIngredients.count,
             "has_photo": previewImage != nil
         ])
-        dismiss()
+        let savedID = recipe.id
+        let wasNew = !isEditing
+        saveFlow.track(firstUpload, id: savedID, retry: retryUpload, onDone: { dismiss() }, onDiscard: {
+            if wasNew {
+                modelContext.delete(recipe); try? modelContext.save()
+            } else {
+                dataSync.reloadFromServer()
+            }
+            dismiss()
+        })
     }
 }

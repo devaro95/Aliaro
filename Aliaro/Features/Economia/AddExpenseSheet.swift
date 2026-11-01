@@ -10,6 +10,7 @@ struct AddExpenseSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var dataSync: AppDataSyncCoordinator
+    @StateObject private var saveFlow = ALISaveFlow()
     @EnvironmentObject private var familySession: FamilySession
     @EnvironmentObject private var premium: PremiumManager
     @Query(sort: \FamilyMember.createdAt) private var members: [FamilyMember]
@@ -82,6 +83,7 @@ struct AddExpenseSheet: View {
             }
             .background(ALIColors.background)
             .navigationTitle(isEditing ? (isIncome ? "Edit income" : "Edit expense") : (isIncome ? "New income" : "New expense"))
+            .aliSaveFlow(saveFlow)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -249,6 +251,8 @@ struct AddExpenseSheet: View {
     }
 
     private func save() {
+        var firstUpload: Task<Void, Error>?
+        var retryUpload: (() -> Task<Void, Error>)?
         guard let amount, let personID else { return }
         let trimmedName = name.trimmed
         guard !trimmedName.isEmpty else { return }
@@ -287,7 +291,9 @@ struct AddExpenseSheet: View {
             modelContext.insert(expense)
         }
         if let familyID = familySession.familyID {
-            dataSync.pushExpense(expense, familyID: familyID)
+            let upload = { dataSync.pushExpense(expense, familyID: familyID) }
+            firstUpload = upload()
+            retryUpload = upload
             dataSync.logActivity(
                 entityType: "expense",
                 entityName: trimmedName,
@@ -298,7 +304,16 @@ struct AddExpenseSheet: View {
                 modelContext: modelContext
             )
         }
-        dismiss()
+        let savedID = expense.id
+        let wasNew = !isEditing
+        saveFlow.track(firstUpload, id: savedID, retry: retryUpload, onDone: { dismiss() }, onDiscard: {
+            if wasNew {
+                modelContext.delete(expense); try? modelContext.save()
+            } else {
+                dataSync.reloadFromServer()
+            }
+            dismiss()
+        })
     }
 }
 
