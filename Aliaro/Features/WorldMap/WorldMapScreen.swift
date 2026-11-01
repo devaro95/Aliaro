@@ -18,13 +18,6 @@ struct WorldMapScreen: View {
     /// `nil` = everyone.
     @State private var selectedMemberID: UUID?
     @State private var showPicker = false
-    /// Last country toggled from the map, shown for a moment.
-    @State private var toast: Toast?
-
-    struct Toast: Equatable {
-        let code: String
-        let added: Bool
-    }
 
     private var myID: UUID? { familySession.memberID }
 
@@ -84,7 +77,6 @@ struct WorldMapScreen: View {
             .padding(.bottom, 100)
         }
         .background(ALIColors.background)
-        .sensoryFeedback(.selection, trigger: toast)
         .sheet(isPresented: $showPicker) {
             CountryPickerSheet()
         }
@@ -148,32 +140,13 @@ struct WorldMapScreen: View {
 
     private func mapCard(visitors: [String: Set<UUID>], memberCount: Int) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            GeometryReader { proxy in
-                let data = WorldMapData.shared
-                WorldMapCanvas(
-                    fill: { fillAmount(visitors[$0]?.count ?? 0, of: memberCount) },
-                    highlighted: toast?.code
-                )
-                .contentShape(Rectangle())
-                .onTapGesture { location in
-                    let scale = data.size.width / proxy.size.width
-                    if let code = data.country(at: CGPoint(x: location.x * scale, y: location.y * scale)) {
-                        toggle(code)
-                    }
-                }
-            }
-            .aspectRatio(WorldMapData.shared.size.width / WorldMapData.shared.size.height, contentMode: .fit)
-            .overlay(alignment: .bottom) {
-                if let toast {
-                    ToastLabel(toast: toast)
-                        .padding(.bottom, 6)
-                        .transition(.opacity.combined(with: .move(edge: .bottom)))
-                }
-            }
+            WorldMapCanvas(fill: { fillAmount(visitors[$0]?.count ?? 0, of: memberCount) })
+                .aspectRatio(WorldMapData.shared.size.width / WorldMapData.shared.size.height, contentMode: .fit)
+                .allowsHitTesting(false)
 
             Group {
                 if canEdit {
-                    Text("Tap a country to mark it as visited.")
+                    Text("Search a country to mark it as visited.")
                 } else {
                     Text("Showing \(memberName(selectedMemberID))'s countries.")
                 }
@@ -235,39 +208,6 @@ struct WorldMapScreen: View {
     /// "Ana, Luis" (members in group order).
     private func names(of ids: Set<UUID>) -> String {
         members.filter { ids.contains($0.id) }.map(\.name).joined(separator: ", ")
-    }
-
-    // MARK: Actions
-
-    private func toggle(_ code: String) {
-        guard canEdit, let myID, let familyID = familySession.familyID else { return }
-        let added = WorldMapActions.toggle(code: code, memberID: myID, familyID: familyID, visits: visits, modelContext: modelContext, dataSync: dataSync, source: "map")
-        withAnimation(.easeOut(duration: 0.2)) { toast = Toast(code: code, added: added) }
-        let shown = toast
-        Task {
-            try? await Task.sleep(for: .seconds(1.6))
-            if toast == shown { withAnimation(.easeIn(duration: 0.2)) { toast = nil } }
-        }
-    }
-}
-
-/// "🇪🇸 Spain ✓" pill shown after tapping a country.
-private struct ToastLabel: View {
-    let toast: WorldMapScreen.Toast
-
-    var body: some View {
-        HStack(spacing: 6) {
-            Text(CountryInfo.flag(toast.code))
-            Text(CountryInfo.name(toast.code)).font(ALITypography.labelLarge.weight(.semibold))
-            Image(systemName: toast.added ? "checkmark" : "minus")
-                .font(.system(size: 11, weight: .bold))
-        }
-        .foregroundStyle(ALIColors.ink)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 7)
-        .background(ALIColors.surface)
-        .clipShape(Capsule())
-        .shadow(color: .black.opacity(0.12), radius: 8, y: 2)
     }
 }
 

@@ -168,6 +168,22 @@
         }
       }
     },
+    "Search a country to mark it as visited." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search a country to mark it as visited."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Busca un país para marcarlo como visitado."
+          }
+        }
+      }
+    },
     "Search country…" : {
       "localizations" : {
         "en" : {
@@ -196,22 +212,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Países de %@."
-          }
-        }
-      }
-    },
-    "Tap a country to mark it as visited." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tap a country to mark it as visited."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Toca un país para marcarlo como visitado."
           }
         }
       }
