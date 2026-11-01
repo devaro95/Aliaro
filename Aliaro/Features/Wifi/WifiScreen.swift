@@ -42,7 +42,7 @@ struct WifiScreen: View {
                             onEdit: { networkToEdit = network }
                         )
                     }
-                    addCard
+                    if networks.isEmpty { emptyCard }
                 }
                 .padding(.horizontal, 20)
                 .padding(.bottom, 100) // clears the floating bottom bar
@@ -60,21 +60,19 @@ struct WifiScreen: View {
         }
     }
 
-    /// Dashed card to add a network: the home one when there's none yet, or another one.
-    private var addCard: some View {
+    /// With no networks yet: dashed card inviting to add the home one (more go through the + button).
+    private var emptyCard: some View {
         Button {
-            Track.event("wifi_add_tap", ["source": networks.isEmpty ? "empty" : "list", "networks": networks.count])
+            Track.event("wifi_add_tap", ["source": "empty", "networks": 0])
             showAdd = true
         } label: {
             HStack(spacing: 12) {
                 WifiIcon()
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(networks.isEmpty ? "Add your home Wi-Fi" : "Add another network")
+                    Text("Add your home Wi-Fi")
                         .font(ALITypography.titleLarge)
                         .foregroundStyle(ALIColors.ink)
-                    Text(networks.isEmpty
-                         ? "Everyone (and your guests) will have the password at hand."
-                         : "The village house, grandma's, the office…")
+                    Text("Everyone (and your guests) will have the password at hand.")
                         .font(ALITypography.labelLarge)
                         .foregroundStyle(ALIColors.mutedInk)
                         .multilineTextAlignment(.leading)
