@@ -18,7 +18,9 @@ struct PlacesScreen: View {
     /// Empty = every category.
     @State private var selectedCategories: Set<PlaceCategory> = []
     @State private var selectedPlaceID: UUID?
-    @State private var position: MapCameraPosition = .userLocation(fallback: .automatic)
+    @State private var position: MapCameraPosition = .automatic
+    /// Centered on the user once, on the first location fix.
+    @State private var didCenterOnUser = false
     @StateObject private var location = PlacesLocation()
     @State private var showAddSheet = false
     @State private var placeToEdit: FamilyPlace?
@@ -92,6 +94,12 @@ struct PlacesScreen: View {
         }
         .background(ALIColors.background)
         .onAppear { location.start() }
+        .onChange(of: location.current) { _, here in
+            // Open centered on the user, zoomed out enough to see the area around (~20 km).
+            guard let here, !didCenterOnUser, selectedPlaceID == nil else { return }
+            didCenterOnUser = true
+            withAnimation { position = .camera(MapCamera(centerCoordinate: here.coordinate, distance: 20_000)) }
+        }
         .onDisappear { location.stop() }
         .animation(.easeInOut(duration: 0.2), value: selectedPlaceID)
         .sheet(isPresented: $showAddSheet) {
