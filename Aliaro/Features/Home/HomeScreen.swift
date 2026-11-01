@@ -488,30 +488,25 @@ struct HomeScreen: View {
         }
     }
 
-    /// Cards ↔ icons, right where the change shows up.
+    /// Cards ↔ icons, right where the change shows up: one button that
+    /// shows the other view and switches to it on each tap.
     private var featureStyleToggle: some View {
-        HStack(spacing: 2) {
-            ForEach(HomeFeatureStyle.allCases) { style in
-                let selected = layout.featureStyle == style
-                Button {
-                    guard !selected else { return }
-                    withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) { layout.setFeatureStyle(style) }
-                    Track.event("home_feature_style", ["style": style.rawValue, "source": "home"])
-                } label: {
-                    Image(systemName: style == .cards ? "square.grid.2x2.fill" : "square.grid.3x3.fill")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(selected ? ALIColors.ink : ALIColors.mutedInk)
-                        .frame(width: 34, height: 28)
-                        .background(selected ? ALIColors.surface : .clear, in: Capsule())
-                        .shadow(color: .black.opacity(selected ? 0.08 : 0), radius: 3, y: 1)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(Text(style.label))
-            }
+        let next: HomeFeatureStyle = layout.featureStyle == .cards ? .icons : .cards
+        return Button {
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) { layout.setFeatureStyle(next) }
+            Track.event("home_feature_style", ["style": next.rawValue, "source": "home"])
+        } label: {
+            Image(systemName: next == .icons ? "square.grid.3x3.fill" : "square.grid.2x2.fill")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(ALIColors.ink)
+                .contentTransition(.symbolEffect(.replace))
+                .frame(width: 34, height: 30)
+                .background(ALIColors.surface, in: Capsule())
+                .overlay(Capsule().stroke(ALIColors.outline, lineWidth: 1))
         }
-        .padding(2)
-        .background(ALIColors.surfaceVariant, in: Capsule())
+        .buttonStyle(.plain)
         .padding(.top, 4)
+        .accessibilityLabel(next == .icons ? Text("Show as icons") : Text("Show as cards"))
         .sensoryFeedback(.selection, trigger: layout.featureStyle)
     }
 
