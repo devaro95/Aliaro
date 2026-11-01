@@ -2,10 +2,10 @@ import SwiftUI
 import SwiftData
 import CoreImage.CIFilterBuiltins
 
-/// Home's Wi-Fi section: the family's networks with the password (hidden
-/// until tapped), copy and a QR code guests can scan to join. With none
-/// saved, a small card invites to add the home Wi-Fi.
-struct WifiHomeSection: View {
+/// Wi-Fi feature: the family's networks (as many as they want: home, the
+/// village house, the office…) with the password hidden until tapped, copy
+/// and a QR code guests can scan to join. Opens from its card on Home.
+struct WifiScreen: View {
     @Query(sort: [SortDescriptor(\WifiNetwork.position), SortDescriptor(\WifiNetwork.createdAt)])
     private var networks: [WifiNetwork]
 
@@ -14,22 +14,41 @@ struct WifiHomeSection: View {
     @State private var networkForQR: WifiNetwork?
 
     var body: some View {
-        VStack(spacing: 10) {
-            if networks.isEmpty {
-                emptyCard
-            } else {
-                ForEach(networks) { network in
-                    WifiCard(
-                        network: network,
-                        onQR: {
-                            Track.event("wifi_qr_open")
-                            networkForQR = network
-                        },
-                        onEdit: { networkToEdit = network }
-                    )
+        trackedBody.trackScreen("wifi")
+    }
+
+    @ViewBuilder
+    private var trackedBody: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            ALITopBar(title: "Wi-Fi", accent: ALIColors.wifiAccent) {
+                ALIFloatingButton(accent: ALIColors.wifiAccent) {
+                    Track.event("wifi_add_tap", ["source": "top_bar", "networks": networks.count])
+                    showAdd = true
                 }
+                .scaleEffect(0.72)
+                .frame(width: 44, height: 44)
+            }
+            .padding(.horizontal, 20)
+
+            ScrollView {
+                VStack(spacing: 10) {
+                    ForEach(networks) { network in
+                        WifiCard(
+                            network: network,
+                            onQR: {
+                                Track.event("wifi_qr_open")
+                                networkForQR = network
+                            },
+                            onEdit: { networkToEdit = network }
+                        )
+                    }
+                    if networks.isEmpty { emptyCard }
+                }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 100) // clears the floating bottom bar
             }
         }
+        .background(ALIColors.background)
         .sheet(isPresented: $showAdd) {
             WifiEditorSheet(networkToEdit: nil)
         }
@@ -41,9 +60,10 @@ struct WifiHomeSection: View {
         }
     }
 
+    /// With no networks yet: dashed card inviting to add the home one (more go through the + button).
     private var emptyCard: some View {
         Button {
-            Track.event("wifi_add_tap", ["source": "home_empty"])
+            Track.event("wifi_add_tap", ["source": "empty", "networks": 0])
             showAdd = true
         } label: {
             HStack(spacing: 12) {
@@ -276,6 +296,16 @@ struct WifiEditorSheet: View {
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                         .onChange(of: ssid) { _, new in if new.count > WifiNetwork.maxSSIDLength { ssid = String(new.prefix(WifiNetwork.maxSSIDLength)) } }
+                    Label {
+                        Text("Write the network name exactly as it appears (capitals included) so the connection QR works.")
+                    } icon: {
+                        Image(systemName: "info.circle.fill")
+                            .foregroundStyle(ALIColors.wifiAccent)
+                    }
+                    .font(ALITypography.labelLarge)
+                    .foregroundStyle(ALIColors.mutedInk)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, -6)
 
                     Picker("Security", selection: $security) {
                         Text("WPA/WPA2").tag(WifiNetwork.Security.wpa)
@@ -290,11 +320,6 @@ struct WifiEditorSheet: View {
                             .autocorrectionDisabled()
                             .onChange(of: password) { _, new in if new.count > WifiNetwork.maxPasswordLength { password = String(new.prefix(WifiNetwork.maxPasswordLength)) } }
                     }
-
-                    Text("Everyone in the family group will see it on Home.")
-                        .font(ALITypography.labelLarge)
-                        .foregroundStyle(ALIColors.mutedInk)
-                        .frame(maxWidth: .infinity, alignment: .leading)
 
                     ALIPrimaryButton(text: "Save", enabled: canSave, accent: ALIColors.wifiAccent) { save() }
 

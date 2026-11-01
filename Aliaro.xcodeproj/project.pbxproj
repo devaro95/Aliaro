@@ -93,7 +93,7 @@
 		804865D3EAB6470D95AAB6DD /* SelectDishSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3422181FCA794E2B8C5DADBB /* SelectDishSheet.swift */; };
 		E831E42BA6994F80AC3E2E9D /* WeeklyMenu+Support.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E39BAF903C24090A03C95EF /* WeeklyMenu+Support.swift */; };
 		B46BE46FBAB64071B626CA3C /* WeeklyMenuScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F54F2A6C164CBDAE08BF70 /* WeeklyMenuScreen.swift */; };
-		D1AFBED9B147479AB8064C1A /* WifiHomeSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACCCCFF20B104165A9A1951F /* WifiHomeSection.swift */; };
+		753E502AC5334FAEB58C6B75 /* WifiScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45A98A25DEC24D8496A27A41 /* WifiScreen.swift */; };
 		EF2871F4F246434F921DCFC0 /* ActivityLogEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = F226AC6D5C664C48A389BEF5 /* ActivityLogEntry.swift */; };
 		3BD20E8D08AF471D88DBF518 /* BoardNote.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04D266B8BB5043F2B9774034 /* BoardNote.swift */; };
 		E3EAC5824F18476FAFC2F15B /* Dish.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4950ADBB56A94AD5AE8C9A5F /* Dish.swift */; };
@@ -253,7 +253,7 @@
 		3422181FCA794E2B8C5DADBB /* SelectDishSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectDishSheet.swift; sourceTree = "<group>"; };
 		4E39BAF903C24090A03C95EF /* WeeklyMenu+Support.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WeeklyMenu+Support.swift"; sourceTree = "<group>"; };
 		B3F54F2A6C164CBDAE08BF70 /* WeeklyMenuScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyMenuScreen.swift; sourceTree = "<group>"; };
-		ACCCCFF20B104165A9A1951F /* WifiHomeSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WifiHomeSection.swift; sourceTree = "<group>"; };
+		45A98A25DEC24D8496A27A41 /* WifiScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WifiScreen.swift; sourceTree = "<group>"; };
 		F226AC6D5C664C48A389BEF5 /* ActivityLogEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityLogEntry.swift; sourceTree = "<group>"; };
 		04D266B8BB5043F2B9774034 /* BoardNote.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardNote.swift; sourceTree = "<group>"; };
 		4950ADBB56A94AD5AE8C9A5F /* Dish.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Dish.swift; sourceTree = "<group>"; };
@@ -535,7 +535,7 @@
 		8264F41820714BFB8D53BB53 /* Wifi */ = {
 			isa = PBXGroup;
 			children = (
-				ACCCCFF20B104165A9A1951F
+				45A98A25DEC24D8496A27A41
 			);
 			path = Wifi;
 			sourceTree = "<group>";
@@ -880,7 +880,7 @@
 				804865D3EAB6470D95AAB6DD /* SelectDishSheet.swift in Sources */,
 				E831E42BA6994F80AC3E2E9D /* WeeklyMenu+Support.swift in Sources */,
 				B46BE46FBAB64071B626CA3C /* WeeklyMenuScreen.swift in Sources */,
-				D1AFBED9B147479AB8064C1A /* WifiHomeSection.swift in Sources */,
+				753E502AC5334FAEB58C6B75 /* WifiScreen.swift in Sources */,
 				EF2871F4F246434F921DCFC0 /* ActivityLogEntry.swift in Sources */,
 				3BD20E8D08AF471D88DBF518 /* BoardNote.swift in Sources */,
 				E3EAC5824F18476FAFC2F15B /* Dish.swift in Sources */,
