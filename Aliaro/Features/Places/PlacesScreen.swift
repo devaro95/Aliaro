@@ -4,8 +4,10 @@ import MapKit
 
 /// "Places" feature: a real map (Apple Maps) with the places the family
 /// saves — restaurants, parks, hotels… — each category with its own color
-/// and icon. Filter by category with the chips, tap a pin to see it, get
-/// directions, edit or delete it. Also available as a list.
+/// and icon, and the user's location (the map opens centered on it). Below
+/// the map, the same places as a list, nearest first. Filter by category
+/// with the chips, tap a pin or a row to see it, get directions, edit or
+/// delete it.
 struct PlacesScreen: View {
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var dataSync: AppDataSyncCoordinator
@@ -15,9 +17,9 @@ struct PlacesScreen: View {
 
     /// Empty = every category.
     @State private var selectedCategories: Set<PlaceCategory> = []
-    @State private var showList = false
     @State private var selectedPlaceID: UUID?
-    @State private var position: MapCameraPosition = .automatic
+    @State private var position: MapCameraPosition = .userLocation(fallback: .automatic)
+    @StateObject private var location = PlacesLocation()
     @State private var showAddSheet = false
     @State private var placeToEdit: FamilyPlace?
     @State private var placePendingDelete: FamilyPlace?
@@ -25,6 +27,16 @@ struct PlacesScreen: View {
     private var filteredPlaces: [FamilyPlace] {
         guard !selectedCategories.isEmpty else { return places }
         return places.filter { selectedCategories.contains($0.placeCategory) }
+    }
+
+    /// Filtered places, nearest first (by name until we know where the user is).
+    private var sortedPlaces: [FamilyPlace] {
+        guard let here = location.current else { return filteredPlaces }
+        return filteredPlaces.sorted { distance(to: $0, from: here) < distance(to: $1, from: here) }
+    }
+
+    private func distance(to place: FamilyPlace, from here: CLLocation) -> CLLocationDistance {
+        here.distance(from: CLLocation(latitude: place.latitude, longitude: place.longitude))
     }
 
     private var selectedPlace: FamilyPlace? {
@@ -47,7 +59,6 @@ struct PlacesScreen: View {
         VStack(alignment: .leading, spacing: 12) {
             ALITopBar(title: "Places", accent: ALIColors.placesAccent) {
                 HStack(spacing: 10) {
-                    if !places.isEmpty { modeToggle }
                     ALIFloatingButton(accent: ALIColors.placesAccent) {
                         Track.event("place_add_tap", ["places": places.count])
                         showAddSheet = true
@@ -60,20 +71,32 @@ struct PlacesScreen: View {
 
             if !usedCategories.isEmpty { categoryChips }
 
-            if showList {
-                placesList
-            } else {
+            if places.isEmpty {
                 map
                     .padding(.horizontal, 20)
                     .padding(.bottom, 84) // clears the floating bottom bar
+            } else {
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 16) {
+                            map
+                                .frame(height: 380)
+                                .id("map")
+                            placesList(scrollToMap: { withAnimation { proxy.scrollTo("map", anchor: .top) } })
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 100) // clears the floating bottom bar
+                    }
+                }
             }
         }
         .background(ALIColors.background)
+        .onAppear { location.start() }
+        .onDisappear { location.stop() }
         .animation(.easeInOut(duration: 0.2), value: selectedPlaceID)
         .sheet(isPresented: $showAddSheet) {
             AddPlaceSheet(placeToEdit: nil) { created in
                 selectedCategories = []
-                showList = false
                 selectedPlaceID = created.id
                 position = .camera(MapCamera(centerCoordinate: created.coordinate, distance: 4000))
             }
@@ -91,24 +114,6 @@ struct PlacesScreen: View {
     }
 
     // MARK: Sections
-
-    /// Map / list switch.
-    private var modeToggle: some View {
-        Button {
-            Track.event("places_mode", ["mode": showList ? "map" : "list"])
-            withAnimation(.easeInOut(duration: 0.2)) { showList.toggle() }
-        } label: {
-            Image(systemName: showList ? "map.fill" : "list.bullet")
-                .font(.system(size: 15, weight: .bold))
-                .foregroundStyle(ALIColors.ink)
-                .frame(width: 42, height: 42)
-                .background(ALIColors.surface)
-                .clipShape(Circle())
-                .overlay(Circle().stroke(ALIColors.outline, lineWidth: 1))
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(showList ? Text("Map") : Text("List"))
-    }
 
     private var categoryChips: some View {
         ScrollView(.horizontal, showsIndicators: false) {
@@ -140,6 +145,7 @@ struct PlacesScreen: View {
 
     private var map: some View {
         Map(position: $position, selection: $selectedPlaceID) {
+            UserAnnotation()
             ForEach(filteredPlaces) { place in
                 Annotation(place.name, coordinate: place.coordinate, anchor: .bottom) {
                     PlaceMarker(category: place.placeCategory, isSelected: place.id == selectedPlaceID)
@@ -150,6 +156,7 @@ struct PlacesScreen: View {
         }
         .mapStyle(.standard(pointsOfInterest: .excludingAll))
         .mapControls {
+            MapUserLocationButton()
             MapCompass()
             MapScaleView()
         }
@@ -195,40 +202,28 @@ struct PlacesScreen: View {
         .shadow(color: .black.opacity(0.12), radius: 12, y: 4)
     }
 
-    private var placesList: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                ForEach(PlaceCategory.allCases) { category in
-                    let items = filteredPlaces.filter { $0.placeCategory == category }
-                    if !items.isEmpty {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Label { Text(category.label) } icon: { Image(systemName: category.systemImage) }
-                                .font(ALITypography.labelLarge.weight(.semibold))
-                                .foregroundStyle(category.color)
-                            VStack(spacing: 10) {
-                                ForEach(items) { place in
-                                    Button {
-                                        Track.event("place_open", ["source": "list"])
-                                        showList = false
-                                        selectedPlaceID = place.id
-                                        position = .camera(MapCamera(centerCoordinate: place.coordinate, distance: 4000))
-                                    } label: {
-                                        PlaceRow(place: place)
-                                    }
-                                    .buttonStyle(.plain)
-                                    .contextMenu {
-                                        Button { openInMaps(place) } label: { Label("Directions", systemImage: "arrow.triangle.turn.up.right.diamond") }
-                                        Button { placeToEdit = place } label: { Label("Edit", systemImage: "pencil") }
-                                        Button(role: .destructive) { placePendingDelete = place } label: { Label("Delete", systemImage: "trash") }
-                                    }
-                                }
-                            }
-                        }
-                    }
+    /// The filtered places, nearest first, with their distance.
+    private func placesList(scrollToMap: @escaping () -> Void) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(location.current == nil ? "Places" : "Nearest first")
+                .font(ALITypography.labelLarge.weight(.semibold))
+                .foregroundStyle(ALIColors.mutedInk)
+            ForEach(sortedPlaces) { place in
+                Button {
+                    Track.event("place_open", ["source": "list"])
+                    selectedPlaceID = place.id
+                    position = .camera(MapCamera(centerCoordinate: place.coordinate, distance: 4000))
+                    scrollToMap()
+                } label: {
+                    PlaceRow(place: place, distance: location.current.map { distance(to: place, from: $0) })
+                }
+                .buttonStyle(.plain)
+                .contextMenu {
+                    Button { openInMaps(place) } label: { Label("Directions", systemImage: "arrow.triangle.turn.up.right.diamond") }
+                    Button { placeToEdit = place } label: { Label("Edit", systemImage: "pencil") }
+                    Button(role: .destructive) { placePendingDelete = place } label: { Label("Delete", systemImage: "trash") }
                 }
             }
-            .padding(.horizontal, 20)
-            .padding(.bottom, 100)
         }
     }
 
@@ -336,6 +331,14 @@ private struct PlaceFilterChip: View {
 /// A place in the list.
 private struct PlaceRow: View {
     let place: FamilyPlace
+    /// Meters from the user, when known.
+    var distance: CLLocationDistance? = nil
+
+    private static let distanceFormatter: MKDistanceFormatter = {
+        let formatter = MKDistanceFormatter()
+        formatter.unitStyle = .abbreviated
+        return formatter
+    }()
 
     var body: some View {
         HStack(spacing: 14) {
@@ -354,6 +357,12 @@ private struct PlaceRow: View {
                 }
             }
             Spacer(minLength: 0)
+            if let distance {
+                Text(Self.distanceFormatter.string(fromDistance: distance))
+                    .font(ALITypography.labelLarge.weight(.semibold))
+                    .foregroundStyle(place.placeCategory.color)
+                    .lineLimit(1)
+            }
             Image(systemName: "chevron.right")
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(ALIColors.mutedInk.opacity(0.6))
@@ -457,4 +466,48 @@ private struct PlaceCard: View {
         .buttonStyle(.plain)
         .accessibilityLabel(Text(label))
     }
+}
+
+/// The user's location for the places map: asks for "when in use" permission
+/// and keeps the last known position (to sort the list by distance).
+@MainActor
+final class PlacesLocation: NSObject, ObservableObject, CLLocationManagerDelegate {
+    @Published private(set) var current: CLLocation?
+    private let manager = CLLocationManager()
+
+    override init() {
+        super.init()
+        manager.delegate = self
+        manager.desiredAccuracy = kCLLocationAccuracyHundredMeters
+        manager.distanceFilter = 50
+    }
+
+    func start() {
+        switch manager.authorizationStatus {
+        case .notDetermined: manager.requestWhenInUseAuthorization()
+        case .authorizedWhenInUse, .authorizedAlways: manager.startUpdatingLocation()
+        default: break
+        }
+    }
+
+    func stop() {
+        manager.stopUpdatingLocation()
+    }
+
+    nonisolated func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        let status = manager.authorizationStatus
+        Task { @MainActor in
+            if status == .authorizedWhenInUse || status == .authorizedAlways {
+                Track.event("places_location_granted")
+                self.manager.startUpdatingLocation()
+            }
+        }
+    }
+
+    nonisolated func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        guard let last = locations.last else { return }
+        Task { @MainActor in self.current = last }
+    }
+
+    nonisolated func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {}
 }
