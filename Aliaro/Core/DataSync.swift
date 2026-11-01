@@ -96,6 +96,8 @@ struct RemoteHouseTask: FamilySynced {
     var created_by_name: String?
     /// Optional so rows from DBs without this column still decode.
     var color: String?
+    /// Seconds before `scheduled_at` (nil = default alert at the time).
+    var alert_offsets: [Int]?
 
     /// Explicit nulls for `interval_days`/`scheduled_at`, so removing the
     /// cadence or the schedule when editing also clears it in Supabase
@@ -112,6 +114,7 @@ struct RemoteHouseTask: FamilySynced {
         try c.encode(created_by, forKey: .created_by)
         try c.encode(created_by_name, forKey: .created_by_name)
         try c.encode(color, forKey: .color)
+        try c.encodeIfPresent(alert_offsets, forKey: .alert_offsets)
     }
 }
 
@@ -149,6 +152,8 @@ struct RemoteFamilyEvent: FamilySynced {
     var color: String?
     var repeat_until: Date?
     var excluded_dates: [String]?
+    /// Seconds before the start (nil = default alert).
+    var alert_offsets: [Int]?
 
     /// Explicit null for `repeat_until`, so removing the end date when
     /// editing also clears it in Supabase (the synthesized encoder omits nils).
@@ -172,6 +177,7 @@ struct RemoteFamilyEvent: FamilySynced {
         try c.encodeIfPresent(color, forKey: .color)
         try c.encode(repeat_until, forKey: .repeat_until)
         try c.encode(excluded_dates ?? [], forKey: .excluded_dates)
+        try c.encodeIfPresent(alert_offsets, forKey: .alert_offsets)
     }
 }
 
@@ -883,11 +889,13 @@ final class AppDataSyncCoordinator: ObservableObject {
             existing.createdByID = remote.created_by
             existing.createdByName = remote.created_by_name
             existing.color = remote.color
+            existing.alertOffsets = remote.alert_offsets
         } else {
             modelContext.insert(HouseTask(
                 id: remote.id, name: remote.name, intervalDays: remote.interval_days,
                 scheduledAt: remote.scheduled_at, forEveryone: remote.for_everyone, memberIDs: remote.member_ids,
-                createdByID: remote.created_by, createdByName: remote.created_by_name, color: remote.color
+                createdByID: remote.created_by, createdByName: remote.created_by_name, color: remote.color,
+                alertOffsets: remote.alert_offsets
             ))
         }
     }
@@ -896,7 +904,8 @@ final class AppDataSyncCoordinator: ObservableObject {
         let record = RemoteHouseTask(
             id: task.id, family_id: familyID, name: task.name, interval_days: task.intervalDays,
             scheduled_at: task.scheduledAt, for_everyone: task.forEveryone, member_ids: task.memberIDs,
-            created_by: task.createdByID, created_by_name: task.createdByName, color: task.color
+            created_by: task.createdByID, created_by_name: task.createdByName, color: task.color,
+            alert_offsets: task.alertOffsets
         )
         Task { try? await houseTasks.push(record) }
     }
@@ -999,6 +1008,7 @@ final class AppDataSyncCoordinator: ObservableObject {
             existing.color = remote.color.flatMap { $0.isEmpty ? nil : $0 }
             existing.repeatUntil = remote.repeat_until
             existing.excludedDates = remote.excluded_dates ?? []
+            existing.alertOffsets = remote.alert_offsets
         } else {
             modelContext.insert(FamilyEvent(
                 id: remote.id, title: remote.title, note: remote.note,
@@ -1011,7 +1021,8 @@ final class AppDataSyncCoordinator: ObservableObject {
                 repeatUnit: remote.repeat_unit ?? FamilyEventRepeatUnit.week.rawValue,
                 color: remote.color.flatMap { $0.isEmpty ? nil : $0 },
                 repeatUntil: remote.repeat_until,
-                excludedDates: remote.excluded_dates ?? []
+                excludedDates: remote.excluded_dates ?? [],
+                alertOffsets: remote.alert_offsets
             ))
         }
         refreshWidgetSnapshot()
@@ -1026,7 +1037,8 @@ final class AppDataSyncCoordinator: ObservableObject {
             is_all_day: event.isAllDay,
             repeat_interval: event.repeatInterval, repeat_unit: event.repeatUnit,
             color: event.color ?? "",
-            repeat_until: event.repeatUntil, excluded_dates: event.excludedDates
+            repeat_until: event.repeatUntil, excluded_dates: event.excludedDates,
+            alert_offsets: event.alertOffsets
         )
         Task { try? await familyEvents.push(record) }
         refreshWidgetSnapshot()
