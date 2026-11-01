@@ -296,6 +296,16 @@ struct WifiEditorSheet: View {
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                         .onChange(of: ssid) { _, new in if new.count > WifiNetwork.maxSSIDLength { ssid = String(new.prefix(WifiNetwork.maxSSIDLength)) } }
+                    Label {
+                        Text("Write the network name exactly as it appears (capitals included) so the connection QR works.")
+                    } icon: {
+                        Image(systemName: "info.circle.fill")
+                            .foregroundStyle(ALIColors.wifiAccent)
+                    }
+                    .font(ALITypography.labelLarge)
+                    .foregroundStyle(ALIColors.mutedInk)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, -6)
 
                     Picker("Security", selection: $security) {
                         Text("WPA/WPA2").tag(WifiNetwork.Security.wpa)
@@ -311,7 +321,7 @@ struct WifiEditorSheet: View {
                             .onChange(of: password) { _, new in if new.count > WifiNetwork.maxPasswordLength { password = String(new.prefix(WifiNetwork.maxPasswordLength)) } }
                     }
 
-                    Text("Everyone in the family group will see it on Home.")
+                    Text("Everyone in the family group will see it.")
                         .font(ALITypography.labelLarge)
                         .foregroundStyle(ALIColors.mutedInk)
                         .frame(maxWidth: .infinity, alignment: .leading)
