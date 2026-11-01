@@ -5,6 +5,7 @@ import SwiftUI
 enum HomeBlock: String, CaseIterable, Identifiable {
     case today
     case board
+    case wifi
     case features
 
     var id: String { rawValue }
@@ -13,6 +14,7 @@ enum HomeBlock: String, CaseIterable, Identifiable {
         switch self {
         case .today: return "Today"
         case .board: return "Board"
+        case .wifi: return "Wi-Fi"
         case .features: return "All features"
         }
     }
@@ -21,6 +23,7 @@ enum HomeBlock: String, CaseIterable, Identifiable {
         switch self {
         case .today: return "sun.max.fill"
         case .board: return "pin.fill"
+        case .wifi: return "wifi"
         case .features: return "square.grid.2x2.fill"
         }
     }
@@ -29,6 +32,7 @@ enum HomeBlock: String, CaseIterable, Identifiable {
         switch self {
         case .today: return ALIColors.sun
         case .board: return ALIColors.boardAccent
+        case .wifi: return ALIColors.wifiAccent
         case .features: return ALIColors.primary
         }
     }
