@@ -323,7 +323,9 @@ final class AppDataSyncCoordinator: ObservableObject {
 
     private var started = false
     private let pathMonitor = NWPathMonitor()
-    private var wasOffline = false
+    /// Last network seen ("offline", "wifi", "cellular"…), to notice changes.
+    private var lastNetwork: String?
+    private var networkResync: Task<Void, Never>?
     private var lastSession: (familyID: UUID, memberID: UUID)?
 
     /// Reloads everything from the server (e.g. after discarding an edit
@@ -358,16 +360,35 @@ final class AppDataSyncCoordinator: ObservableObject {
         expenseArchives.onRejected = reject
         // Back online: upload what was saved on the device meanwhile.
         pathMonitor.pathUpdateHandler = { [weak self] path in
-            let online = path.status == .satisfied
-            Task { @MainActor in self?.connectivityChanged(online: online) }
+            let network: String
+            if path.status != .satisfied {
+                network = "offline"
+            } else if path.usesInterfaceType(.wifi) {
+                network = "wifi"
+            } else if path.usesInterfaceType(.cellular) {
+                network = "cellular"
+            } else {
+                network = "other"
+            }
+            Task { @MainActor in self?.networkChanged(to: network) }
         }
         pathMonitor.start(queue: DispatchQueue(label: "aliaro.sync.path"))
     }
 
-    private func connectivityChanged(online: Bool) {
-        defer { wasOffline = !online }
-        guard online, wasOffline, started else { return }
-        Task { await retryAllPending() }
+    /// The real-time connection dies when the network drops or changes
+    /// (Wi-Fi ↔ mobile data) and changes made meanwhile by others never
+    /// arrive. So, once back online on a different network than before, we
+    /// reload everything (which also uploads what's pending on this device).
+    private func networkChanged(to network: String) {
+        defer { lastNetwork = network }
+        guard let previous = lastNetwork, previous != network, network != "offline", started else { return }
+        networkResync?.cancel()
+        networkResync = Task {
+            try? await Task.sleep(for: .seconds(2)) // let the new connection settle
+            guard !Task.isCancelled else { return }
+            Track.event("sync_network_resync", ["from": previous, "to": network])
+            reloadFromServer()
+        }
     }
 
     /// Uploads the changes waiting on this device (saved while offline).
