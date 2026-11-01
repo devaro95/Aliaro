@@ -4,6 +4,38 @@
     "" : {
 
     },
+    "%lld countries" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld countries"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld países"
+          }
+        }
+      }
+    },
+    "%lld countries visited" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld countries visited"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld países visitados"
+          }
+        }
+      }
+    },
     "%lld places" : {
       "localizations" : {
         "en" : {
@@ -16,6 +48,54 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld lugares"
+          }
+        }
+      }
+    },
+    "%lld%% of the world" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld%% of the world"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld%% del mundo"
+          }
+        }
+      }
+    },
+    "1 country" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 country"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 país"
+          }
+        }
+      }
+    },
+    "1 country visited" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 country visited"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 país visitado"
           }
         }
       }
@@ -84,6 +164,54 @@
         }
       }
     },
+    "countries" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "countries"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "países"
+          }
+        }
+      }
+    },
+    "Countries visited" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Countries visited"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Países visitados"
+          }
+        }
+      }
+    },
+    "country" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "country"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "país"
+          }
+        }
+      }
+    },
     "Culture" : {
       "localizations" : {
         "en" : {
@@ -128,6 +256,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Editar lugar"
+          }
+        }
+      }
+    },
+    "Expand map" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expand map"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ampliar mapa"
           }
         }
       }
@@ -228,6 +372,22 @@
         }
       }
     },
+    "Mark the countries you've visited and watch the family map fill up." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mark the countries you've visited and watch the family map fill up."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marca los países que has visitado y mira cómo se rellena el mapa de la familia."
+          }
+        }
+      }
+    },
     "Name (e.g. Casa Lucio)" : {
       "localizations" : {
         "en" : {
@@ -292,6 +452,22 @@
         }
       }
     },
+    "No countries yet" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No countries yet"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aún no hay países"
+          }
+        }
+      }
+    },
     "No places yet" : {
       "localizations" : {
         "en" : {
@@ -352,6 +528,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Parques y naturaleza"
+          }
+        }
+      }
+    },
+    "Pinch to zoom." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pinch to zoom."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pellizca para hacer zoom."
+          }
+        }
+      }
+    },
+    "Pinch to zoom. Tap a country to mark it as visited." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pinch to zoom. Tap a country to mark it as visited."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pellizca para hacer zoom. Toca un país para marcarlo como visitado."
           }
         }
       }
@@ -452,6 +660,22 @@
         }
       }
     },
+    "Search a country to mark it as visited." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search a country to mark it as visited."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Busca un país para marcarlo como visitado."
+          }
+        }
+      }
+    },
     "Search a place or address" : {
       "localizations" : {
         "en" : {
@@ -484,6 +708,22 @@
         }
       }
     },
+    "Search country…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search country…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscar país…"
+          }
+        }
+      }
+    },
     "Share" : {
       "localizations" : {
         "en" : {
@@ -512,6 +752,70 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tiendas"
+          }
+        }
+      }
+    },
+    "Showing %@'s countries." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Showing %@'s countries."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Países de %@."
+          }
+        }
+      }
+    },
+    "Tap a country to mark it as visited." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap a country to mark it as visited."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toca un país para marcarlo como visitado."
+          }
+        }
+      }
+    },
+    "Visited countries" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Visited countries"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Países visitados"
+          }
+        }
+      }
+    },
+    "World map" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "World map"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mapa del mundo"
           }
         }
       }
