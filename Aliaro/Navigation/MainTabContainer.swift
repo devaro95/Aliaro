@@ -11,6 +11,7 @@ struct MainTabContainer: View {
     @EnvironmentObject private var familyService: FamilyService
     @EnvironmentObject private var familySession: FamilySession
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.scenePhase) private var scenePhase
 
     @State private var selected: AppTab
     /// Screens pushed on top of Home (features that aren't favorites, and People).
@@ -109,6 +110,15 @@ struct MainTabContainer: View {
                 "initial_tab": (homePath.last ?? selected).settingsKey,
                 "visible_tabs": AppTab.visibleFeatures(excluding: familySession.disabledTabs).count,
             ])
+        }
+        .onChange(of: scenePhase) { oldPhase, newPhase in
+            // Back from the background: catch up on changes missed while suspended.
+            guard oldPhase == .background, newPhase != .background,
+                  let familyID = familySession.familyID, let memberID = familySession.memberID else { return }
+            Task {
+                await dataSync.resyncAfterBackground(familyID: familyID, currentMemberID: memberID, modelContext: modelContext)
+                await familyService.refreshFamilySettings()
+            }
         }
         .task {
             if let familyID = familySession.familyID, let memberID = familySession.memberID {

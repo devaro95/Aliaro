@@ -23,7 +23,9 @@ struct WeeklyMenuScreen: View {
     }
 
     private func dish(for weekday: Weekday, mealType: MealType) -> DishSelection? {
-        guard let entry = entries.first(where: { $0.weekday == weekday.rawValue && $0.mealType == mealType.rawValue }) else {
+        guard let entry = entries
+            .filter({ $0.weekday == weekday.rawValue && $0.mealType == mealType.rawValue })
+            .max(by: { $0.updatedAt < $1.updatedAt }) else {
             return nil
         }
         return DishSelection(id: entry.dishID, name: entry.dishName)
