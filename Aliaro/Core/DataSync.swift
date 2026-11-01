@@ -350,6 +350,7 @@ final class AppDataSyncCoordinator: ObservableObject {
             { await self.reminders.retryPending() }, { await self.boardNotes.retryPending() },
             { await self.categories.retryPending() }, { await self.expenses.retryPending() },
             { await self.activityLogEntries.retryPending() }, { await self.expenseArchives.retryPending() },
+            { await self.wifiNetworks.retryPending() },
         ]
     }
 
@@ -360,7 +361,7 @@ final class AppDataSyncCoordinator: ObservableObject {
         shoppingListEntries.onRejected = reject; houseTasks.onRejected = reject; houseTaskLogs.onRejected = reject
         familyEvents.onRejected = reject; reminders.onRejected = reject; boardNotes.onRejected = reject
         categories.onRejected = reject; expenses.onRejected = reject; activityLogEntries.onRejected = reject
-        expenseArchives.onRejected = reject
+        expenseArchives.onRejected = reject; wifiNetworks.onRejected = reject
         // Back online: upload what was saved on the device meanwhile.
         pathMonitor.pathUpdateHandler = { [weak self] path in
             let network: String
@@ -1364,11 +1365,11 @@ final class AppDataSyncCoordinator: ObservableObject {
             security: network.security, position: network.position, created_at: network.createdAt,
             updated_at: network.updatedAt, created_by: network.createdByID, created_by_name: network.createdByName
         )
-        Task { try? await wifiNetworks.push(record) }
+        save(wifiNetworks, record)
     }
 
     func deleteWifiNetwork(id: UUID) {
-        Task { try? await wifiNetworks.remove(id: id) }
+        remove(wifiNetworks, id: id)
     }
 
     // MARK: Categories
