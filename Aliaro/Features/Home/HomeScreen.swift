@@ -444,6 +444,11 @@ struct HomeScreen: View {
         HStack(alignment: .firstTextBaseline) {
             sectionTitle("All features")
             Spacer()
+            if !isReordering {
+                featureStyleToggle
+                    .padding(.trailing, visibleFeatures.count > 1 ? 0 : 20)
+                    .transition(.opacity)
+            }
             if visibleFeatures.count > 1 {
                 if isReordering {
                     Button {
@@ -483,8 +488,32 @@ struct HomeScreen: View {
         }
     }
 
+    /// Cards ↔ icons, right where the change shows up: one button that
+    /// shows the other view and switches to it on each tap.
+    private var featureStyleToggle: some View {
+        let next: HomeFeatureStyle = layout.featureStyle == .cards ? .icons : .cards
+        return Button {
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) { layout.setFeatureStyle(next) }
+            Track.event("home_feature_style", ["style": next.rawValue, "source": "home"])
+        } label: {
+            Image(systemName: next == .icons ? "square.grid.3x3.fill" : "square.grid.2x2.fill")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(ALIColors.ink)
+                .contentTransition(.symbolEffect(.replace))
+                .frame(width: 34, height: 30)
+                .background(ALIColors.surface, in: Capsule())
+                .overlay(Capsule().stroke(ALIColors.outline, lineWidth: 1))
+        }
+        .buttonStyle(.plain)
+        .padding(.top, 4)
+        .accessibilityLabel(next == .icons ? Text("Show as icons") : Text("Show as cards"))
+        .sensoryFeedback(.selection, trigger: layout.featureStyle)
+    }
+
     private var featureGrid: some View {
-        LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
+        let icons = layout.featureStyle == .icons
+        let columns = Array(repeating: GridItem(.flexible(), spacing: icons ? 8 : 12), count: icons ? 4 : 2)
+        return LazyVGrid(columns: columns, spacing: icons ? 18 : 12) {
             ForEach(displayedFeatures) { tab in
                 featureTile(tab)
                     .homeEntrance(
@@ -511,19 +540,37 @@ struct HomeScreen: View {
                 onOpen(tab)
             }
         } label: {
-            ALIFeatureTile(
-                title: tab.label,
-                systemImage: tab.systemImage,
-                accent: tab.accent,
-                detail: showsCrown(tab) ? nil : tileDetail(for: tab)
-            )
+            if layout.featureStyle == .icons {
+                ALIFeatureIcon(title: tab.label, systemImage: tab.systemImage, accent: tab.accent)
+            } else {
+                ALIFeatureTile(
+                    title: tab.label,
+                    systemImage: tab.systemImage,
+                    accent: tab.accent,
+                    detail: showsCrown(tab) ? nil : tileDetail(for: tab)
+                )
+            }
         }
         .buttonStyle(.plain)
         // The Board opens as a blurred preview when locked, but still
         // gets the crown so it reads as premium from the grid.
         .aliPremiumLockOverlay(showsCrown(tab) && !isReordering)
         .overlay(alignment: .topTrailing) {
-            if isReordering {
+            if isReordering && layout.featureStyle == .icons {
+                // Icons are small: a round grip badge on the corner.
+                Image(systemName: "line.3.horizontal")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(ALIColors.ink)
+                    .frame(width: 24, height: 24)
+                    .background(ALIColors.surface, in: Circle())
+                    .overlay(Circle().stroke(ALIColors.outline, lineWidth: 1))
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
+                    .highPriorityGesture(reorderGesture(for: tab))
+                    .accessibilityLabel(Text("Reorder"))
+                    .offset(x: 8, y: -12)
+                    .transition(.opacity)
+            } else if isReordering {
                 Image(systemName: "line.3.horizontal")
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(isDragging ? ALIColors.ink : ALIColors.mutedInk)

@@ -20,6 +20,22 @@
         }
       }
     },
+    "Cards" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cards"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tarjetas"
+          }
+        }
+      }
+    },
     "Copy link" : {
       "localizations" : {
         "en" : {
@@ -48,6 +64,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "https://…"
+          }
+        }
+      }
+    },
+    "Icons" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Icons"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Iconos"
           }
         }
       }
@@ -112,6 +144,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Compartir"
+          }
+        }
+      }
+    },
+    "Show as cards" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show as cards"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ver como tarjetas"
+          }
+        }
+      }
+    },
+    "Show as icons" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show as icons"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ver como iconos"
           }
         }
       }

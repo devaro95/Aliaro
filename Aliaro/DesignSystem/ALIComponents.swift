@@ -488,6 +488,31 @@ struct ALIFeatureTile: View {
     }
 }
 
+/// A feature as an app-style icon with its name below (Home "Icons" style).
+struct ALIFeatureIcon: View {
+    let title: LocalizedStringKey
+    let systemImage: String
+    let accent: Color
+
+    var body: some View {
+        VStack(spacing: 6) {
+            Image(systemName: systemImage)
+                .font(.system(size: 24, weight: .semibold))
+                .foregroundStyle(ALIColors.onAccent)
+                .frame(width: 60, height: 60)
+                .background(accent)
+                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+            Text(title)
+                .font(ALITypography.labelLarge)
+                .foregroundStyle(ALIColors.ink)
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+        }
+        .frame(maxWidth: .infinity)
+        .contentShape(Rectangle())
+    }
+}
+
 /// Round avatar button used on the Home top bar to open People: the
 /// first letter of the member's name, or a generic icon if there's no name.
 struct ALIAvatarButton: View {

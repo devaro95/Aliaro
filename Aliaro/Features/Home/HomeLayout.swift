@@ -38,6 +38,21 @@ enum HomeBlock: String, CaseIterable, Identifiable {
     var canHide: Bool { self != .features }
 }
 
+/// How "All features" is shown: big cards with a summary, or app-style icons.
+enum HomeFeatureStyle: String, CaseIterable, Identifiable {
+    case cards
+    case icons
+
+    var id: String { rawValue }
+
+    var label: LocalizedStringKey {
+        switch self {
+        case .cards: return "Cards"
+        case .icons: return "Icons"
+        }
+    }
+}
+
 /// This member's Home layout on this device (not synced, like the feature
 /// order): the order of the blocks, which ones are hidden, and which
 /// "Today" cards show and in what order.
@@ -53,12 +68,14 @@ final class HomeLayout: ObservableObject {
     /// `AppTab.settingsKey`s. Empty = follow the features grid order.
     @Published private(set) var todayOrder: [String]
     @Published private(set) var hiddenTodayCards: Set<String>
+    @Published private(set) var featureStyle: HomeFeatureStyle
 
     private enum Keys {
         static let blockOrder = "aliaro.home.blockOrder"
         static let hiddenBlocks = "aliaro.home.hiddenBlocks"
         static let todayOrder = "aliaro.home.todayOrder"
         static let hiddenTodayCards = "aliaro.home.hiddenTodayCards"
+        static let featureStyle = "aliaro.home.featureStyle"
     }
 
     private let defaults = UserDefaults.standard
@@ -68,6 +85,7 @@ final class HomeLayout: ObservableObject {
         hiddenBlocks = Set(defaults.stringArray(forKey: Keys.hiddenBlocks) ?? [])
         todayOrder = defaults.stringArray(forKey: Keys.todayOrder) ?? []
         hiddenTodayCards = Set(defaults.stringArray(forKey: Keys.hiddenTodayCards) ?? [])
+        featureStyle = defaults.string(forKey: Keys.featureStyle).flatMap(HomeFeatureStyle.init(rawValue:)) ?? .cards
     }
 
     /// Every block in this member's order (unknown/new ones keep their
@@ -93,6 +111,7 @@ final class HomeLayout: ObservableObject {
 
     var isCustomized: Bool {
         !blockOrder.isEmpty || !hiddenBlocks.isEmpty || !todayOrder.isEmpty || !hiddenTodayCards.isEmpty
+            || featureStyle != .cards
     }
 
     // MARK: Changes
@@ -118,12 +137,18 @@ final class HomeLayout: ObservableObject {
         defaults.set(Array(hiddenTodayCards), forKey: Keys.hiddenTodayCards)
     }
 
+    func setFeatureStyle(_ style: HomeFeatureStyle) {
+        featureStyle = style
+        defaults.set(style.rawValue, forKey: Keys.featureStyle)
+    }
+
     /// Back to the default Home (the features grid order is reset separately).
     func reset() {
         blockOrder = []
         hiddenBlocks = []
         todayOrder = []
         hiddenTodayCards = []
-        [Keys.blockOrder, Keys.hiddenBlocks, Keys.todayOrder, Keys.hiddenTodayCards].forEach(defaults.removeObject(forKey:))
+        featureStyle = .cards
+        [Keys.blockOrder, Keys.hiddenBlocks, Keys.todayOrder, Keys.hiddenTodayCards, Keys.featureStyle].forEach(defaults.removeObject(forKey:))
     }
 }
