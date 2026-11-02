@@ -468,10 +468,13 @@ private struct EventRow: View {
                             .tracking(0.4)
                             .foregroundStyle(ALIColors.mutedInk)
                     }
-                    Text(event.title)
-                        .font(ALITypography.bodyLarge)
-                        .foregroundStyle(ALIColors.ink)
-                    Text("\(rangeLabel + (event.isRepeating ? " 🔁" : "")) · \(attendees)")
+                    HStack(spacing: 5) {
+                        Text(event.title)
+                            .font(ALITypography.bodyLarge)
+                            .foregroundStyle(ALIColors.ink)
+                        if event.isRepeating { ALIRepeatIcon() }
+                    }
+                    Text("\(rangeLabel) · \(attendees)")
                         .font(ALITypography.labelLarge)
                         .foregroundStyle(ALIColors.mutedInk)
                         .lineLimit(1)

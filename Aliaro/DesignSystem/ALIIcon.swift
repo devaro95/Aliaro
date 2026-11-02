@@ -68,3 +68,19 @@ struct ALIIconView: View {
             .accessibilityHidden(true)
     }
 }
+
+/// Small "repeats" marker next to the title of recurring tasks and events.
+struct ALIRepeatIcon: View {
+    var size: CGFloat = 13
+    var color: Color = ALIColors.mutedInk
+
+    var body: some View {
+        Image("ali_repeat")
+            .renderingMode(.template)
+            .resizable()
+            .scaledToFit()
+            .frame(width: size, height: size)
+            .foregroundStyle(color)
+            .accessibilityLabel(Text("Repeats"))
+    }
+}
