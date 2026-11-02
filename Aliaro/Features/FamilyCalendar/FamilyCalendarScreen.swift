@@ -15,11 +15,21 @@ struct FamilyCalendarScreen: View {
     @EnvironmentObject private var premium: PremiumManager
 
     @Query(sort: \FamilyEvent.startDate) private var events: [FamilyEvent]
+    @Query(sort: [SortDescriptor(\EventCategory.position), SortDescriptor(\EventCategory.createdAt)])
+    private var categories: [EventCategory]
+    /// Month shown in the month view (for the legend).
+    @State private var displayedMonth = Calendar.current.startOfDay(for: .now)
+    /// Legend chip tapped: only that category's events (category id, or "none").
+    @State private var legendFilter: String?
     @Query(sort: \FamilyMember.createdAt) private var members: [FamilyMember]
 
     @State private var selectedDay: Date? = Calendar.current.startOfDay(for: .now)
     @State private var showAddSheet = false
     @State private var selectedEvent: FamilyEvent?
+    /// Event tapped in the "by person" view: its detail first (then edit/delete).
+    @State private var detailEvent: FamilyEvent?
+    /// Edit or delete chosen from the detail, applied once it has closed.
+    @State private var afterDetail: (() -> Void)?
     /// The tapped occurrence (for repeating events, a display copy with its own dates).
     @State private var eventPendingDelete: FamilyEvent?
     @State private var viewMode: ViewMode = .month
@@ -42,7 +52,87 @@ struct FamilyCalendarScreen: View {
     private func events(on day: Date) -> [FamilyEvent] {
         let start = calendar.startOfDay(for: day)
         let end = calendar.date(byAdding: .day, value: 1, to: start) ?? start
-        return events.expanded(in: DateInterval(start: start, end: end.addingTimeInterval(-1)))
+        return shownEvents.expanded(in: DateInterval(start: start, end: end.addingTimeInterval(-1)))
+    }
+
+    // MARK: Legend
+
+    /// Legend key of an event: its (existing) category id, or "none".
+    private func legendKey(_ event: FamilyEvent) -> String {
+        guard let familyID = familySession.familyID,
+              let id = event.resolvedCategoryID(familyID: familyID),
+              categories.contains(where: { $0.id == id }) else { return "none" }
+        return id.uuidString
+    }
+
+    /// Events after the legend filter.
+    private var shownEvents: [FamilyEvent] {
+        guard let legendFilter else { return events }
+        return events.filter { legendKey($0) == legendFilter }
+    }
+
+    struct LegendItem: Identifiable {
+        let key: String
+        let name: String
+        let color: Color
+        var id: String { key }
+    }
+
+    /// Categories with events in the month on screen (in category order), plus "No category" if any.
+    private var monthLegend: [LegendItem] {
+        guard let month = calendar.dateInterval(of: .month, for: displayedMonth) else { return [] }
+        let monthEvents = events.expanded(in: month)
+        var keys = Set<String>()
+        for event in monthEvents { keys.insert(legendKey(event)) }
+        var items: [LegendItem] = []
+        for category in categories where keys.contains(category.id.uuidString) {
+            items.append(LegendItem(key: category.id.uuidString, name: category.displayName, color: category.swiftUIColor))
+        }
+        if keys.contains("none") {
+            items.append(LegendItem(key: "none", name: String(localized: "No category"), color: EventCategory.noneColor))
+        }
+        return items
+    }
+
+    /// Chips under the month with the categories used in it; tap one to see only its events.
+    private var legendStrip: some View {
+        let items = monthLegend
+        let filterVisible = legendFilter == nil || items.contains(where: { $0.key == legendFilter })
+        return Group {
+            if !items.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 6) {
+                        ForEach(items) { item in
+                            let isOn = legendFilter == item.key
+                            Button {
+                                withAnimation(.easeInOut(duration: 0.2)) { legendFilter = isOn ? nil : item.key }
+                                Track.event("calendar_legend_filter", ["on": !isOn])
+                            } label: {
+                                HStack(spacing: 6) {
+                                    Circle().fill(item.color).frame(width: 9, height: 9)
+                                    Text(item.name)
+                                        .font(ALITypography.labelLarge.weight(isOn ? .semibold : .regular))
+                                        .foregroundStyle(isOn ? ALIColors.onAccent : ALIColors.ink)
+                                    if isOn {
+                                        Image(systemName: "xmark")
+                                            .font(.system(size: 9, weight: .bold))
+                                            .foregroundStyle(ALIColors.onAccent)
+                                    }
+                                }
+                                .padding(.horizontal, 10)
+                                .frame(height: 30)
+                                .background(isOn ? ALIItemColors.soft(item.color, 0.6) : ALIColors.surface, in: Capsule())
+                                .overlay(Capsule().stroke(isOn ? item.color : ALIColors.outline, lineWidth: 1))
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                }
+                .padding(.horizontal, -20)
+                .opacity(filterVisible ? 1 : 0.6)
+            }
+        }
     }
 
     /// Repetitions are display copies: map them back to the stored event.
@@ -60,7 +150,7 @@ struct FamilyCalendarScreen: View {
             Color.clear.frame(height: 0).trackBottomBarScroll(bottomBarScrollTracker)
 
             VStack(spacing: 16) {
-                ALITopBar(title: "Family calendar", accent: ALIColors.familyAccent) {
+                ALITopBar(title: "Calendar", accent: ALIColors.familyAccent) {
                     HStack(spacing: 10) {
                         viewModeToggleButton
                         if canAdd {
@@ -75,7 +165,8 @@ struct FamilyCalendarScreen: View {
 
                 switch viewMode {
                 case .month:
-                    FamilyCalendarMonthView(events: events, selectedDay: $selectedDay)
+                    FamilyCalendarMonthView(events: shownEvents, selectedDay: $selectedDay, displayedMonth: $displayedMonth)
+                    legendStrip
 
                     if let selectedDay {
                         selectedDaySummary(for: selectedDay)
@@ -94,7 +185,8 @@ struct FamilyCalendarScreen: View {
                         .aliPremiumPreview(true)
                     } else {
                         FamilyCalendarPeopleView(events: events, members: members, selectedDay: $selectedDay) { event in
-                            selectedEvent = original(event)
+                            Track.event("calendar_event_detail_open", ["source": "people_view"])
+                            detailEvent = event
                         }
                     }
                 }
@@ -120,6 +212,23 @@ struct FamilyCalendarScreen: View {
         }
         .sheet(item: $selectedEvent) { event in
             AddFamilyEventSheet(eventToEdit: event, canEdit: canEdit)
+        }
+        .sheet(item: $detailEvent, onDismiss: {
+            // Open the editor / delete dialog only once the detail is gone.
+            afterDetail?()
+            afterDetail = nil
+        }) { event in
+            FamilyEventDetailSheet(
+                event: event, canEdit: canEdit, canDelete: canDelete,
+                onEdit: {
+                    afterDetail = { selectedEvent = original(event) }
+                    detailEvent = nil
+                },
+                onDelete: {
+                    afterDetail = { eventPendingDelete = event }
+                    detailEvent = nil
+                }
+            )
         }
         .sheet(isPresented: $showWhatsNew) {
             ALIWhatsNewSheet(
@@ -266,14 +375,17 @@ struct FamilyCalendarScreen: View {
     }
 
     private var upcomingList: some View {
-        // Next occurrence of each event (repeating ones show only the next one).
-        let upcoming = events
+        // Next occurrence of each event (repeating ones show only the next one)
+        // that starts within the next 7 days (or is happening now).
+        let limit = calendar.date(byAdding: .day, value: 7, to: calendar.startOfDay(for: .now)) ?? .now
+        let upcoming = shownEvents
             .compactMap { event in event.nextOccurrence().map { event.occurrenceCopy(start: $0.start, end: $0.end) } }
+            .filter { $0.startDate < limit }
             .sorted { $0.startDate < $1.startDate }
         return Group {
             if !upcoming.isEmpty {
                 VStack(alignment: .leading, spacing: 10) {
-                    Text("Upcoming events")
+                    Text("Next 7 days")
                         .font(ALITypography.labelLarge)
                         .foregroundStyle(ALIColors.mutedInk)
 
@@ -301,7 +413,15 @@ struct FamilyCalendarScreen: View {
 
 /// Row for an event: icon, title, date range and who it's for.
 private struct EventRow: View {
+    @EnvironmentObject private var familySession: FamilySession
+    @Query private var categories: [EventCategory]
     let event: FamilyEvent
+
+    private var category: EventCategory? {
+        guard let familyID = familySession.familyID else { return nil }
+        let id = event.resolvedCategoryID(familyID: familyID)
+        return categories.first { $0.id == id }
+    }
     let attendees: String
     var canDelete: Bool = true
     let onTap: () -> Void
@@ -337,11 +457,17 @@ private struct EventRow: View {
     var body: some View {
         Button(action: onTap) {
             HStack(spacing: 12) {
-                ALIIconView(icon: event.emoji, size: 22, fallback: ALIIcon.calendar)
-                    .frame(width: 36, height: 36)
-                    .background(ALIItemColors.color(event.color, fallback: ALIColors.familyAccent).opacity(0.35))
-                    .clipShape(Circle())
+                // The event's (category) color as a bar on the left, like a calendar.
+                Capsule()
+                    .fill(ALIItemColors.color(event.color, fallback: ALIColors.familyAccent))
+                    .frame(width: 4, height: 40)
                 VStack(alignment: .leading, spacing: 3) {
+                    if let category {
+                        Text(category.displayName.uppercased())
+                            .font(.system(size: 10, weight: .bold))
+                            .tracking(0.4)
+                            .foregroundStyle(ALIColors.mutedInk)
+                    }
                     Text(event.title)
                         .font(ALITypography.bodyLarge)
                         .foregroundStyle(ALIColors.ink)

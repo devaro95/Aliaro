@@ -158,6 +158,7 @@ struct RemoteFamilyEvent: FamilySynced {
     var excluded_dates: [String]?
     /// Seconds before the start (nil = default alert).
     var alert_offsets: [Int]?
+    var category_id: UUID?
 
     /// Explicit null for `repeat_until`, so removing the end date when
     /// editing also clears it in Supabase (the synthesized encoder omits nils).
@@ -182,7 +183,19 @@ struct RemoteFamilyEvent: FamilySynced {
         try c.encode(repeat_until, forKey: .repeat_until)
         try c.encode(excluded_dates ?? [], forKey: .excluded_dates)
         try c.encodeIfPresent(alert_offsets, forKey: .alert_offsets)
+        try c.encodeIfPresent(category_id, forKey: .category_id)
     }
+}
+
+struct RemoteEventCategory: FamilySynced {
+    static let tableName = "event_categories"
+    var id: UUID
+    var family_id: UUID
+    var name: String
+    var color: String
+    var default_key: String?
+    var position: Int
+    var created_at: Date
 }
 
 struct RemoteReminder: FamilySynced {
@@ -308,6 +321,7 @@ final class AppDataSyncCoordinator: ObservableObject {
     private let houseTasks = RemoteSync<RemoteHouseTask>()
     private let houseTaskLogs = RemoteSync<RemoteHouseTaskLog>()
     private let familyEvents = RemoteSync<RemoteFamilyEvent>()
+    private let eventCategories = RemoteSync<RemoteEventCategory>()
     private let reminders = RemoteSync<RemoteReminder>()
     private let boardNotes = RemoteSync<RemoteBoardNote>()
     private let categories = RemoteSync<RemoteCategory>()
@@ -347,7 +361,9 @@ final class AppDataSyncCoordinator: ObservableObject {
         await startShoppingListEntries(familyID: familyID, modelContext: modelContext)
         await startHouseTasks(familyID: familyID, modelContext: modelContext)
         await startHouseTaskLogs(familyID: familyID, modelContext: modelContext)
+        await startEventCategories(familyID: familyID, modelContext: modelContext)
         await startFamilyEvents(familyID: familyID, modelContext: modelContext)
+        backfillEventCategories(familyID: familyID, modelContext: modelContext)
         await startReminders(familyID: familyID, modelContext: modelContext)
         await startBoardNotes(familyID: familyID, modelContext: modelContext)
         await startCategories(familyID: familyID, modelContext: modelContext)
@@ -396,6 +412,7 @@ final class AppDataSyncCoordinator: ObservableObject {
         await houseTasks.stop()
         await houseTaskLogs.stop()
         await familyEvents.stop()
+        await eventCategories.stop()
         await reminders.stop()
         await boardNotes.stop()
         await categories.stop()
@@ -1019,6 +1036,7 @@ final class AppDataSyncCoordinator: ObservableObject {
             existing.repeatUntil = remote.repeat_until
             existing.excludedDates = remote.excluded_dates ?? []
             existing.alertOffsets = remote.alert_offsets
+            existing.categoryID = remote.category_id
         } else {
             modelContext.insert(FamilyEvent(
                 id: remote.id, title: remote.title, note: remote.note,
@@ -1032,7 +1050,8 @@ final class AppDataSyncCoordinator: ObservableObject {
                 color: remote.color.flatMap { $0.isEmpty ? nil : $0 },
                 repeatUntil: remote.repeat_until,
                 excludedDates: remote.excluded_dates ?? [],
-                alertOffsets: remote.alert_offsets
+                alertOffsets: remote.alert_offsets,
+                categoryID: remote.category_id
             ))
         }
         refreshWidgetSnapshot()
@@ -1048,10 +1067,97 @@ final class AppDataSyncCoordinator: ObservableObject {
             repeat_interval: event.repeatInterval, repeat_unit: event.repeatUnit,
             color: event.color ?? "",
             repeat_until: event.repeatUntil, excluded_dates: event.excludedDates,
-            alert_offsets: event.alertOffsets
+            alert_offsets: event.alertOffsets,
+            category_id: event.categoryID
         )
         Task { try? await familyEvents.push(record) }
         refreshWidgetSnapshot()
+    }
+
+    // MARK: EventCategories
+
+    /// Events from before categories (no `category_id`, an old icon) get the
+    /// default category of their icon, once per family and device, and its
+    /// color (replacing the color they had). Idempotent, so several devices
+    /// doing it is harmless.
+    private func backfillEventCategories(familyID: UUID, modelContext: ModelContext) {
+        let key = "aliaro.eventCategories.backfilled.\(familyID.uuidString)"
+        guard !UserDefaults.standard.bool(forKey: key) else { return }
+        let categories = (try? modelContext.fetch(FetchDescriptor<EventCategory>())) ?? []
+        guard !categories.isEmpty else { return } // categories not loaded yet: next time
+        let events = (try? modelContext.fetch(FetchDescriptor<FamilyEvent>())) ?? []
+        for event in events where event.categoryID == nil {
+            guard let id = event.resolvedCategoryID(familyID: familyID),
+                  let category = categories.first(where: { $0.id == id }) else { continue }
+            event.categoryID = category.id
+            event.color = category.color
+            pushFamilyEvent(event, familyID: familyID)
+        }
+        try? modelContext.save()
+        UserDefaults.standard.set(true, forKey: key)
+    }
+
+    private func startEventCategories(familyID: UUID, modelContext: ModelContext) async {
+        do {
+            let remote = try await eventCategories.fetchAll(familyID: familyID)
+            for r in remote { applyEventCategory(r, modelContext: modelContext) }
+            let remoteIDs = Set(remote.map(\.id))
+            let local = (try? modelContext.fetch(FetchDescriptor<EventCategory>())) ?? []
+            for category in local where !remoteIDs.contains(category.id) { modelContext.delete(category) }
+            // The default categories (the old icons) are created once, when the
+            // family has none yet; after that they can be deleted like any
+            // other. Fixed ids: two devices doing it at once write the same rows.
+            let seededKey = "aliaro.eventCategories.seeded.\(familyID.uuidString)"
+            let seedDefaults = remote.isEmpty && !UserDefaults.standard.bool(forKey: seededKey)
+            UserDefaults.standard.set(true, forKey: seededKey)
+            for (index, preset) in EventCategory.defaults.enumerated() where seedDefaults {
+                let category = EventCategory(
+                    id: EventCategory.defaultID(familyID: familyID, key: preset.key),
+                    name: preset.name, color: preset.color, defaultKey: preset.key, position: index
+                )
+                if !local.contains(where: { $0.id == category.id }) { modelContext.insert(category) }
+                pushEventCategory(category, familyID: familyID)
+            }
+        } catch {
+            lastError = error.localizedDescription
+        }
+        await eventCategories.start(
+            familyID: familyID,
+            onUpsert: { [weak self] r in self?.applyEventCategory(r, modelContext: modelContext) },
+            onDelete: { id in
+                let descriptor = FetchDescriptor<EventCategory>(predicate: #Predicate { $0.id == id })
+                if let existing = try? modelContext.fetch(descriptor).first {
+                    modelContext.delete(existing)
+                }
+            }
+        )
+    }
+
+    private func applyEventCategory(_ remote: RemoteEventCategory, modelContext: ModelContext) {
+        let descriptor = FetchDescriptor<EventCategory>(predicate: #Predicate { $0.id == remote.id })
+        if let existing = try? modelContext.fetch(descriptor).first {
+            existing.name = remote.name
+            existing.color = remote.color
+            existing.defaultKey = remote.default_key
+            existing.position = remote.position
+        } else {
+            modelContext.insert(EventCategory(
+                id: remote.id, name: remote.name, color: remote.color, defaultKey: remote.default_key,
+                position: remote.position, createdAt: remote.created_at
+            ))
+        }
+    }
+
+    func pushEventCategory(_ category: EventCategory, familyID: UUID) {
+        let record = RemoteEventCategory(
+            id: category.id, family_id: familyID, name: category.name, color: category.color,
+            default_key: category.defaultKey, position: category.position, created_at: category.createdAt
+        )
+        Task { try? await eventCategories.push(record) }
+    }
+
+    func deleteEventCategory(id: UUID) {
+        Task { try? await eventCategories.remove(id: id) }
     }
 
     func deleteFamilyEvent(id: UUID) {

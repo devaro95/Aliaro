@@ -4,7 +4,8 @@ import SwiftUI
 /// column per family member and one row per hour. Each event is drawn in
 /// the column of every person it's for, as a colored line spanning its
 /// duration with the title next to it. Events for everyone appear in
-/// every column. All-day events go in a strip above the hours.
+/// every column. All-day events (and the middle days of multi-day ones)
+/// fill every hour of the day, side by side with whatever else happens.
 struct FamilyCalendarPeopleView: View {
     let events: [FamilyEvent]
     let members: [FamilyMember]
@@ -19,6 +20,9 @@ struct FamilyCalendarPeopleView: View {
     private let hourHeight: CGFloat = 52
     private let gutterWidth: CGFloat = 40
     private let minColumnWidth: CGFloat = 92
+    /// Overlapping events of a person never get narrower than this: their
+    /// column widens instead (the view scrolls sideways), so titles stay readable.
+    private let minLaneWidth: CGFloat = 88
     private let headerHeight: CGFloat = 56
 
     private var calendar: Calendar { Calendar.current }
@@ -123,6 +127,13 @@ struct FamilyCalendarPeopleView: View {
         return result
     }
 
+    /// Width of a person's column: the shared width, or more if they have
+    /// several events at the same time (one readable lane each).
+    private func width(for column: Column) -> CGFloat {
+        let lanes = layout(dayEvents.filter { isFor($0, column) }).map(\.lanes).max() ?? 1
+        return max(columnWidth, CGFloat(lanes) * minLaneWidth + 6)
+    }
+
     private var columnWidth: CGFloat {
         let usable = availableWidth - gutterWidth
         guard usable > 0, !columns.isEmpty else { return minColumnWidth }
@@ -194,7 +205,8 @@ struct FamilyCalendarPeopleView: View {
     }
 
     private var matrix: some View {
-        let hasAllDay = !allDayEvents.isEmpty
+        // All-day events are drawn across every hour (no separate strip).
+        let hasAllDay = false
         return HStack(alignment: .top, spacing: 0) {
             // Hour gutter (fixed, doesn't scroll sideways).
             VStack(spacing: 0) {
@@ -231,7 +243,7 @@ struct FamilyCalendarPeopleView: View {
                     if hasAllDay { allDayCell(column) }
                     timeColumn(column)
                 }
-                .frame(width: columnWidth)
+                .frame(width: width(for: column))
             }
         }
     }
@@ -249,13 +261,13 @@ struct FamilyCalendarPeopleView: View {
     private func columnHeader(_ column: Column) -> some View {
         VStack(spacing: 4) {
             ZStack {
-                Circle().fill(column.color.opacity(0.35))
+                Circle().fill(ALIItemColors.soft(column.color, 0.5))
                 if let emoji = column.emoji {
                     ALIIconView(icon: emoji, size: 16, fallback: ALIIcon.user)
                 } else {
                     Image(systemName: "person.3.fill")
                         .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(ALIColors.ink)
+                        .foregroundStyle(ALIColors.onAccent)
                 }
             }
             .frame(width: 28, height: 28)
@@ -318,8 +330,10 @@ struct FamilyCalendarPeopleView: View {
     private var gridHeight: CGFloat { CGFloat(hourRange.count - 1) * hourHeight }
 
     private func timeColumn(_ column: Column) -> some View {
-        let items = layout(timedEvents.filter { isFor($0, column) })
-        let laneWidthBase = columnWidth - 6
+        // Every event of the day, all-day ones included (they span all the hours).
+        let items = layout(dayEvents.filter { isFor($0, column) })
+        let fullWidth = width(for: column)
+        let laneWidthBase = fullWidth - 6
 
         return ZStack(alignment: .topLeading) {
             // Hour grid lines.
@@ -334,8 +348,10 @@ struct FamilyCalendarPeopleView: View {
             }
 
             ForEach(items) { item in
-                let top = yOffset(for: item.event.startDate)
-                let height = max(yOffset(for: item.event.endDate) - top, 22)
+                // Clamped to the visible hours (an all-day event fills them all).
+                let top = max(0, isAllDayHere(item.event) ? 0 : yOffset(for: item.event.startDate))
+                let bottom = min(gridHeight, isAllDayHere(item.event) ? gridHeight : yOffset(for: item.event.endDate))
+                let height = max(bottom - top, 22)
                 let laneWidth = laneWidthBase / CGFloat(item.lanes)
                 eventBlock(item.event, column: column, height: height)
                     .frame(width: laneWidth - 2, height: height)
@@ -346,13 +362,14 @@ struct FamilyCalendarPeopleView: View {
                 nowLine
             }
         }
-        .frame(width: columnWidth, height: gridHeight, alignment: .topLeading)
+        .frame(width: fullWidth, height: gridHeight, alignment: .topLeading)
         .clipped()
     }
 
     private func eventBlock(_ event: FamilyEvent, column: Column, height: CGFloat) -> some View {
         let tint = color(for: event, in: column)
         let time: String = {
+            if isAllDayHere(event) { return String(localized: "All day") }
             let f = DateFormatter()
             f.dateFormat = "HH:mm"
             return "\(f.string(from: max(event.startDate, day))) – \(f.string(from: min(event.endDate, dayEnd)))"
@@ -367,12 +384,12 @@ struct FamilyCalendarPeopleView: View {
                 VStack(alignment: .leading, spacing: 1) {
                     Text(event.title)
                         .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(ALIColors.ink)
+                        .foregroundStyle(ALIColors.onAccent)
                         .lineLimit(height > 40 ? 2 : 1)
                     if height > 36 {
                         Text(time)
                             .font(.system(size: 9, weight: .medium).monospacedDigit())
-                            .foregroundStyle(ALIColors.mutedInk)
+                            .foregroundStyle(ALIColors.onAccent.opacity(0.65))
                             .lineLimit(1)
                     }
                 }
@@ -381,7 +398,7 @@ struct FamilyCalendarPeopleView: View {
             .padding(.vertical, 3)
             .padding(.trailing, 3)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .background(tint.opacity(0.22))
+            .background(ALIItemColors.soft(tint, 0.3))
             .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
         }
     }

@@ -645,7 +645,7 @@ final class FamilyService: ObservableObject {
         }
         wipe(FamilyMember.self); wipe(Dish.self); wipe(Recipe.self); wipe(MealPlanEntry.self)
         wipe(GroceryItem.self); wipe(ShoppingList.self); wipe(ShoppingListEntry.self)
-        wipe(HouseTask.self); wipe(HouseTaskLog.self); wipe(FamilyEvent.self); wipe(Reminder.self)
+        wipe(HouseTask.self); wipe(HouseTaskLog.self); wipe(FamilyEvent.self); wipe(EventCategory.self); wipe(Reminder.self)
         wipe(BoardNote.self); wipe(Expense.self); wipe(ExpenseCategory.self); wipe(ExpenseArchive.self)
         wipe(ActivityLogEntry.self); wipe(WifiNetwork.self)
         do { try modelContext.save() } catch { print("clearAllLocalData save failed: \(error)") }
