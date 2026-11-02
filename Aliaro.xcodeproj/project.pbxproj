@@ -72,6 +72,7 @@
 		7CE2D721E52D4C3C9A13E7BF /* NameEntrySheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 788DE75D8A5A4CF28B21F5A9 /* NameEntrySheet.swift */; };
 		C627EFCFBF034BD9B7F99A3A /* AccountScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 604FFA76CEE2450DB6752BD0 /* AccountScreen.swift */; };
 		DC24E5E688574227B2B48D8D /* AppFeaturesSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2971023C9784B6AB05E26C8 /* AppFeaturesSheet.swift */; };
+		FA53ED71C9CB423A83B3A206 /* FeedbackSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 381819E86297474C8035E8AD /* FeedbackSheet.swift */; };
 		0D7080F8E41F4FCA85275CB9 /* HistorialSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDD63371264448B9A35C638A /* HistorialSheet.swift */; };
 		61B069399CC44852BEA713E6 /* InviteQRSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4242A672942C493BA02A492E /* InviteQRSheet.swift */; };
 		1A6F2D4393604203921918EA /* JoinByCodeSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7FA5D7FE3DB41A4B2FA0072 /* JoinByCodeSheet.swift */; };
@@ -237,6 +238,7 @@
 		788DE75D8A5A4CF28B21F5A9 /* NameEntrySheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NameEntrySheet.swift; sourceTree = "<group>"; };
 		604FFA76CEE2450DB6752BD0 /* AccountScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountScreen.swift; sourceTree = "<group>"; };
 		D2971023C9784B6AB05E26C8 /* AppFeaturesSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppFeaturesSheet.swift; sourceTree = "<group>"; };
+		381819E86297474C8035E8AD /* FeedbackSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackSheet.swift; sourceTree = "<group>"; };
 		EDD63371264448B9A35C638A /* HistorialSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistorialSheet.swift; sourceTree = "<group>"; };
 		4242A672942C493BA02A492E /* InviteQRSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InviteQRSheet.swift; sourceTree = "<group>"; };
 		F7FA5D7FE3DB41A4B2FA0072 /* JoinByCodeSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JoinByCodeSheet.swift; sourceTree = "<group>"; };
@@ -475,6 +477,7 @@
 			children = (
 				604FFA76CEE2450DB6752BD0,
 				D2971023C9784B6AB05E26C8,
+				381819E86297474C8035E8AD,
 				EDD63371264448B9A35C638A,
 				4242A672942C493BA02A492E,
 				F7FA5D7FE3DB41A4B2FA0072,
@@ -874,6 +877,7 @@
 				7CE2D721E52D4C3C9A13E7BF /* NameEntrySheet.swift in Sources */,
 				C627EFCFBF034BD9B7F99A3A /* AccountScreen.swift in Sources */,
 				DC24E5E688574227B2B48D8D /* AppFeaturesSheet.swift in Sources */,
+				FA53ED71C9CB423A83B3A206 /* FeedbackSheet.swift in Sources */,
 				0D7080F8E41F4FCA85275CB9 /* HistorialSheet.swift in Sources */,
 				61B069399CC44852BEA713E6 /* InviteQRSheet.swift in Sources */,
 				1A6F2D4393604203921918EA /* JoinByCodeSheet.swift in Sources */,
