@@ -1,15 +1,17 @@
 import SwiftUI
 
 /// Monthly calendar view for "Family": navigates month by month.
-/// Multi-day events are drawn as a continuous band joining the days they
-/// span (with rounded corners only on the start and end day); single-day
-/// events are marked with a dot below the number.
+/// Month grid with the events written in each day, like Google Calendar:
+/// up to `maxLanes` small labels per day in the event's color. Multi-day
+/// events are one continuous label across the days they span (same row on
+/// every day, title at the start of each week), single-day ones fill the
+/// free rows; what doesn't fit shows as "+N".
 /// Tapping a day selects it to see its detail below.
 struct FamilyCalendarMonthView: View {
     let events: [FamilyEvent]
     @Binding var selectedDay: Date?
-
-    @State private var displayedMonth: Date = Calendar.current.startOfDay(for: .now)
+    /// Month on screen (owned by the screen, for the color legend).
+    @Binding var displayedMonth: Date
 
     private var calendar: Calendar { Calendar.current }
 
@@ -37,9 +39,6 @@ struct FamilyCalendarMonthView: View {
         return days
     }
 
-    /// The multi-day event (if any) that covers that date. Single-day
-    /// events don't count here — those are marked with a dot, not the
-    /// band.
     /// Events (and repetitions) overlapping the visible grid.
     private var gridEvents: [FamilyEvent] {
         guard let first = gridDays.first, let last = gridDays.last,
@@ -47,17 +46,7 @@ struct FamilyCalendarMonthView: View {
         return events.expanded(in: DateInterval(start: first, end: end))
     }
 
-    private func spanningEvent(on day: Date, in gridEvents: [FamilyEvent]) -> FamilyEvent? {
-        gridEvents.first { event in
-            let start = calendar.startOfDay(for: event.startDate)
-            let end = calendar.startOfDay(for: event.endDate)
-            guard start != end else { return false }
-            let target = calendar.startOfDay(for: day)
-            return target >= start && target <= end
-        }
-    }
-
-    /// Events that occur entirely on that day (for the little dot below the number).
+    /// Events that occur entirely on that day (for the ring around the number).
     private func singleDayEvents(on day: Date, in gridEvents: [FamilyEvent]) -> [FamilyEvent] {
         gridEvents.filter { event in
             let start = calendar.startOfDay(for: event.startDate)
@@ -66,11 +55,74 @@ struct FamilyCalendarMonthView: View {
         }
     }
 
-    /// The id of the multi-day event occupying each grid cell, in the
-    /// same order as `gridDays` — this way we know whether the previous
-    /// or next cell belongs to the same event to join the band between them.
-    private func spanningEventIDs(in gridEvents: [FamilyEvent]) -> [UUID?] {
-        gridDays.map { spanningEvent(on: $0, in: gridEvents)?.id }
+    static let maxLanes = 3
+
+    /// A multi-day event placed in a lane, as grid indexes (inclusive).
+    struct LaneBar {
+        let lane: Int
+        let first: Int
+        let last: Int
+        let color: Color
+        let title: String
+    }
+
+    /// Multi-day events in lanes for the whole grid: earlier (and longer)
+    /// ones first, each in the first lane free for all its days, so it keeps
+    /// the same lane across weeks. Also how many don't fit, per day.
+    private func laneLayout(in gridEvents: [FamilyEvent]) -> LaneLayout {
+        let days = gridDays.map { calendar.startOfDay(for: $0) }
+        guard let gridStart = days.first else { return LaneLayout(bars: [], hidden: []) }
+        let lastIndex = days.count - 1
+
+        struct Span {
+            let title: String
+            let color: String?
+            let first: Int
+            let last: Int
+        }
+        var spans: [Span] = []
+        for event in gridEvents where !calendar.isDate(event.startDate, inSameDayAs: event.endDate) {
+            let startOffset = calendar.dateComponents([.day], from: gridStart, to: calendar.startOfDay(for: event.startDate)).day ?? 0
+            let endOffset = calendar.dateComponents([.day], from: gridStart, to: calendar.startOfDay(for: event.endDate)).day ?? 0
+            let first = max(0, startOffset)
+            let last = min(lastIndex, endOffset)
+            if first <= last { spans.append(Span(title: event.title, color: event.color, first: first, last: last)) }
+        }
+        spans.sort { lhs, rhs in
+            if lhs.first != rhs.first { return lhs.first < rhs.first }
+            return (lhs.last - lhs.first) > (rhs.last - rhs.first)
+        }
+
+        var laneEnds: [Int] = [] // last grid index used by each lane
+        var bars: [LaneBar] = []
+        var hidden = Array(repeating: 0, count: days.count)
+        for span in spans {
+            let lane: Int
+            if let free = laneEnds.firstIndex(where: { $0 < span.first }) {
+                lane = free
+                laneEnds[free] = span.last
+            } else {
+                lane = laneEnds.count
+                laneEnds.append(span.last)
+            }
+            if lane < Self.maxLanes {
+                let color = ALIItemColors.color(span.color, fallback: ALIColors.familyAccent)
+                bars.append(LaneBar(lane: lane, first: span.first, last: span.last, color: color, title: span.title))
+            } else {
+                for i in span.first...span.last { hidden[i] += 1 }
+            }
+        }
+        return LaneLayout(bars: bars, hidden: hidden)
+    }
+
+    struct LaneLayout {
+        let bars: [LaneBar]
+        /// Multi-day events that didn't fit in the lanes, per grid day.
+        let hidden: [Int]
+
+        func bar(lane: Int, at index: Int) -> LaneBar? {
+            bars.first(where: { $0.lane == lane && $0.first <= index && index <= $0.last })
+        }
     }
 
     private func isInDisplayedMonth(_ day: Date) -> Bool {
@@ -127,86 +179,115 @@ struct FamilyCalendarMonthView: View {
     private var dayGrid: some View {
         // Expanded once per render (repetitions included), then shared by every cell.
         let events = gridEvents
-        let ids = spanningEventIDs(in: events)
-        return LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 7), spacing: 8) {
+        let layout = laneLayout(in: events)
+        return LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 0), count: 7), spacing: 0) {
             ForEach(Array(gridDays.enumerated()), id: \.offset) { index, day in
-                dayCell(day, index: index, spanningIDs: ids, events: events)
+                dayCell(day, index: index, layout: layout, events: events)
             }
         }
     }
 
-    private func dayCell(_ day: Date, index: Int, spanningIDs: [UUID?], events: [FamilyEvent]) -> some View {
-        let singleEvents = singleDayEvents(on: day, in: events)
-        let spanning = spanningIDs.isEmpty ? nil : spanningIDs[index]
-        let spanningColor = events.first { $0.id == spanning }?.color
+    /// What goes in each of a day's rows: a multi-day bar (fixed row) or a
+    /// single-day event (first free rows); plus how many didn't fit.
+    private func slots(for index: Int, day: Date, layout: LaneLayout, events: [FamilyEvent]) -> (rows: [DaySlot?], more: Int) {
+        var rows: [DaySlot?] = Array(repeating: nil, count: Self.maxLanes)
+        for lane in 0..<Self.maxLanes {
+            if let bar = layout.bar(lane: lane, at: index) { rows[lane] = .bar(bar) }
+        }
+        var more = layout.hidden.indices.contains(index) ? layout.hidden[index] : 0
+        for event in singleDayEvents(on: day, in: events) {
+            if let free = rows.firstIndex(where: { $0 == nil }) {
+                rows[free] = .single(title: event.title, color: ALIItemColors.color(event.color, fallback: ALIColors.familyAccent))
+            } else {
+                more += 1
+            }
+        }
+        return (rows, more)
+    }
+
+    enum DaySlot {
+        case bar(LaneBar)
+        case single(title: String, color: Color)
+    }
+
+    private func dayCell(_ day: Date, index: Int, layout: LaneLayout, events: [FamilyEvent]) -> some View {
         let isToday = calendar.isDateInToday(day)
         let isSelected = selectedDay.map { calendar.isDate($0, inSameDayAs: day) } ?? false
         let inMonth = isInDisplayedMonth(day)
-
-        let columnIndex = index % 7
-        let isRangeStart = spanning != nil && (columnIndex == 0 || spanningIDs[index - 1] != spanning)
-        let isRangeEnd = spanning != nil && (columnIndex == 6 || spanningIDs[index + 1] != spanning)
+        let column = index % 7
+        let content = slots(for: index, day: day, layout: layout, events: events)
 
         return Button {
             Track.event("calendar_day_tap", ["screen": "calendar", "is_today": Calendar.current.isDateInToday(day)])
             withAnimation(.easeInOut(duration: 0.15)) { selectedDay = day }
         } label: {
-            VStack(spacing: 4) {
+            VStack(spacing: 2) {
                 Text("\(calendar.component(.day, from: day))")
-                    .font(ALITypography.bodyMedium)
-                    .foregroundStyle(inMonth ? ALIColors.ink : ALIColors.mutedInk.opacity(0.4))
-                    .frame(width: 30, height: 30)
-                    .background(
-                        isSelected
-                            ? ALIColors.familyAccent
-                            : (singleEvents.isEmpty ? Color.clear : ALIColors.calendarActivity.opacity(0.55))
-                    )
-                    .clipShape(Circle())
-                    .overlay(
-                        Circle().stroke(isToday && !isSelected ? ALIColors.familyAccent : .clear, lineWidth: 1.5)
-                    )
-                    .padding(.vertical, 2)
-                    .frame(maxWidth: .infinity)
-                    .background(
-                        rangeBackground(isStart: isRangeStart, isEnd: isRangeEnd, isActive: spanning != nil, color: spanningColor)
-                    )
+                    .font(.system(size: 12, weight: isToday || isSelected ? .bold : .medium))
+                    .foregroundStyle(isSelected ? ALIColors.onAccent : (isToday ? ALIColors.onAccent : (inMonth ? ALIColors.ink : ALIColors.mutedInk.opacity(0.4))))
+                    .frame(width: 22, height: 22)
+                    .background(isSelected ? ALIColors.familyAccent : (isToday ? ALIColors.primary : Color.clear), in: Circle())
+                    .padding(.top, 3)
 
-                HStack(spacing: 3) {
-                    if singleEvents.isEmpty {
-                        Color.clear.frame(width: 5, height: 5)
-                    } else {
-                        ForEach(Array(singleEvents.prefix(3).enumerated()), id: \.offset) { _, event in
-                            Circle().fill(ALIItemColors.color(event.color, fallback: ALIColors.familyAccent)).frame(width: 5, height: 5)
-                        }
-                    }
+                ForEach(0..<Self.maxLanes, id: \.self) { row in
+                    slotView(content.rows[row], index: index, column: column)
                 }
-                .frame(height: 5)
+
+                Text(content.more > 0 ? "+\(content.more)" : " ")
+                    .font(.system(size: 9, weight: .semibold))
+                    .foregroundStyle(ALIColors.mutedInk)
+                    .frame(height: 10)
             }
-            .padding(.vertical, 3)
-            .frame(maxWidth: .infinity)
+            .opacity(inMonth ? 1 : 0.45)
+            .frame(maxWidth: .infinity, alignment: .top)
+            .padding(.bottom, 2)
+            .background(isSelected ? ALIColors.familyAccent.opacity(0.12) : Color.clear)
+            .overlay(alignment: .top) { Rectangle().fill(ALIColors.outline).frame(height: 1) }
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
 
-    /// Continuous band behind a day that's part of a multi-day event: it
-    /// extends a couple of points into the gap with the neighboring cell
-    /// when that cell belongs to the same event, so the two bands touch
-    /// and look like a single piece. It only has rounded corners at the
-    /// event's actual end (or the end of the row, if the event continues
-    /// into the following week).
+    /// One row of a day: an event label in its color. A multi-day event's
+    /// pieces join across days (title only where it starts or a week starts).
     @ViewBuilder
-    private func rangeBackground(isStart: Bool, isEnd: Bool, isActive: Bool, color: String?) -> some View {
-        if isActive {
-            UnevenRoundedRectangle(
-                topLeadingRadius: isStart ? 15 : 0,
-                bottomLeadingRadius: isStart ? 15 : 0,
-                bottomTrailingRadius: isEnd ? 15 : 0,
-                topTrailingRadius: isEnd ? 15 : 0
-            )
-            .fill(ALIItemColors.color(color, fallback: ALIColors.familyAccent).opacity(0.32))
-            .padding(.leading, isStart ? 0 : -2)
-            .padding(.trailing, isEnd ? 0 : -2)
+    private func slotView(_ slot: DaySlot?, index: Int, column: Int) -> some View {
+        switch slot {
+        case .bar(let bar):
+            let isStart = index == bar.first || column == 0
+            let isEnd = index == bar.last || column == 6
+            label(isStart ? bar.title : "", color: bar.color, roundLeading: isStart, roundTrailing: isEnd)
+                .padding(.leading, index == bar.first ? 2 : 0)
+                .padding(.trailing, index == bar.last ? 2 : 0)
+        case .single(let title, let color):
+            label(title, color: color, roundLeading: true, roundTrailing: true)
+                .padding(.horizontal, 2)
+        case nil:
+            Color.clear.frame(height: 14)
         }
+    }
+
+    private func label(_ title: String, color: Color, roundLeading: Bool, roundTrailing: Bool) -> some View {
+        HStack(spacing: 0) {
+            if roundLeading {
+                Rectangle().fill(color).frame(width: 2)
+            }
+            Text(title)
+                .font(.system(size: 9, weight: .semibold))
+                .foregroundStyle(ALIColors.onAccent)
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .padding(.leading, 3)
+            Spacer(minLength: 0)
+        }
+        .frame(height: 14)
+        .background(ALIItemColors.soft(color, 0.4))
+        .clipShape(UnevenRoundedRectangle(
+            topLeadingRadius: roundLeading ? 4 : 0,
+            bottomLeadingRadius: roundLeading ? 4 : 0,
+            bottomTrailingRadius: roundTrailing ? 4 : 0,
+            topTrailingRadius: roundTrailing ? 4 : 0
+        ))
     }
 
     private func shiftMonth(by value: Int) {

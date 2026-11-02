@@ -10,6 +10,7 @@ struct AddFamilyEventSheet: View {
     @EnvironmentObject private var dataSync: AppDataSyncCoordinator
     @EnvironmentObject private var familySession: FamilySession
     @Query(sort: \FamilyMember.createdAt) private var members: [FamilyMember]
+    @Query private var categories: [EventCategory]
 
     let eventToEdit: FamilyEvent?
     var defaultDay: Date? = nil
@@ -17,27 +18,28 @@ struct AddFamilyEventSheet: View {
 
     @State private var title = ""
     @State private var note = ""
-    @State private var emoji = ALIIcon.party
+    @State private var categoryID: UUID?
     @State private var startDate = Date()
     @State private var endDate = Date().addingTimeInterval(3600)
+    /// The end is optional: hidden until the user adds it (then 1 h after
+    /// the start, or the same day for all-day events).
+    @State private var hasEnd = false
     @State private var forEveryone = true
     @State private var isAllDay = false
     @State private var selectedMemberIDs: Set<UUID> = []
     @State private var repeats = false
     @State private var repeatEvery = 1
     @State private var repeatUnit: FamilyEventRepeatUnit = .week
-    @State private var color: String?
     @State private var hasUntil = false
     @State private var repeatUntil = Calendar.current.date(byAdding: .month, value: 1, to: .now) ?? .now
     @State private var alertOffsets: [Int] = ALIAlerts.defaultOffsets(isEvent: true, isAllDay: false)
 
-    private static let emojiOptions = [
-        ALIIcon.party, ALIIcon.cake, ALIIcon.plane, ALIIcon.beach, ALIIcon.xmas,
-        ALIIcon.health, ALIIcon.sport, ALIIcon.graduation, ALIIcon.heart, ALIIcon.calendar,
-    ]
 
     private var isEditing: Bool { eventToEdit != nil }
-    private var isValid: Bool { !title.trimmed.isEmpty && endDate >= minEndDate && (forEveryone || !selectedMemberIDs.isEmpty) }
+    private var isValid: Bool { !title.trimmed.isEmpty && (!hasEnd || endDate >= minEndDate) && (forEveryone || !selectedMemberIDs.isEmpty) }
+
+    /// End used when the user didn't add one.
+    private var defaultEnd: Date { isAllDay ? startDate : startDate.addingTimeInterval(3600) }
 
     var body: some View {
         trackedBody.trackScreen("calendar_event_editor")
@@ -64,8 +66,7 @@ struct AddFamilyEventSheet: View {
                     ALITextField(placeholder: "Note (optional)", text: $note)
 
                     attendeesCard
-                    emojiCard
-                    ALIColorPickerCard(selection: $color, enabled: canEdit)
+                    EventCategoryPickerCard(selection: $categoryID, enabled: canEdit)
                     datesCard
                     ALIAlertsCard(offsets: $alertOffsets, isAllDay: isAllDay, accent: ALIColors.familyAccent, enabled: canEdit)
 
@@ -148,34 +149,6 @@ struct AddFamilyEventSheet: View {
                 )
         }
         .buttonStyle(.plain)
-    }
-
-    private var emojiCard: some View {
-        ALICard {
-            VStack(alignment: .leading, spacing: 14) {
-                Text("Icon")
-                    .font(ALITypography.labelLarge)
-                    .foregroundStyle(ALIColors.mutedInk)
-
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 44))], spacing: 8) {
-                    ForEach(Self.emojiOptions, id: \.self) { option in
-                        let isSelected = emoji == option
-                        Button {
-                            emoji = option
-                        } label: {
-                            ALIIconView(icon: option, size: 20)
-                                .frame(width: 44, height: 44)
-                                .background(isSelected ? ALIColors.familyAccent.opacity(0.3) : ALIColors.surfaceVariant)
-                                .clipShape(Circle())
-                                .overlay(
-                                    Circle().stroke(isSelected ? ALIColors.familyAccent : .clear, lineWidth: 1.5)
-                                )
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-            }
-        }
     }
 
     private var datesCard: some View {
@@ -266,17 +239,44 @@ struct AddFamilyEventSheet: View {
                 // Repetitions last a single day: only the end time is chosen
                 // (nothing for all-day ones); the series end goes below.
                 if !(repeats && isAllDay) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Ends")
-                            .font(ALITypography.bodyMedium)
-                            .foregroundStyle(ALIColors.ink)
-                        DatePicker("", selection: $endDate, in: minEndDate..., displayedComponents: repeats ? [.hourAndMinute] : pickerComponents)
-                            .datePickerStyle(.compact)
-                            .labelsHidden()
+                    if hasEnd {
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack {
+                                Text("Ends")
+                                    .font(ALITypography.bodyMedium)
+                                    .foregroundStyle(ALIColors.ink)
+                                Spacer()
+                                Button {
+                                    withAnimation { hasEnd = false }
+                                } label: {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .font(.system(size: 18))
+                                        .foregroundStyle(ALIColors.mutedInk.opacity(0.6))
+                                }
+                                .buttonStyle(.plain)
+                                .disabled(!canEdit)
+                                .accessibilityLabel(Text("Remove end"))
+                            }
+                            DatePicker("", selection: $endDate, in: minEndDate..., displayedComponents: repeats ? [.hourAndMinute] : pickerComponents)
+                                .datePickerStyle(.compact)
+                                .labelsHidden()
+                        }
+                    } else {
+                        Button {
+                            endDate = defaultEnd
+                            withAnimation { hasEnd = true }
+                            Track.event("calendar_event_add_end")
+                        } label: {
+                            Label("Add end", systemImage: "plus.circle.fill")
+                                .font(ALITypography.bodyMedium.weight(.semibold))
+                                .foregroundStyle(ALIColors.ink)
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(!canEdit)
                     }
                 }
 
-                if !isAllDay && endDate < startDate {
+                if hasEnd && !isAllDay && endDate < startDate {
                     Text("The end date can't be before the start date.")
                         .font(ALITypography.labelLarge)
                         .foregroundStyle(ALIColors.error)
@@ -316,16 +316,19 @@ struct AddFamilyEventSheet: View {
         if let event = eventToEdit {
             title = event.title
             note = event.note ?? ""
-            emoji = ALIIcon.token(for: event.emoji, fallback: ALIIcon.calendar)
+            if let familyID = familySession.familyID { categoryID = event.resolvedCategoryID(familyID: familyID) }
             startDate = event.startDate
             endDate = event.endDate
+            // Show the end only if it isn't the default one (1 h / same day).
+            hasEnd = event.isAllDay
+                ? !Calendar.current.isDate(event.startDate, inSameDayAs: event.endDate)
+                : abs(event.endDate.timeIntervalSince(event.startDate) - 3600) > 60
             forEveryone = event.forEveryone
             selectedMemberIDs = Set(event.memberIDs)
             isAllDay = event.isAllDay
             repeats = event.isRepeating
             repeatEvery = max(event.repeatInterval, 1)
             repeatUnit = event.repeatUnitValue
-            color = event.color
             hasUntil = event.repeatUntil != nil
             if let until = event.repeatUntil { repeatUntil = until }
             alertOffsets = event.effectiveAlertOffsets
@@ -339,6 +342,7 @@ struct AddFamilyEventSheet: View {
     private func save() {
         let trimmedTitle = title.trimmed
         guard isValid else { return }
+        let end = hasEnd ? endDate : defaultEnd
         let trimmedNote = note.trimmed
         let memberIDs = forEveryone ? [] : Array(selectedMemberIDs)
         let wasEditing = isEditing
@@ -346,28 +350,35 @@ struct AddFamilyEventSheet: View {
         let calendar = Calendar.current
         let finalStart = isAllDay ? calendar.startOfDay(for: startDate) : startDate
         var finalEnd = isAllDay
-            ? calendar.startOfDay(for: max(endDate, startDate)).addingTimeInterval(86_399)
-            : endDate
+            ? calendar.startOfDay(for: max(end, startDate)).addingTimeInterval(86_399)
+            : end
         if repeats {
             // A repetition lasts a single day: same day as the start.
             if isAllDay {
                 finalEnd = calendar.startOfDay(for: startDate).addingTimeInterval(86_399)
             } else {
-                let t = calendar.dateComponents([.hour, .minute], from: endDate)
+                let t = calendar.dateComponents([.hour, .minute], from: end)
                 let sameDay = calendar.date(bySettingHour: t.hour ?? 0, minute: t.minute ?? 0, second: 0, of: finalStart) ?? finalStart
                 finalEnd = sameDay > finalStart ? sameDay : finalStart.addingTimeInterval(3600)
             }
         }
         let finalUntil: Date? = repeats && hasUntil ? calendar.startOfDay(for: max(repeatUntil, finalStart)) : nil
+        // The event takes its category's color (and, for older app versions,
+        // its icon). Without a category: default color, and the "none" mark.
+        let category = categories.first { $0.id == categoryID }
+        let chosenID = category?.id
+        let color = category?.color
+        let emoji = category.map { EventCategory.icon(forDefaultKey: $0.defaultKey) } ?? EventCategory.noneIcon
+
         Track.event(wasEditing ? "calendar_event_edited" : "calendar_event_new", [
-            "emoji": emoji,
+            "category": category.map { $0.defaultKey ?? "custom" } ?? "none",
             "has_note": !trimmedNote.isEmpty,
             "for_everyone": forEveryone,
             "attendees": memberIDs.count,
             "all_day": isAllDay,
             "repeat": repeats ? "\(repeatEvery)_\(repeatUnit.rawValue)" : "none",
-            "multi_day": !Calendar.current.isDate(startDate, inSameDayAs: endDate),
-            "duration_hours": Int(endDate.timeIntervalSince(startDate) / 3600),
+            "multi_day": !Calendar.current.isDate(startDate, inSameDayAs: end),
+            "duration_hours": Int(end.timeIntervalSince(startDate) / 3600),
             "days_ahead": Calendar.current.dateComponents([.day], from: .now, to: startDate).day ?? 0,
             "alerts": alertOffsets.count
         ])
@@ -385,6 +396,7 @@ struct AddFamilyEventSheet: View {
             existing.repeatInterval = repeats ? repeatEvery : 0
             existing.repeatUnit = repeatUnit.rawValue
             existing.color = color
+            existing.categoryID = chosenID
             existing.repeatUntil = finalUntil
             existing.alertOffsets = alertOffsets
             event = existing
@@ -404,7 +416,8 @@ struct AddFamilyEventSheet: View {
                 repeatUnit: repeatUnit.rawValue,
                 color: color,
                 repeatUntil: finalUntil,
-                alertOffsets: alertOffsets
+                alertOffsets: alertOffsets,
+                categoryID: chosenID
             )
             modelContext.insert(event)
         }

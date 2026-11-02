@@ -186,14 +186,16 @@ struct HouseTasksCalendarView: View {
             withAnimation(.easeInOut(duration: 0.15)) { selectedDay = day }
         } label: {
             VStack(spacing: 4) {
+                // Colored backgrounds are the same in light and dark mode: dark number on top.
+                let onColor = isSelected || !dayLogs.isEmpty
                 Text("\(calendar.component(.day, from: day))")
                     .font(ALITypography.bodyMedium)
-                    .foregroundStyle(inMonth ? ALIColors.ink : ALIColors.mutedInk.opacity(0.4))
+                    .foregroundStyle(!inMonth ? ALIColors.mutedInk.opacity(0.4) : (onColor ? ALIColors.onAccent : ALIColors.ink))
                     .frame(width: 30, height: 30)
                     .background(
                         isSelected
                             ? ALIColors.houseTasksAccent
-                            : (dayLogs.isEmpty ? Color.clear : ALIColors.calendarActivity.opacity(0.55))
+                            : (dayLogs.isEmpty ? Color.clear : ALIItemColors.soft(ALIColors.calendarActivity, 0.55))
                     )
                     .clipShape(Circle())
                     .overlay(

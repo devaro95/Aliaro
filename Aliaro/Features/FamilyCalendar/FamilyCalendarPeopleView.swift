@@ -249,13 +249,13 @@ struct FamilyCalendarPeopleView: View {
     private func columnHeader(_ column: Column) -> some View {
         VStack(spacing: 4) {
             ZStack {
-                Circle().fill(column.color.opacity(0.35))
+                Circle().fill(ALIItemColors.soft(column.color, 0.5))
                 if let emoji = column.emoji {
                     ALIIconView(icon: emoji, size: 16, fallback: ALIIcon.user)
                 } else {
                     Image(systemName: "person.3.fill")
                         .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(ALIColors.ink)
+                        .foregroundStyle(ALIColors.onAccent)
                 }
             }
             .frame(width: 28, height: 28)
@@ -367,12 +367,12 @@ struct FamilyCalendarPeopleView: View {
                 VStack(alignment: .leading, spacing: 1) {
                     Text(event.title)
                         .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(ALIColors.ink)
+                        .foregroundStyle(ALIColors.onAccent)
                         .lineLimit(height > 40 ? 2 : 1)
                     if height > 36 {
                         Text(time)
                             .font(.system(size: 9, weight: .medium).monospacedDigit())
-                            .foregroundStyle(ALIColors.mutedInk)
+                            .foregroundStyle(ALIColors.onAccent.opacity(0.65))
                             .lineLimit(1)
                     }
                 }
@@ -381,7 +381,7 @@ struct FamilyCalendarPeopleView: View {
             .padding(.vertical, 3)
             .padding(.trailing, 3)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .background(tint.opacity(0.22))
+            .background(ALIItemColors.soft(tint, 0.3))
             .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
         }
     }

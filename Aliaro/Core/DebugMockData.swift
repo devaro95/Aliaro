@@ -114,6 +114,39 @@ enum DebugMockData {
             track(FamilyEvent(title: title, startDate: start, endDate: end, emoji: emoji, createdByID: creator?.id, createdByName: creator?.name))
         }
 
+        // Days with 1…8 short events in different colors, to see the event
+        // "pie" ring on the month calendar (one slice per event).
+        let pieTitles = ["Swimming", "Piano class", "Groceries", "Vet", "Football", "Haircut", "Call grandma", "Movie night"]
+        let pieIcons = [ALIIcon.sport, ALIIcon.school, ALIIcon.cart, ALIIcon.pet, ALIIcon.sport, ALIIcon.heart, ALIIcon.user, ALIIcon.film]
+        // Days without the events above, so each one shows exactly `count` slices.
+        let pieDays = [2, 4, 5, 7, 8, 9, 12, 13]
+        for count in 1...8 {
+            let baseDay = calendar.date(byAdding: .day, value: pieDays[count - 1], to: calendar.startOfDay(for: .now)) ?? .now
+            let colors = ALIItemColors.palette.shuffled()
+            for index in 0..<count {
+                let start = calendar.date(byAdding: .hour, value: 8 + index * 2, to: baseDay) ?? baseDay
+                let end = calendar.date(byAdding: .hour, value: 1, to: start) ?? start
+                let creator = members.randomElement()
+                track(FamilyEvent(
+                    title: pieTitles[index], startDate: start, endDate: end, emoji: pieIcons[index],
+                    createdByID: creator?.id, createdByName: creator?.name, color: colors[index]
+                ))
+            }
+        }
+
+        // Overlapping multi-day events (lanes under the numbers on the month view).
+        let spans: [(String, Int, Int, String)] = [
+            ("Summer camp", 15, 5, "5DADE2"), ("Grandparents visit", 17, 4, "FFC49B"),
+            ("School trip", 18, 2, "A78BFA"), ("Conference", 19, 3, "6BCB77"),
+        ]
+        for (title, daysFromNow, days, color) in spans {
+            let start = calendar.date(byAdding: .day, value: daysFromNow, to: calendar.startOfDay(for: .now)) ?? .now
+            let end = (calendar.date(byAdding: .day, value: days, to: start) ?? start).addingTimeInterval(-1)
+            let creator = members.randomElement()
+            track(FamilyEvent(title: title, startDate: start, endDate: end, emoji: ALIIcon.plane,
+                              createdByID: creator?.id, createdByName: creator?.name, isAllDay: true, color: color))
+        }
+
         // Reminders.
         let reminderDefs: [(String, Int)] = [("Take out the recycling", 1), ("Water the plants", 2), ("Pay the rent", 5)]
         for (title, daysFromNow) in reminderDefs {
