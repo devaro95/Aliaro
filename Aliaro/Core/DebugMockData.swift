@@ -147,6 +147,34 @@ enum DebugMockData {
                               createdByID: creator?.id, createdByName: creator?.name, isAllDay: true, color: color))
         }
 
+        // A busy day (11 November) for one person: 7 events, several at the
+        // same time and one all-day, to see the "by person" view crowded.
+        if let busyDay = calendar.date(from: DateComponents(year: calendar.component(.year, from: .now), month: 11, day: 11)) {
+            let person = members.first(where: \.isCurrentDevice) ?? members.first
+            let busy: [(String, Int, Int, Int, String?)] = [
+                // title, start hour, start minute, duration (minutes; 0 = all day), color
+                ("Day off", 0, 0, 0, "4ECDC4"),
+                ("Gym", 8, 0, 60, "F8B259"),
+                ("Dentist", 9, 30, 45, "8FD9C4"),
+                ("Call with the bank", 9, 45, 30, "5DADE2"),
+                ("Lunch with Ana", 13, 30, 90, "FF8FA3"),
+                ("Pick up the kids", 17, 0, 30, "A78BFA"),
+                ("Piano class", 17, 15, 60, "D291BC"),
+                ("Dinner out", 21, 0, 120, "FFC49B"),
+            ]
+            for (title, hour, minute, duration, color) in busy {
+                let allDay = duration == 0
+                let start = allDay ? busyDay : (calendar.date(bySettingHour: hour, minute: minute, second: 0, of: busyDay) ?? busyDay)
+                let end = allDay ? busyDay.addingTimeInterval(86_399) : start.addingTimeInterval(TimeInterval(duration * 60))
+                track(FamilyEvent(
+                    title: title, startDate: start, endDate: end, emoji: ALIIcon.calendar,
+                    createdByID: person?.id, createdByName: person?.name,
+                    forEveryone: person == nil, memberIDs: person.map { [$0.id] } ?? [],
+                    isAllDay: allDay, color: color
+                ))
+            }
+        }
+
         // Reminders.
         let reminderDefs: [(String, Int)] = [("Take out the recycling", 1), ("Water the plants", 2), ("Pay the rent", 5)]
         for (title, daysFromNow) in reminderDefs {
