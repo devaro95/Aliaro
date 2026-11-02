@@ -64,6 +64,8 @@ struct RemoteGroceryItem: FamilySynced {
     var family_id: UUID
     var name: String
     var created_at: Date
+    /// List it belongs to (nil = old product, from before lists had their own).
+    var list_id: UUID?
 }
 
 struct RemoteShoppingList: FamilySynced {
@@ -73,6 +75,8 @@ struct RemoteShoppingList: FamilySynced {
     var name: String
     var position: Int
     var created_at: Date
+    /// Set = private list, only this member sees it (RLS in Supabase).
+    var owner_member_id: UUID?
 }
 
 struct RemoteShoppingListEntry: FamilySynced {
@@ -85,6 +89,22 @@ struct RemoteShoppingListEntry: FamilySynced {
     var is_checked: Bool
     var added_at: Date
     var checked_at: Date?
+    var quantity: String?
+
+    /// Explicit nulls so removing the quantity (or unchecking) also clears
+    /// it in Supabase (the synthesized encoder would just omit them).
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(id, forKey: .id)
+        try c.encode(family_id, forKey: .family_id)
+        try c.encode(item_id, forKey: .item_id)
+        try c.encode(list_id, forKey: .list_id)
+        try c.encode(name, forKey: .name)
+        try c.encode(is_checked, forKey: .is_checked)
+        try c.encode(added_at, forKey: .added_at)
+        try c.encode(checked_at, forKey: .checked_at)
+        try c.encode(quantity, forKey: .quantity)
+    }
 }
 
 struct RemoteHouseTask: FamilySynced {
@@ -777,13 +797,14 @@ final class AppDataSyncCoordinator: ObservableObject {
         let descriptor = FetchDescriptor<GroceryItem>(predicate: #Predicate { $0.id == remote.id })
         if let existing = try? modelContext.fetch(descriptor).first {
             existing.name = remote.name
+            existing.listID = remote.list_id
         } else {
-            modelContext.insert(GroceryItem(id: remote.id, name: remote.name, createdAt: remote.created_at))
+            modelContext.insert(GroceryItem(id: remote.id, name: remote.name, listID: remote.list_id, createdAt: remote.created_at))
         }
     }
 
     func pushGroceryItem(_ item: GroceryItem, familyID: UUID) {
-        let record = RemoteGroceryItem(id: item.id, family_id: familyID, name: item.name, created_at: item.createdAt)
+        let record = RemoteGroceryItem(id: item.id, family_id: familyID, name: item.name, created_at: item.createdAt, list_id: item.listID)
         Task { try? await groceryItems.push(record) }
     }
 
@@ -818,13 +839,20 @@ final class AppDataSyncCoordinator: ObservableObject {
         if let existing = try? modelContext.fetch(descriptor).first {
             existing.name = remote.name
             existing.position = remote.position
+            existing.ownerMemberID = remote.owner_member_id
         } else {
-            modelContext.insert(ShoppingList(id: remote.id, name: remote.name, position: remote.position, createdAt: remote.created_at))
+            modelContext.insert(ShoppingList(
+                id: remote.id, name: remote.name, position: remote.position,
+                ownerMemberID: remote.owner_member_id, createdAt: remote.created_at
+            ))
         }
     }
 
     func pushShoppingList(_ list: ShoppingList, familyID: UUID) {
-        let record = RemoteShoppingList(id: list.id, family_id: familyID, name: list.name, position: list.position, created_at: list.createdAt)
+        let record = RemoteShoppingList(
+            id: list.id, family_id: familyID, name: list.name, position: list.position,
+            created_at: list.createdAt, owner_member_id: list.ownerMemberID
+        )
         Task { try? await shoppingLists.push(record) }
     }
 
@@ -863,10 +891,12 @@ final class AppDataSyncCoordinator: ObservableObject {
             existing.isChecked = remote.is_checked
             existing.addedAt = remote.added_at
             existing.checkedAt = remote.checked_at
+            existing.quantity = remote.quantity
         } else {
             modelContext.insert(ShoppingListEntry(
                 id: remote.id, itemID: remote.item_id, listID: remote.list_id, name: remote.name,
-                isChecked: remote.is_checked, addedAt: remote.added_at, checkedAt: remote.checked_at
+                isChecked: remote.is_checked, addedAt: remote.added_at, checkedAt: remote.checked_at,
+                quantity: remote.quantity
             ))
         }
     }
@@ -874,7 +904,8 @@ final class AppDataSyncCoordinator: ObservableObject {
     func pushShoppingListEntry(_ entry: ShoppingListEntry, familyID: UUID) {
         let record = RemoteShoppingListEntry(
             id: entry.id, family_id: familyID, item_id: entry.itemID, list_id: entry.listID, name: entry.name,
-            is_checked: entry.isChecked, added_at: entry.addedAt, checked_at: entry.checkedAt
+            is_checked: entry.isChecked, added_at: entry.addedAt, checked_at: entry.checkedAt,
+            quantity: entry.quantity
         )
         Task { try? await shoppingListEntries.push(record) }
     }

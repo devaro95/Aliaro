@@ -114,6 +114,7 @@ final class FamilyService: ObservableObject {
         async let minimumWait: Void = Task.sleep(for: Self.minimumCreatingDuration)
         session.setMembership(familyID: response.familyId, memberID: response.memberId, familyName: response.familyName)
         session.setDisabledTabs([]) // a brand-new group starts with every tab on
+        WhatsNew.shared.markSeen() // new to the app: nothing "new" to show
         PremiumManager.shared.syncFamilyPremiumStatus()
         upsertLocalMember(id: response.memberId, name: myName, isCurrentDevice: true, isCreator: true, modelContext: modelContext)
         // A newly created group has nothing to sync yet, but we start
@@ -230,6 +231,7 @@ final class FamilyService: ObservableObject {
         session.setMembership(familyID: response.familyId, memberID: response.memberId, familyName: response.familyName)
         PremiumManager.shared.syncFamilyPremiumStatus()
         upsertLocalMember(id: response.memberId, name: myName, isCurrentDevice: true, isCreator: false, modelContext: modelContext)
+        WhatsNew.shared.markSeen() // new to the app: nothing "new" to show
         await refreshMembers(modelContext: modelContext)
         // Joining an existing group inherits its configuration, same as
         // menu/calendar/etc: fetch which tabs the admin already hid.

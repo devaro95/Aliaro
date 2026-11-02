@@ -15,6 +15,8 @@ final class ShoppingListEntry {
     var isChecked: Bool
     var addedAt: Date
     var checkedAt: Date?
+    /// Optional free-text amount ("2", "1 kg", "3 packs").
+    var quantity: String?
 
     init(
         id: UUID = UUID(),
@@ -23,7 +25,8 @@ final class ShoppingListEntry {
         name: String,
         isChecked: Bool = false,
         addedAt: Date = .now,
-        checkedAt: Date? = nil
+        checkedAt: Date? = nil,
+        quantity: String? = nil
     ) {
         self.id = id
         self.itemID = itemID
@@ -32,5 +35,6 @@ final class ShoppingListEntry {
         self.isChecked = isChecked
         self.addedAt = addedAt
         self.checkedAt = checkedAt
+        self.quantity = quantity
     }
 }
