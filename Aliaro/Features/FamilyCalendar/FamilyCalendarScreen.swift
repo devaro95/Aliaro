@@ -26,6 +26,10 @@ struct FamilyCalendarScreen: View {
     @State private var selectedDay: Date? = Calendar.current.startOfDay(for: .now)
     @State private var showAddSheet = false
     @State private var selectedEvent: FamilyEvent?
+    /// Event tapped in the "by person" view: its detail first (then edit/delete).
+    @State private var detailEvent: FamilyEvent?
+    /// Edit or delete chosen from the detail, applied once it has closed.
+    @State private var afterDetail: (() -> Void)?
     /// The tapped occurrence (for repeating events, a display copy with its own dates).
     @State private var eventPendingDelete: FamilyEvent?
     @State private var viewMode: ViewMode = .month
@@ -181,7 +185,8 @@ struct FamilyCalendarScreen: View {
                         .aliPremiumPreview(true)
                     } else {
                         FamilyCalendarPeopleView(events: events, members: members, selectedDay: $selectedDay) { event in
-                            selectedEvent = original(event)
+                            Track.event("calendar_event_detail_open", ["source": "people_view"])
+                            detailEvent = event
                         }
                     }
                 }
@@ -207,6 +212,23 @@ struct FamilyCalendarScreen: View {
         }
         .sheet(item: $selectedEvent) { event in
             AddFamilyEventSheet(eventToEdit: event, canEdit: canEdit)
+        }
+        .sheet(item: $detailEvent, onDismiss: {
+            // Open the editor / delete dialog only once the detail is gone.
+            afterDetail?()
+            afterDetail = nil
+        }) { event in
+            FamilyEventDetailSheet(
+                event: event, canEdit: canEdit, canDelete: canDelete,
+                onEdit: {
+                    afterDetail = { selectedEvent = original(event) }
+                    detailEvent = nil
+                },
+                onDelete: {
+                    afterDetail = { eventPendingDelete = event }
+                    detailEvent = nil
+                }
+            )
         }
         .sheet(isPresented: $showWhatsNew) {
             ALIWhatsNewSheet(

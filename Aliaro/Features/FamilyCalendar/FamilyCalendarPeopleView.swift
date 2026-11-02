@@ -20,6 +20,9 @@ struct FamilyCalendarPeopleView: View {
     private let hourHeight: CGFloat = 52
     private let gutterWidth: CGFloat = 40
     private let minColumnWidth: CGFloat = 92
+    /// Overlapping events of a person never get narrower than this: their
+    /// column widens instead (the view scrolls sideways), so titles stay readable.
+    private let minLaneWidth: CGFloat = 88
     private let headerHeight: CGFloat = 56
 
     private var calendar: Calendar { Calendar.current }
@@ -122,6 +125,13 @@ struct FamilyCalendarPeopleView: View {
         }
         flush()
         return result
+    }
+
+    /// Width of a person's column: the shared width, or more if they have
+    /// several events at the same time (one readable lane each).
+    private func width(for column: Column) -> CGFloat {
+        let lanes = layout(dayEvents.filter { isFor($0, column) }).map(\.lanes).max() ?? 1
+        return max(columnWidth, CGFloat(lanes) * minLaneWidth + 6)
     }
 
     private var columnWidth: CGFloat {
@@ -233,7 +243,7 @@ struct FamilyCalendarPeopleView: View {
                     if hasAllDay { allDayCell(column) }
                     timeColumn(column)
                 }
-                .frame(width: columnWidth)
+                .frame(width: width(for: column))
             }
         }
     }
@@ -322,7 +332,8 @@ struct FamilyCalendarPeopleView: View {
     private func timeColumn(_ column: Column) -> some View {
         // Every event of the day, all-day ones included (they span all the hours).
         let items = layout(dayEvents.filter { isFor($0, column) })
-        let laneWidthBase = columnWidth - 6
+        let fullWidth = width(for: column)
+        let laneWidthBase = fullWidth - 6
 
         return ZStack(alignment: .topLeading) {
             // Hour grid lines.
@@ -351,7 +362,7 @@ struct FamilyCalendarPeopleView: View {
                 nowLine
             }
         }
-        .frame(width: columnWidth, height: gridHeight, alignment: .topLeading)
+        .frame(width: fullWidth, height: gridHeight, alignment: .topLeading)
         .clipped()
     }
 
