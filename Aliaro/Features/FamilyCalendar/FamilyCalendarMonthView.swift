@@ -143,9 +143,30 @@ struct FamilyCalendarMonthView: View {
         HStack {
             monthStepButton(systemImage: "chevron.left") { shiftMonth(by: -1) }
             Spacer()
-            Text(monthTitle)
-                .font(ALITypography.titleLarge)
-                .foregroundStyle(ALIColors.ink)
+            // Like the "by person" view: tapping the title goes back to today;
+            // "Go to today" shows when you're elsewhere.
+            let today = calendar.startOfDay(for: .now)
+            let atToday = calendar.isDate(displayedMonth, equalTo: today, toGranularity: .month)
+                && (selectedDay.map { calendar.isDate($0, inSameDayAs: today) } ?? true)
+            Button {
+                Track.event("calendar_go_today", ["screen": "calendar"])
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    displayedMonth = today
+                    selectedDay = today
+                }
+            } label: {
+                VStack(spacing: 2) {
+                    Text(monthTitle)
+                        .font(ALITypography.titleLarge)
+                        .foregroundStyle(ALIColors.ink)
+                    if !atToday {
+                        Text("Go to today")
+                            .font(ALITypography.labelLarge)
+                            .foregroundStyle(ALIColors.mutedInk)
+                    }
+                }
+            }
+            .buttonStyle(.plain)
             Spacer()
             monthStepButton(systemImage: "chevron.right") { shiftMonth(by: 1) }
         }
