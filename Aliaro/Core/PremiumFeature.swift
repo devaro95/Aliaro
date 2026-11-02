@@ -25,7 +25,7 @@ enum PremiumFeature: String, CaseIterable, Identifiable {
     var title: LocalizedStringKey {
         switch self {
         case .historial: return "Group history"
-        case .extraShoppingLists: return "Multiple shopping lists"
+        case .extraShoppingLists: return "Multiple lists"
         case .unlimitedReminders: return "Unlimited reminders"
         case .houseTasksCalendar: return "Tasks calendar view"
         case .familyCalendarPeople: return "Calendar by person"
@@ -73,7 +73,7 @@ enum PremiumFeature: String, CaseIterable, Identifiable {
     var systemImage: String {
         switch self {
         case .historial: return "clock.arrow.circlepath"
-        case .extraShoppingLists: return "cart.fill"
+        case .extraShoppingLists: return "list.bullet.clipboard.fill"
         case .unlimitedReminders: return "bell.fill"
         case .houseTasksCalendar: return "calendar"
         case .familyCalendarPeople: return "person.3.fill"

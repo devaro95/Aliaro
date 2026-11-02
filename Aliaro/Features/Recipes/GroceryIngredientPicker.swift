@@ -1,8 +1,9 @@
 import SwiftUI
 import SwiftData
 
-/// Multi-select list of the shopping list catalog (`GroceryItem`) to add
-/// them as recipe ingredients in one go. Items already in the recipe are
+/// Multi-select list of the shopping list's products (`GroceryItem` of the
+/// first list — the other lists are pharmacy, gifts…) to add them as
+/// recipe ingredients in one go. Items already in the recipe are
 /// shown as added and can't be picked again.
 struct GroceryIngredientPicker: View {
     @Environment(\.dismiss) private var dismiss
@@ -11,7 +12,13 @@ struct GroceryIngredientPicker: View {
     let alreadyAdded: Set<String>
     let onAdd: ([String]) -> Void
 
-    @Query(sort: \GroceryItem.name) private var catalog: [GroceryItem]
+    @Query(sort: \GroceryItem.name) private var allItems: [GroceryItem]
+    @Query(sort: \ShoppingList.position) private var lists: [ShoppingList]
+
+    private var catalog: [GroceryItem] {
+        guard let first = lists.first?.id else { return allItems }
+        return allItems.filter { $0.belongs(to: first, firstListID: first) }
+    }
 
     @State private var searchText = ""
     @State private var selected: [String] = []

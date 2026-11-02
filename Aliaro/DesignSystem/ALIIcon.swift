@@ -16,13 +16,13 @@ enum ALIIcon {
     static let graduation = "graduation", heart = "heart", calendar = "calendar"
     static let school = "school", user = "user", sparkles = "sparkles", history = "history"
     static let wave = "wave", euro = "euro", search = "search", archive = "archive"
-    static let cleaning = "cleaning", bell = "bell", check = "check"
+    static let cleaning = "cleaning", bell = "bell", check = "check", list = "list"
 
     static let all: Set<String> = [
         tag, cart, home, bulb, car, dining, pill, film, shopping, book, pet, plane, gift,
         laptop, receipt, gym, bookmark, coins, unknown, party, cake, beach, xmas, health,
         doctor, sport, graduation, heart, calendar, school, user, sparkles, history, wave,
-        euro, search, archive, cleaning, bell, check,
+        euro, search, archive, cleaning, bell, check, list,
     ]
 
     /// Emoji stored before the SVG migration → icon token.

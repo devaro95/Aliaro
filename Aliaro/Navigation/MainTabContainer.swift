@@ -8,6 +8,7 @@ import Combine
 /// `NavigationStack`, so new features never need a bar slot.
 struct MainTabContainer: View {
     @EnvironmentObject private var dataSync: AppDataSyncCoordinator
+    @ObservedObject private var whatsNew = WhatsNew.shared
     @EnvironmentObject private var familyService: FamilyService
     @EnvironmentObject private var familySession: FamilySession
     @Environment(\.modelContext) private var modelContext
@@ -111,6 +112,10 @@ struct MainTabContainer: View {
                 "visible_tabs": AppTab.visibleFeatures(excluding: familySession.disabledTabs).count,
             ])
         }
+        .sheet(isPresented: $whatsNew.isPresented) {
+            WhatsNewSheet()
+        }
+        .onAppear { whatsNew.showIfNeeded() }
         .onChange(of: scenePhase) { oldPhase, newPhase in
             // Back from the background: catch up on changes missed while suspended.
             guard oldPhase == .background, newPhase != .background,

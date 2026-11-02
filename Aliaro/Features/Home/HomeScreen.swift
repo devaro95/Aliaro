@@ -688,8 +688,8 @@ struct HomeScreen: View {
             return count == 1 ? String(localized: "1 recipe") : String(localized: "\(count) recipes")
         case .shoppingList:
             let count = shoppingEntries.filter { !$0.isChecked }.count
-            if count == 0 { return String(localized: "Nothing to buy") }
-            return count == 1 ? String(localized: "1 to buy") : String(localized: "\(count) to buy")
+            if count == 0 { return String(localized: "Nothing pending") }
+            return count == 1 ? String(localized: "1 pending") : String(localized: "\(count) pending")
         case .houseTasks:
             let count = houseTasks.count
             if count == 0 { return String(localized: "No tasks yet") }
@@ -808,8 +808,8 @@ struct HomeScreen: View {
         let pending = shoppingEntries.filter { !$0.isChecked }
         guard !pending.isEmpty else { return nil }
         let headline = pending.count == 1
-            ? String(localized: "1 item to buy")
-            : String(localized: "\(pending.count) items to buy")
+            ? String(localized: "1 pending item")
+            : String(localized: "\(pending.count) pending items")
         return HomeSummary(tab: .shoppingList, headline: headline, detail: namesPreview(pending.map(\.name)))
     }
 

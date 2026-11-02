@@ -46,15 +46,8 @@ enum DebugMockData {
             }
         }
 
-        // Grocery catalog + active shopping list.
-        let groceryNames = ["Milk", "Eggs", "Bread", "Tomatoes", "Chicken breast", "Rice", "Olive oil", "Toilet paper"]
-        var groceryItems: [GroceryItem] = []
-        for name in groceryNames {
-            let item = GroceryItem(name: name)
-            track(item)
-            groceryItems.append(item)
-        }
-        let existingLists = (try? modelContext.fetch(FetchDescriptor<ShoppingList>())) ?? []
+        // Lists: products of each list + entries (some with quantity).
+        let existingLists = ((try? modelContext.fetch(FetchDescriptor<ShoppingList>())) ?? []).sorted { $0.position < $1.position }
         let list: ShoppingList
         if let first = existingLists.first {
             list = first
@@ -62,9 +55,29 @@ enum DebugMockData {
             list = ShoppingList(name: "Shopping list", position: 0)
             track(list)
         }
-        // 3 pending (unchecked) + 5 already bought (checked).
-        for (index, item) in groceryItems.enumerated() {
-            track(ShoppingListEntry(itemID: item.id, listID: list.id, name: item.name, isChecked: index >= 3))
+        let nextPosition = (existingLists.map(\.position).max() ?? 0) + 1
+        let pharmacy = ShoppingList(name: "Pharmacy", position: nextPosition)
+        track(pharmacy)
+        let owner = members.first(where: \.isCurrentDevice) ?? members.first
+        let gifts = ShoppingList(name: "Gifts", position: nextPosition + 1, ownerMemberID: owner?.id)
+        track(gifts)
+
+        let mockLists: [(ShoppingList, [(String, String?)], Int)] = [
+            // (list, products with optional quantity, how many are pending)
+            (list, [("Milk", "6"), ("Eggs", "1 dozen"), ("Bread", nil), ("Tomatoes", "1 kg"),
+                    ("Chicken breast", nil), ("Rice", nil), ("Olive oil", nil), ("Shampoo", nil)], 4),
+            (pharmacy, [("Ibuprofen", nil), ("Plasters", "2 boxes"), ("Sun cream", nil), ("Shampoo", nil)], 3),
+            (gifts, [("Book for Ana", nil), ("Headphones", nil)], 2),
+        ]
+        for (target, products, pendingCount) in mockLists {
+            for (index, product) in products.enumerated() {
+                let item = GroceryItem(name: product.0, listID: target.id)
+                track(item)
+                track(ShoppingListEntry(
+                    itemID: item.id, listID: target.id, name: item.name,
+                    isChecked: index >= pendingCount, quantity: product.1
+                ))
+            }
         }
 
         // House tasks + a bit of "done" history.
