@@ -4,7 +4,8 @@ import SwiftUI
 /// column per family member and one row per hour. Each event is drawn in
 /// the column of every person it's for, as a colored line spanning its
 /// duration with the title next to it. Events for everyone appear in
-/// every column. All-day events go in a strip above the hours.
+/// every column. All-day events (and the middle days of multi-day ones)
+/// fill every hour of the day, side by side with whatever else happens.
 struct FamilyCalendarPeopleView: View {
     let events: [FamilyEvent]
     let members: [FamilyMember]
@@ -194,7 +195,8 @@ struct FamilyCalendarPeopleView: View {
     }
 
     private var matrix: some View {
-        let hasAllDay = !allDayEvents.isEmpty
+        // All-day events are drawn across every hour (no separate strip).
+        let hasAllDay = false
         return HStack(alignment: .top, spacing: 0) {
             // Hour gutter (fixed, doesn't scroll sideways).
             VStack(spacing: 0) {
@@ -318,7 +320,8 @@ struct FamilyCalendarPeopleView: View {
     private var gridHeight: CGFloat { CGFloat(hourRange.count - 1) * hourHeight }
 
     private func timeColumn(_ column: Column) -> some View {
-        let items = layout(timedEvents.filter { isFor($0, column) })
+        // Every event of the day, all-day ones included (they span all the hours).
+        let items = layout(dayEvents.filter { isFor($0, column) })
         let laneWidthBase = columnWidth - 6
 
         return ZStack(alignment: .topLeading) {
@@ -334,8 +337,10 @@ struct FamilyCalendarPeopleView: View {
             }
 
             ForEach(items) { item in
-                let top = yOffset(for: item.event.startDate)
-                let height = max(yOffset(for: item.event.endDate) - top, 22)
+                // Clamped to the visible hours (an all-day event fills them all).
+                let top = max(0, isAllDayHere(item.event) ? 0 : yOffset(for: item.event.startDate))
+                let bottom = min(gridHeight, isAllDayHere(item.event) ? gridHeight : yOffset(for: item.event.endDate))
+                let height = max(bottom - top, 22)
                 let laneWidth = laneWidthBase / CGFloat(item.lanes)
                 eventBlock(item.event, column: column, height: height)
                     .frame(width: laneWidth - 2, height: height)
@@ -353,6 +358,7 @@ struct FamilyCalendarPeopleView: View {
     private func eventBlock(_ event: FamilyEvent, column: Column, height: CGFloat) -> some View {
         let tint = color(for: event, in: column)
         let time: String = {
+            if isAllDayHere(event) { return String(localized: "All day") }
             let f = DateFormatter()
             f.dateFormat = "HH:mm"
             return "\(f.string(from: max(event.startDate, day))) – \(f.string(from: min(event.endDate, dayEnd)))"

@@ -146,7 +146,7 @@ struct FamilyCalendarScreen: View {
             Color.clear.frame(height: 0).trackBottomBarScroll(bottomBarScrollTracker)
 
             VStack(spacing: 16) {
-                ALITopBar(title: "Family calendar", accent: ALIColors.familyAccent) {
+                ALITopBar(title: "Calendar", accent: ALIColors.familyAccent) {
                     HStack(spacing: 10) {
                         viewModeToggleButton
                         if canAdd {
