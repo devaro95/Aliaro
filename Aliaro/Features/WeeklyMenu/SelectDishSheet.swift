@@ -91,7 +91,7 @@ struct SelectDishSheet: View {
                             }
                             if !filteredCatalog.isEmpty {
                                 if !filteredRecipes.isEmpty {
-                                    sectionHeader("Dishes").padding(.top, 8)
+                                    sectionHeader("menu_section_dishes").padding(.top, 8)
                                 }
                             }
                             ForEach(filteredCatalog) { dish in
