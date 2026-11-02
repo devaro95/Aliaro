@@ -375,14 +375,17 @@ struct FamilyCalendarScreen: View {
     }
 
     private var upcomingList: some View {
-        // Next occurrence of each event (repeating ones show only the next one).
+        // Next occurrence of each event (repeating ones show only the next one)
+        // that starts within the next 7 days (or is happening now).
+        let limit = calendar.date(byAdding: .day, value: 7, to: calendar.startOfDay(for: .now)) ?? .now
         let upcoming = shownEvents
             .compactMap { event in event.nextOccurrence().map { event.occurrenceCopy(start: $0.start, end: $0.end) } }
+            .filter { $0.startDate < limit }
             .sorted { $0.startDate < $1.startDate }
         return Group {
             if !upcoming.isEmpty {
                 VStack(alignment: .leading, spacing: 10) {
-                    Text("Upcoming events")
+                    Text("Next 7 days")
                         .font(ALITypography.labelLarge)
                         .foregroundStyle(ALIColors.mutedInk)
 
