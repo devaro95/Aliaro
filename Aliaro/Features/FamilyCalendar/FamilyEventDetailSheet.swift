@@ -24,23 +24,24 @@ struct FamilyEventDetailSheet: View {
 
     private var color: Color { ALIItemColors.color(event.color, fallback: EventCategory.noneColor) }
 
-    private var whenLabel: String {
+    /// Start and end as two lines ("Starts …" / "Ends …"); a single line
+    /// for a one-day all-day event.
+    private var whenLines: [String] {
         let calendar = Calendar.current
         let day = DateFormatter()
         day.setLocalizedDateFormatFromTemplate("EEEEdMMMM")
         let time = DateFormatter()
         time.dateFormat = "HH:mm"
-        let sameDay = calendar.isDate(event.startDate, inSameDayAs: event.endDate)
-        if event.isAllDay {
-            return sameDay
-                ? day.string(from: event.startDate).capitalized + " · " + String(localized: "All day")
-                : day.string(from: event.startDate).capitalized + " – " + day.string(from: event.endDate)
+        func full(_ date: Date) -> String {
+            event.isAllDay ? day.string(from: date) : day.string(from: date) + " · " + time.string(from: date)
         }
-        if sameDay {
-            return day.string(from: event.startDate).capitalized + " · " + time.string(from: event.startDate) + " – " + time.string(from: event.endDate)
+        if event.isAllDay && calendar.isDate(event.startDate, inSameDayAs: event.endDate) {
+            return [day.string(from: event.startDate).capitalized + " · " + String(localized: "All day")]
         }
-        return day.string(from: event.startDate).capitalized + " " + time.string(from: event.startDate)
-            + " – " + day.string(from: event.endDate) + " " + time.string(from: event.endDate)
+        return [
+            String(localized: "Starts") + ": " + full(event.startDate),
+            String(localized: "Ends") + ": " + full(event.endDate),
+        ]
     }
 
     var body: some View {
@@ -64,7 +65,20 @@ struct FamilyEventDetailSheet: View {
 
                     ALICard {
                         VStack(alignment: .leading, spacing: 14) {
-                            row("calendar", whenLabel)
+                            HStack(alignment: .top, spacing: 12) {
+                                Image(systemName: "calendar")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundStyle(ALIColors.mutedInk)
+                                    .frame(width: 20)
+                                VStack(alignment: .leading, spacing: 4) {
+                                    ForEach(whenLines, id: \.self) { line in
+                                        Text(line)
+                                            .font(ALITypography.bodyMedium)
+                                            .foregroundStyle(ALIColors.ink)
+                                    }
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            }
                             if event.isRepeating {
                                 row("repeat", event.repeatUnitValue.everyLabel(event.repeatInterval))
                             }
