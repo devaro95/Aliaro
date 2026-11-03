@@ -44,11 +44,12 @@ final class WhatsNew: ObservableObject {
         }
     }
 
+    /// Every dot a different color.
     static let items: [ALIWhatsNewItem] = [
         ALIWhatsNewItem(
             systemImage: "slider.horizontal.3", title: "Home your way",
             text: "With the button next to your avatar, reorder or hide the Home sections and choose which “Today” cards you see.",
-            color: ALIColors.primary
+            color: ALIPalette.periwinkle
         ),
         ALIWhatsNewItem(
             systemImage: "calendar", title: "A new calendar",
@@ -68,7 +69,7 @@ final class WhatsNew: ObservableObject {
         ALIWhatsNewItem(
             systemImage: "bell.badge.fill", title: "Alerts for events and tasks",
             text: "Get up to 2 alerts before an event or a task: 5 minutes, 1 hour, 1 day…",
-            color: ALIColors.familyAccent
+            color: ALIColors.houseTasksAccent
         ),
         ALIWhatsNewItem(
             systemImage: "link", title: "Links in recipes",
