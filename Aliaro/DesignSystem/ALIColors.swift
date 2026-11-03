@@ -63,7 +63,7 @@ enum ALIColors {
     static let economiaAccent = ALIPalette.pistachio
     static let recipesAccent = ALIPalette.apricot
     static let boardAccent = ALIPalette.periwinkle
-    static let wifiAccent = ALIPalette.sky
+    static let wifiAccent = ALIPalette.turquoise
 
     // Distinguish lunch/dinner at a glance within the weekly menu.
     static let mealLunchAccent = ALIPalette.sun
