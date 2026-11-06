@@ -27,10 +27,12 @@ struct AliaroApp: App {
             Reminder.self,
             BoardNote.self,
             FamilyEvent.self,
+            EventCategory.self,
             Expense.self,
             ExpenseCategory.self,
             ActivityLogEntry.self,
-            ExpenseArchive.self
+            ExpenseArchive.self,
+            WifiNetwork.self
         ])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
         do {
@@ -93,7 +95,10 @@ struct AliaroApp: App {
                     ForceUpdatePresenter.update(required: required, debugPreview: preview)
                 }
                 .onChange(of: scenePhase) { _, phase in
-                    if phase == .active { Task { await ForceUpdate.shared.refresh() } }
+                    if phase == .active {
+                        Task { await ForceUpdate.shared.refresh() }
+                        ReviewPrompt.shared.registerSession()
+                    }
                 }
         }
         .modelContainer(modelContainer)

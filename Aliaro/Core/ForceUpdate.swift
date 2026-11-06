@@ -53,6 +53,7 @@ final class ForceUpdate: ObservableObject {
 
     /// Every time the app becomes active: catches a minimum set while it was in the background.
     func refresh() async {
+        await reportVersion()
         do {
             let rows: [RemoteAppCompat] = try await supabase
                 .from("app_compat")
@@ -68,6 +69,23 @@ final class ForceUpdate: ObservableObject {
             required = isRequired
         } catch {
             print("⚠️ Could not fetch app_compat, keeping cached value (\(error))")
+        }
+    }
+
+    /// Tells the server which version this member is running (RPC
+    /// `report_app_version` → `family_members.app_version/app_platform/app_seen_at`),
+    /// so Varo can see who is still on an old version before raising `min_compat`.
+    /// Only with a session; failures are ignored.
+    private func reportVersion() async {
+        guard supabase.auth.currentSession != nil else { return }
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
+        struct Params: Encodable { let p_version: String; let p_platform: String }
+        do {
+            try await supabase
+                .rpc("report_app_version", params: Params(p_version: version, p_platform: "ios"))
+                .execute()
+        } catch {
+            print("⚠️ Could not report app version (\(error))")
         }
     }
 

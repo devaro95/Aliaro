@@ -26,7 +26,8 @@ struct AddRecipeSheet: View {
     }
     @State private var ingredients: [IngredientDraft] = [IngredientDraft()]
     @State private var steps: [TextDraft] = [TextDraft()]
-    @State private var showGroceryPicker = false
+    /// Web links being edited (raw text; normalized on save).
+    @State private var links: [LinkDraft] = []
     /// The vertical TextField reports a Return twice in the same update;
     /// remembers the last split ("<id>|<text>") so it only happens once.
     @State private var lastStepSplit: String?
@@ -45,6 +46,12 @@ struct AddRecipeSheet: View {
 
     private struct TextDraft: Identifiable {
         let id = UUID()
+        var text = ""
+    }
+
+    private struct LinkDraft: Identifiable {
+        let id = UUID()
+        var name = ""
         var text = ""
     }
 
@@ -107,6 +114,7 @@ struct AddRecipeSheet: View {
                     detailsCard
                     ingredientsCard
                     stepsCard
+                    linksCard
 
                     ALIPrimaryButton(
                         text: isEditing ? "Save" : "Create recipe",
@@ -133,11 +141,6 @@ struct AddRecipeSheet: View {
                     title: field == .prep ? "Prep time" : "Cooking time",
                     minutes: field == .prep ? $prepMinutes : $cookMinutes
                 )
-            }
-            .sheet(isPresented: $showGroceryPicker) {
-                GroceryIngredientPicker(alreadyAdded: Set(ingredients.map { $0.name.trimmed.lowercased() })) { names in
-                    addIngredients(names)
-                }
             }
             .onChange(of: photoItem) { _, item in
                 guard let item else { return }
@@ -296,14 +299,8 @@ struct AddRecipeSheet: View {
                     ingredientRow($ingredient)
                 }
 
-                HStack(spacing: 8) {
-                    addRowButton("Add ingredient", systemImage: "plus") {
-                        addIngredient(after: ingredients.last?.id)
-                    }
-                    addRowButton("From shopping list", systemImage: "cart.fill") {
-                        Track.event("recipe_ingredients_from_shopping_tap")
-                        showGroceryPicker = true
-                    }
+                addRowButton("Add ingredient", systemImage: "plus") {
+                    addIngredient(after: ingredients.last?.id)
                 }
                 .padding(.top, 4)
             }
@@ -378,6 +375,96 @@ struct AddRecipeSheet: View {
                 .clipShape(Capsule())
         }
         .buttonStyle(.plain)
+    }
+
+    /// Links to the original recipe, a video…: one field per link.
+    private var linksCard: some View {
+        ALICard {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Links")
+                    .font(ALITypography.labelLarge)
+                    .foregroundStyle(ALIColors.mutedInk)
+
+                if links.isEmpty {
+                    Text("Save where the recipe comes from (a website, a video…) to check it any time.")
+                        .font(ALITypography.labelLarge)
+                        .foregroundStyle(ALIColors.mutedInk)
+                }
+
+                ForEach($links) { $link in
+                    let invalid = !link.text.trimmed.isEmpty && RecipeLink.normalized(link.text) == nil
+                    VStack(spacing: 0) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "textformat")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(ALIColors.mutedInk)
+                                .frame(width: 18)
+                            TextField("Name (optional)", text: $link.name)
+                                .font(ALITypography.bodyMedium.weight(.semibold))
+                                .foregroundStyle(ALIColors.ink)
+                                .onChange(of: link.name) { _, new in
+                                    if new.count > RecipeLink.maxNameLength { link.name = String(new.prefix(RecipeLink.maxNameLength)) }
+                                }
+                            Button {
+                                let id = link.id
+                                withAnimation { links.removeAll { $0.id == id } }
+                            } label: {
+                                Image(systemName: "xmark.circle.fill")
+                                    .font(.system(size: 18))
+                                    .foregroundStyle(ALIColors.mutedInk.opacity(0.6))
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel(Text("Delete"))
+                        }
+                        .frame(minHeight: 40)
+                        Divider().overlay(ALIColors.outline)
+                        HStack(spacing: 8) {
+                            Image(systemName: "link")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(invalid ? ALIColors.error : ALIColors.mutedInk)
+                                .frame(width: 18)
+                            TextField("https://…", text: $link.text)
+                                .keyboardType(.URL)
+                                .textInputAutocapitalization(.never)
+                                .autocorrectionDisabled()
+                                .font(ALITypography.bodyMedium)
+                                .foregroundStyle(ALIColors.ink)
+                        }
+                        .frame(minHeight: 40)
+                    }
+                    .padding(.horizontal, 12)
+                    .background(ALIColors.surfaceVariant)
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                }
+
+                if links.count < RecipeLink.maxCount {
+                    HStack(spacing: 8) {
+                        addRowButton("Add link", systemImage: "plus") {
+                            withAnimation { links.append(LinkDraft()) }
+                        }
+                        // System paste button: no "Allow paste?" prompt.
+                        PasteButton(payloadType: URL.self) { urls in
+                            guard let pasted = urls.first?.absoluteString,
+                                  !links.contains(where: { RecipeLink.normalized($0.text) == pasted }) else { return }
+                            Track.event("recipe_link_paste")
+                            withAnimation {
+                                if let empty = links.firstIndex(where: { $0.text.trimmed.isEmpty }) {
+                                    links[empty].text = pasted
+                                } else {
+                                    links.append(LinkDraft(text: pasted))
+                                }
+                            }
+                        }
+                        .labelStyle(.titleAndIcon)
+                        .buttonBorderShape(.capsule)
+                        .tint(ALIColors.surfaceVariant)
+                        .foregroundStyle(ALIColors.ink)
+                        .controlSize(.small)
+                    }
+                    .padding(.top, 4)
+                }
+            }
+        }
     }
 
     private var stepsCard: some View {
@@ -504,15 +591,6 @@ struct AddRecipeSheet: View {
         }
     }
 
-    /// Adds the picked catalog items as ingredients, filling the empty row first.
-    private func addIngredients(_ names: [String]) {
-        let existing = Set(ingredients.map { $0.name.trimmed.lowercased() })
-        let fresh = names.filter { !existing.contains($0.lowercased()) }
-        guard !fresh.isEmpty else { return }
-        ingredients.removeAll { $0.name.trimmed.isEmpty }
-        ingredients.append(contentsOf: fresh.map { IngredientDraft(name: $0) })
-    }
-
     private func loadIfEditing() {
         guard let recipe = recipeToEdit else { return }
         name = recipe.name
@@ -526,12 +604,20 @@ struct AddRecipeSheet: View {
             .map { String($0).trimmed }
             .filter { !$0.isEmpty }
         steps = savedSteps.isEmpty ? [TextDraft()] : savedSteps.map { TextDraft(text: $0) }
+        links = recipe.links.indices.map { LinkDraft(name: recipe.linkName(at: $0) ?? "", text: recipe.links[$0]) }
         existingPhoto = recipe.image
     }
 
     private func save() {
         let cleanIngredients = ingredients.map(\.ingredient).filter { !$0.name.isEmpty }
         let cleanSteps = steps.map(\.text.trimmed).filter { !$0.isEmpty }.joined(separator: "\n")
+        var cleanLinks: [String] = []
+        var cleanLinkNames: [String] = []
+        for draft in links {
+            guard let link = RecipeLink.normalized(draft.text), !cleanLinks.contains(link) else { continue }
+            cleanLinks.append(link)
+            cleanLinkNames.append(String(draft.name.trimmed.prefix(RecipeLink.maxNameLength)))
+        }
         let familyID = familySession.familyID
         let recipe: Recipe
 
@@ -543,6 +629,8 @@ struct AddRecipeSheet: View {
             existing.cookMinutes = cookMinutes == 0 ? nil : cookMinutes
             existing.ingredients = cleanIngredients
             existing.steps = cleanSteps
+            existing.links = cleanLinks
+            existing.linkNames = cleanLinkNames
             existing.updatedAt = .now
             recipe = existing
         } else {
@@ -556,7 +644,9 @@ struct AddRecipeSheet: View {
                 prepMinutes: prepMinutes == 0 ? nil : prepMinutes,
                 cookMinutes: cookMinutes == 0 ? nil : cookMinutes,
                 createdByID: memberID,
-                createdByName: memberID.flatMap { modelContext.familyMemberName(id: $0) }
+                createdByName: memberID.flatMap { modelContext.familyMemberName(id: $0) },
+                links: cleanLinks,
+                linkNames: cleanLinkNames
             )
             modelContext.insert(recipe)
         }

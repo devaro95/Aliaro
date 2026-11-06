@@ -358,10 +358,13 @@ private struct HouseTaskRow: View {
             Button(action: onOpenDetail) {
                 HStack(spacing: 8) {
                     VStack(alignment: .leading, spacing: 3) {
-                        Text(task.name)
-                            .font(ALITypography.bodyLarge)
-                            .foregroundStyle(isDone ? ALIColors.mutedInk : ALIColors.ink)
-                            .strikethrough(isDone && task.scheduledAt != nil && task.intervalDays == nil, color: ALIColors.mutedInk)
+                        HStack(spacing: 5) {
+                            Text(task.name)
+                                .font(ALITypography.bodyLarge)
+                                .foregroundStyle(isDone ? ALIColors.mutedInk : ALIColors.ink)
+                                .strikethrough(isDone && task.scheduledAt != nil && task.intervalDays == nil, color: ALIColors.mutedInk)
+                            if task.intervalDays != nil { ALIRepeatIcon() }
+                        }
                         HStack(spacing: 6) {
                             Circle().fill(status.color).frame(width: 7, height: 7)
                             Text(statusLabel)

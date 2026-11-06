@@ -488,6 +488,31 @@ struct ALIFeatureTile: View {
     }
 }
 
+/// A feature as an app-style icon with its name below (Home "Icons" style).
+struct ALIFeatureIcon: View {
+    let title: LocalizedStringKey
+    let systemImage: String
+    let accent: Color
+
+    var body: some View {
+        VStack(spacing: 6) {
+            Image(systemName: systemImage)
+                .font(.system(size: 24, weight: .semibold))
+                .foregroundStyle(ALIColors.onAccent)
+                .frame(width: 60, height: 60)
+                .background(accent)
+                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+            Text(title)
+                .font(ALITypography.labelLarge)
+                .foregroundStyle(ALIColors.ink)
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+        }
+        .frame(maxWidth: .infinity)
+        .contentShape(Rectangle())
+    }
+}
+
 /// Round avatar button used on the Home top bar to open People: the
 /// first letter of the member's name, or a generic icon if there's no name.
 struct ALIAvatarButton: View {
@@ -568,6 +593,8 @@ struct ALIWhatsNewItem: Identifiable {
     let systemImage: String
     let title: LocalizedStringKey
     let text: LocalizedStringKey
+    /// Dot color in the timeline style (nil = the sheet's accent).
+    var color: Color? = nil
 }
 
 /// One-off "What's new" sheet: sparkle header, a strip of the item colors,
@@ -577,9 +604,24 @@ struct ALIWhatsNewSheet: View {
     let title: LocalizedStringKey
     let accent: Color
     let items: [ALIWhatsNewItem]
-    let tip: LocalizedStringKey
+    var tip: LocalizedStringKey? = nil
+    /// Title as ready-made `Text` (e.g. with the Aliaro wordmark inlined);
+    /// used instead of `title` when set.
+    var titleText: Text? = nil
+    /// Sparkles badge and "What's new" label above the title. Off = just
+    /// the title, bigger.
+    var showsBadge: Bool = true
+    /// Warm closing line under everything (a heart + the message).
+    var closing: Text? = nil
+    /// Strip of item colors under the title (for color-related news).
+    var showsColors: Bool = true
+    /// Items as a timeline (a dot per item joined by a line) instead of cards.
+    var timeline: Bool = false
 
     @State private var appeared = false
+
+    /// Title size without the badge (also for an inlined wordmark).
+    static let bigTitleSize: CGFloat = 32
 
     private let stripColors = Array(ALIItemColors.palette.enumerated().filter { $0.offset % 3 == 0 }.map(\.element))
 
@@ -587,6 +629,7 @@ struct ALIWhatsNewSheet: View {
         ScrollView {
             VStack(spacing: 24) {
                 VStack(spacing: 14) {
+                    if showsBadge {
                     ZStack {
                         Circle()
                             .fill(LinearGradient(colors: [accent, accent.opacity(0.45)], startPoint: .topLeading, endPoint: .bottomTrailing))
@@ -603,11 +646,15 @@ struct ALIWhatsNewSheet: View {
                         .font(ALITypography.labelLarge)
                         .foregroundStyle(ALIColors.mutedInk)
                         .textCase(.uppercase)
-                    Text(title)
-                        .font(.system(size: 24, weight: .bold, design: .rounded))
+                    }
+                    (titleText ?? Text(title))
+                        .font(.system(size: showsBadge ? 24 : ALIWhatsNewSheet.bigTitleSize, weight: showsBadge ? .bold : .black, design: .rounded))
                         .foregroundStyle(ALIColors.ink)
                         .multilineTextAlignment(.center)
+                        .opacity(appeared || showsBadge ? 1 : 0)
+                        .offset(y: appeared || showsBadge ? 0 : 12)
 
+                    if showsColors {
                     HStack(spacing: 6) {
                         ForEach(Array(stripColors.enumerated()), id: \.offset) { index, hex in
                             Circle()
@@ -617,9 +664,13 @@ struct ALIWhatsNewSheet: View {
                                 .animation(.spring(response: 0.4, dampingFraction: 0.55).delay(0.15 + Double(index) * 0.05), value: appeared)
                         }
                     }
+                    }
                 }
                 .padding(.top, 12)
 
+                if timeline {
+                    timelineList
+                } else {
                 VStack(spacing: 12) {
                     ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
                         ALICard {
@@ -647,21 +698,44 @@ struct ALIWhatsNewSheet: View {
                         .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.25 + Double(index) * 0.1), value: appeared)
                     }
                 }
-
-                HStack(alignment: .top, spacing: 10) {
-                    Image(systemName: "lightbulb.fill")
-                        .foregroundStyle(ALIColors.sun)
-                    Text(tip)
-                        .font(ALITypography.bodyMedium)
-                        .foregroundStyle(ALIColors.ink)
-                        .fixedSize(horizontal: false, vertical: true)
-                    Spacer(minLength: 0)
                 }
-                .padding(14)
-                .background(ALIColors.sun.opacity(0.18))
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                .opacity(appeared ? 1 : 0)
-                .animation(.easeOut(duration: 0.4).delay(0.5), value: appeared)
+
+                if let tip {
+                    HStack(alignment: .top, spacing: 10) {
+                        Image(systemName: "lightbulb.fill")
+                            .foregroundStyle(ALIColors.sun)
+                        Text(tip)
+                            .font(ALITypography.bodyMedium)
+                            .foregroundStyle(ALIColors.ink)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Spacer(minLength: 0)
+                    }
+                    .padding(14)
+                    .background(ALIColors.sun.opacity(0.18))
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .opacity(appeared ? 1 : 0)
+                    .animation(.easeOut(duration: 0.4).delay(0.5), value: appeared)
+                }
+
+                if let closing {
+                    VStack(spacing: 8) {
+                        Image(systemName: "heart.fill")
+                            .font(.system(size: 20, weight: .semibold))
+                            .foregroundStyle(ALIPalette.coral.gradient)
+                            .symbolEffect(.bounce, value: appeared)
+                        closing
+                            .font(.system(size: 15, weight: .medium, design: .rounded))
+                            .italic()
+                            .foregroundStyle(ALIColors.mutedInk)
+                            .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, 12)
+                    .padding(.top, 4)
+                    .opacity(appeared ? 1 : 0)
+                    .animation(.easeOut(duration: 0.5).delay(0.7), value: appeared)
+                }
 
                 ALIPrimaryButton(text: "Got it", accent: accent) { dismiss() }
             }
@@ -673,6 +747,56 @@ struct ALIWhatsNewSheet: View {
         .onAppear {
             withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) { appeared = true }
         }
+    }
+
+    /// One row per item: a colored dot with its icon on the left, joined to
+    /// the next one by a line, and the title and text beside it.
+    private var timelineList: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
+                let isLast = index == items.count - 1
+                let color = item.color ?? accent
+                HStack(alignment: .top, spacing: 16) {
+                    VStack(spacing: 0) {
+                        Image(systemName: item.systemImage)
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundStyle(ALIColors.onAccent)
+                            .frame(width: 38, height: 38)
+                            .background(Circle().fill(color.gradient))
+                            .overlay(Circle().stroke(ALIColors.background, lineWidth: 3))
+                            .shadow(color: color.opacity(0.35), radius: 6, y: 2)
+                            .scaleEffect(appeared ? 1 : 0.3)
+                            .animation(.spring(response: 0.45, dampingFraction: 0.6).delay(0.2 + Double(index) * 0.12), value: appeared)
+                        if !isLast {
+                            LinearGradient(colors: [color.opacity(0.6), (items[index + 1].color ?? accent).opacity(0.6)], startPoint: .top, endPoint: .bottom)
+                                .frame(width: 3)
+                                .frame(maxHeight: .infinity)
+                                .clipShape(Capsule())
+                                .padding(.vertical, 4)
+                                .scaleEffect(x: 1, y: appeared ? 1 : 0, anchor: .top)
+                                .animation(.easeOut(duration: 0.35).delay(0.3 + Double(index) * 0.12), value: appeared)
+                        }
+                    }
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(item.title)
+                            .font(ALITypography.bodyLarge.weight(.semibold))
+                            .foregroundStyle(ALIColors.ink)
+                        Text(item.text)
+                            .font(ALITypography.bodyMedium)
+                            .foregroundStyle(ALIColors.mutedInk)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(.top, 8)
+                    .padding(.bottom, isLast ? 0 : 24)
+                    .opacity(appeared ? 1 : 0)
+                    .offset(x: appeared ? 0 : 16)
+                    .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.25 + Double(index) * 0.12), value: appeared)
+                    Spacer(minLength: 0)
+                }
+                .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(.horizontal, 4)
     }
 }
 

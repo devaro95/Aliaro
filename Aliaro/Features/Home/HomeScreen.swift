@@ -17,6 +17,11 @@ import SwiftData
 /// (`FamilySession.homeFeatureOrder`, stored on this device), not a family
 /// setting; the "Today" carousel follows it too.
 ///
+/// "Customize Home" (slider button next to the avatar, `HomeCustomizeSheet`)
+/// moves the blocks — Today, Board, All features — and hides any of them
+/// but the grid, plus orders/hides the "Today" cards (`HomeLayout`, also
+/// personal and on this device).
+///
 /// Respects `FamilySession.disabledTabs` (hidden features appear nowhere)
 /// and whole-feature premium locks (`AppTab.premiumFeature`): locked
 /// cards show the crown and open the paywall instead of the screen.
@@ -34,6 +39,7 @@ struct HomeScreen: View {
     @Query(sort: \FamilyMember.createdAt) private var members: [FamilyMember]
     @Query private var houseTasks: [HouseTask]
     @Query private var houseTaskLogs: [HouseTaskLog]
+    @Query private var wifiNetworks: [WifiNetwork]
     @Query(sort: \FamilyEvent.startDate) private var events: [FamilyEvent]
     @Query private var mealPlan: [MealPlanEntry]
     @Query(sort: \ShoppingListEntry.addedAt) private var shoppingEntries: [ShoppingListEntry]
@@ -46,6 +52,8 @@ struct HomeScreen: View {
     @Query private var allExpenses: [Expense]
 
     @State private var showPaywall = false
+    @State private var showCustomize = false
+    @ObservedObject private var layout = HomeLayout.shared
     /// Entrance animation, played every time Home is loaded (app launch,
     /// switching back to the Home tab): sections and cards start hidden
     /// and pop in one by one once `entranceRevealed`. Not replayed when
@@ -118,6 +126,20 @@ struct HomeScreen: View {
 
             VStack(alignment: .leading, spacing: 16) {
                 ALITopBar(title: "Home", accent: AppTab.home.accent) {
+                    Button {
+                        Track.event("home_customize_open")
+                        showCustomize = true
+                    } label: {
+                        Image(systemName: "slider.horizontal.3")
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundStyle(ALIColors.ink)
+                            .frame(width: 42, height: 42)
+                            .background(ALIColors.surface)
+                            .clipShape(Circle())
+                            .overlay(Circle().stroke(ALIColors.outline, lineWidth: 1))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(Text("Customize Home"))
                     ALIAvatarButton(name: currentMember?.name) {
                         onOpen(.people)
                     }
@@ -131,37 +153,73 @@ struct HomeScreen: View {
                 .padding(.bottom, -12)
                 .homeEntrance(hidden: isEntranceHidden, revealed: entranceRevealed, step: 0)
 
-                let cards = summaryCards
-                if !cards.isEmpty {
-                    VStack(alignment: .leading, spacing: 16) {
-                        sectionTitle("Today")
-                        VStack(spacing: 10) {
-                            carousel(cards)
-                            carouselDots(cards)
-                        }
-                    }
-                    .homeEntrance(hidden: isEntranceHidden, revealed: entranceRevealed, step: 1)
+                ForEach(Array(shownBlocks.enumerated()), id: \.element) { index, block in
+                    blockView(block)
+                        .homeEntrance(hidden: isEntranceHidden, revealed: entranceRevealed, step: index + 1)
                 }
+            }
+            .padding(.bottom, 100)
+        }
+        .scrollDisabled(draggingTab != nil)
+        .background(ALIColors.background)
+        .sensoryFeedback(.impact(weight: .medium), trigger: draggingTab) { _, new in new != nil }
+        .sensoryFeedback(.selection, trigger: dragOrder)
+        .onDisappear { isReordering = false }
+        .onAppear(perform: startEntranceIfNeeded)
+        .sensoryFeedback(.impact(weight: .light), trigger: entranceRevealed) { _, new in new }
+        .sheet(isPresented: $showPaywall) {
+            PaywallView()
+        }
+        .sheet(isPresented: $showCustomize) {
+            HomeCustomizeSheet(visibleFeatures: visibleFeatures)
+        }
+        .alert("Reset order?", isPresented: $showResetOrder) {
+            Button("Cancel", role: .cancel) {}
+            Button("Reset", role: .destructive, action: resetOrder)
+        } message: {
+            Text("The cards will go back to their original order. This only changes it for you.")
+        }
+    }
 
-                if visibleFeatures.contains(.board) {
-                    Group {
-                        if premium.isLocked(.board) {
-                            VStack(alignment: .leading, spacing: 16) {
-                                sectionTitle("Board")
-                                boardLockedPreview
-                            }
-                        } else if !myBoardNotes.isEmpty {
-                            VStack(alignment: .leading, spacing: 16) {
-                                sectionTitle("Board")
-                                boardSection
-                            }
-                        }
-                    }
-                    .homeEntrance(hidden: isEntranceHidden, revealed: entranceRevealed, step: 2)
+    // MARK: Blocks
+
+    /// Blocks in this member's order, without the hidden ones nor the ones
+    /// that have nothing to show right now.
+    private var shownBlocks: [HomeBlock] {
+        layout.orderedBlocks.filter { block in
+            guard !layout.isHidden(block) else { return false }
+            switch block {
+            case .today: return !summaryCards.isEmpty
+            case .board: return visibleFeatures.contains(.board) && (premium.isLocked(.board) || !myBoardNotes.isEmpty)
+            case .features: return true
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func blockView(_ block: HomeBlock) -> some View {
+        switch block {
+        case .today:
+            let cards = summaryCards
+            VStack(alignment: .leading, spacing: 16) {
+                sectionTitle("Today")
+                VStack(spacing: 10) {
+                    carousel(cards)
+                    carouselDots(cards)
                 }
-
+            }
+        case .board:
+            VStack(alignment: .leading, spacing: 16) {
+                sectionTitle("Board")
+                if premium.isLocked(.board) {
+                    boardLockedPreview
+                } else {
+                    boardSection
+                }
+            }
+        case .features:
+            VStack(alignment: .leading, spacing: 16) {
                 featuresHeader
-                    .homeEntrance(hidden: isEntranceHidden, revealed: entranceRevealed, step: 3)
                 if isReordering {
                     Label {
                         Text("Drag a card by its handle to reorder it. Only you see this order.")
@@ -176,23 +234,6 @@ struct HomeScreen: View {
                 featureGrid
                     .padding(.horizontal, 20)
             }
-            .padding(.bottom, 100)
-        }
-        .scrollDisabled(draggingTab != nil)
-        .background(ALIColors.background)
-        .sensoryFeedback(.impact(weight: .medium), trigger: draggingTab) { _, new in new != nil }
-        .sensoryFeedback(.selection, trigger: dragOrder)
-        .onDisappear { isReordering = false }
-        .onAppear(perform: startEntranceIfNeeded)
-        .sensoryFeedback(.impact(weight: .light), trigger: entranceRevealed) { _, new in new }
-        .sheet(isPresented: $showPaywall) {
-            PaywallView()
-        }
-        .alert("Reset order?", isPresented: $showResetOrder) {
-            Button("Cancel", role: .cancel) {}
-            Button("Reset", role: .destructive, action: resetOrder)
-        } message: {
-            Text("The cards will go back to their original order. This only changes it for you.")
         }
     }
 
@@ -403,6 +444,11 @@ struct HomeScreen: View {
         HStack(alignment: .firstTextBaseline) {
             sectionTitle("All features")
             Spacer()
+            if !isReordering {
+                featureStyleToggle
+                    .padding(.trailing, visibleFeatures.count > 1 ? 0 : 20)
+                    .transition(.opacity)
+            }
             if visibleFeatures.count > 1 {
                 if isReordering {
                     Button {
@@ -442,8 +488,32 @@ struct HomeScreen: View {
         }
     }
 
+    /// Cards ↔ icons, right where the change shows up: one button that
+    /// shows the other view and switches to it on each tap.
+    private var featureStyleToggle: some View {
+        let next: HomeFeatureStyle = layout.featureStyle == .cards ? .icons : .cards
+        return Button {
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) { layout.setFeatureStyle(next) }
+            Track.event("home_feature_style", ["style": next.rawValue, "source": "home"])
+        } label: {
+            Image(systemName: next == .icons ? "square.grid.3x3.fill" : "square.grid.2x2.fill")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(ALIColors.ink)
+                .contentTransition(.symbolEffect(.replace))
+                .frame(width: 34, height: 30)
+                .background(ALIColors.surface, in: Capsule())
+                .overlay(Capsule().stroke(ALIColors.outline, lineWidth: 1))
+        }
+        .buttonStyle(.plain)
+        .padding(.top, 4)
+        .accessibilityLabel(next == .icons ? Text("Show as icons") : Text("Show as cards"))
+        .sensoryFeedback(.selection, trigger: layout.featureStyle)
+    }
+
     private var featureGrid: some View {
-        LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
+        let icons = layout.featureStyle == .icons
+        let columns = Array(repeating: GridItem(.flexible(), spacing: icons ? 8 : 12), count: icons ? 4 : 2)
+        return LazyVGrid(columns: columns, spacing: icons ? 18 : 12) {
             ForEach(displayedFeatures) { tab in
                 featureTile(tab)
                     .homeEntrance(
@@ -470,19 +540,37 @@ struct HomeScreen: View {
                 onOpen(tab)
             }
         } label: {
-            ALIFeatureTile(
-                title: tab.label,
-                systemImage: tab.systemImage,
-                accent: tab.accent,
-                detail: showsCrown(tab) ? nil : tileDetail(for: tab)
-            )
+            if layout.featureStyle == .icons {
+                ALIFeatureIcon(title: tab.label, systemImage: tab.systemImage, accent: tab.accent)
+            } else {
+                ALIFeatureTile(
+                    title: tab.label,
+                    systemImage: tab.systemImage,
+                    accent: tab.accent,
+                    detail: showsCrown(tab) ? nil : tileDetail(for: tab)
+                )
+            }
         }
         .buttonStyle(.plain)
         // The Board opens as a blurred preview when locked, but still
         // gets the crown so it reads as premium from the grid.
         .aliPremiumLockOverlay(showsCrown(tab) && !isReordering)
         .overlay(alignment: .topTrailing) {
-            if isReordering {
+            if isReordering && layout.featureStyle == .icons {
+                // Icons are small: a round grip badge on the corner.
+                Image(systemName: "line.3.horizontal")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(ALIColors.ink)
+                    .frame(width: 24, height: 24)
+                    .background(ALIColors.surface, in: Circle())
+                    .overlay(Circle().stroke(ALIColors.outline, lineWidth: 1))
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
+                    .highPriorityGesture(reorderGesture(for: tab))
+                    .accessibilityLabel(Text("Reorder"))
+                    .offset(x: 8, y: -12)
+                    .transition(.opacity)
+            } else if isReordering {
                 Image(systemName: "line.3.horizontal")
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(isDragging ? ALIColors.ink : ALIColors.mutedInk)
@@ -600,8 +688,8 @@ struct HomeScreen: View {
             return count == 1 ? String(localized: "1 recipe") : String(localized: "\(count) recipes")
         case .shoppingList:
             let count = shoppingEntries.filter { !$0.isChecked }.count
-            if count == 0 { return String(localized: "Nothing to buy") }
-            return count == 1 ? String(localized: "1 to buy") : String(localized: "\(count) to buy")
+            if count == 0 { return String(localized: "Nothing pending") }
+            return count == 1 ? String(localized: "1 pending") : String(localized: "\(count) pending")
         case .houseTasks:
             let count = houseTasks.count
             if count == 0 { return String(localized: "No tasks yet") }
@@ -626,6 +714,10 @@ struct HomeScreen: View {
             let count = myBoardNotes.count
             if count == 0 { return String(localized: "No notes") }
             return count == 1 ? String(localized: "1 note") : String(localized: "\(count) notes")
+        case .wifi:
+            let count = wifiNetworks.count
+            if count == 0 { return String(localized: "Add your Wi-Fi") }
+            return count == 1 ? String(localized: "1 network") : String(localized: "\(count) networks")
         case .home, .people:
             return nil
         }
@@ -634,10 +726,11 @@ struct HomeScreen: View {
     // MARK: Summaries
 
     /// One card per visible, unlocked feature that has something relevant
-    /// today — in the same order as the grid.
+    /// today — in this member's "Today" order (the grid's by default),
+    /// without the cards they switched off in "Customize Home".
     private var summaryCards: [HomeSummary] {
-        visibleFeatures
-            .filter { !isLocked($0) }
+        layout.orderedTodayTabs(featureOrder: visibleFeatures)
+            .filter { !isLocked($0) && !layout.isHidden(todayCard: $0) }
             .compactMap(summary(for:))
     }
 
@@ -649,7 +742,7 @@ struct HomeScreen: View {
         case .shoppingList: return shoppingSummary
         case .reminders: return remindersSummary
         case .economia: return financesSummary
-        case .recipes, .board, .home, .people: return nil
+        case .recipes, .board, .wifi, .home, .people: return nil
         }
     }
 
@@ -715,8 +808,8 @@ struct HomeScreen: View {
         let pending = shoppingEntries.filter { !$0.isChecked }
         guard !pending.isEmpty else { return nil }
         let headline = pending.count == 1
-            ? String(localized: "1 item to buy")
-            : String(localized: "\(pending.count) items to buy")
+            ? String(localized: "1 pending item")
+            : String(localized: "\(pending.count) pending items")
         return HomeSummary(tab: .shoppingList, headline: headline, detail: namesPreview(pending.map(\.name)))
     }
 

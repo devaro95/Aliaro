@@ -41,6 +41,10 @@ struct RemoteRecipe: FamilySynced {
     var updated_at: Date
     var created_by: UUID?
     var created_by_name: String?
+    /// Optional so rows from before the column existed still decode.
+    var links: [String]?
+    /// Names of the links, same order ("" = none). Optional for older rows.
+    var link_names: [String]?
 }
 
 struct RemoteMealPlanEntry: FamilySynced {
@@ -60,6 +64,8 @@ struct RemoteGroceryItem: FamilySynced {
     var family_id: UUID
     var name: String
     var created_at: Date
+    /// List it belongs to (nil = old product, from before lists had their own).
+    var list_id: UUID?
 }
 
 struct RemoteShoppingList: FamilySynced {
@@ -69,6 +75,8 @@ struct RemoteShoppingList: FamilySynced {
     var name: String
     var position: Int
     var created_at: Date
+    /// Set = private list, only this member sees it (RLS in Supabase).
+    var owner_member_id: UUID?
 }
 
 struct RemoteShoppingListEntry: FamilySynced {
@@ -81,6 +89,22 @@ struct RemoteShoppingListEntry: FamilySynced {
     var is_checked: Bool
     var added_at: Date
     var checked_at: Date?
+    var quantity: String?
+
+    /// Explicit nulls so removing the quantity (or unchecking) also clears
+    /// it in Supabase (the synthesized encoder would just omit them).
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(id, forKey: .id)
+        try c.encode(family_id, forKey: .family_id)
+        try c.encode(item_id, forKey: .item_id)
+        try c.encode(list_id, forKey: .list_id)
+        try c.encode(name, forKey: .name)
+        try c.encode(is_checked, forKey: .is_checked)
+        try c.encode(added_at, forKey: .added_at)
+        try c.encode(checked_at, forKey: .checked_at)
+        try c.encode(quantity, forKey: .quantity)
+    }
 }
 
 struct RemoteHouseTask: FamilySynced {
@@ -96,6 +120,8 @@ struct RemoteHouseTask: FamilySynced {
     var created_by_name: String?
     /// Optional so rows from DBs without this column still decode.
     var color: String?
+    /// Seconds before `scheduled_at` (nil = default alert at the time).
+    var alert_offsets: [Int]?
 
     /// Explicit nulls for `interval_days`/`scheduled_at`, so removing the
     /// cadence or the schedule when editing also clears it in Supabase
@@ -112,6 +138,7 @@ struct RemoteHouseTask: FamilySynced {
         try c.encode(created_by, forKey: .created_by)
         try c.encode(created_by_name, forKey: .created_by_name)
         try c.encode(color, forKey: .color)
+        try c.encodeIfPresent(alert_offsets, forKey: .alert_offsets)
     }
 }
 
@@ -149,6 +176,9 @@ struct RemoteFamilyEvent: FamilySynced {
     var color: String?
     var repeat_until: Date?
     var excluded_dates: [String]?
+    /// Seconds before the start (nil = default alert).
+    var alert_offsets: [Int]?
+    var category_id: UUID?
 
     /// Explicit null for `repeat_until`, so removing the end date when
     /// editing also clears it in Supabase (the synthesized encoder omits nils).
@@ -172,7 +202,20 @@ struct RemoteFamilyEvent: FamilySynced {
         try c.encodeIfPresent(color, forKey: .color)
         try c.encode(repeat_until, forKey: .repeat_until)
         try c.encode(excluded_dates ?? [], forKey: .excluded_dates)
+        try c.encodeIfPresent(alert_offsets, forKey: .alert_offsets)
+        try c.encodeIfPresent(category_id, forKey: .category_id)
     }
+}
+
+struct RemoteEventCategory: FamilySynced {
+    static let tableName = "event_categories"
+    var id: UUID
+    var family_id: UUID
+    var name: String
+    var color: String
+    var default_key: String?
+    var position: Int
+    var created_at: Date
 }
 
 struct RemoteReminder: FamilySynced {
@@ -258,6 +301,21 @@ struct RemoteExpenseArchive: FamilySynced {
     var created_at: Date
 }
 
+struct RemoteWifiNetwork: FamilySynced {
+    static let tableName = "wifi_networks"
+    var id: UUID
+    var family_id: UUID
+    var label: String
+    var ssid: String
+    var password: String
+    var security: String
+    var position: Int
+    var created_at: Date
+    var updated_at: Date
+    var created_by: UUID?
+    var created_by_name: String?
+}
+
 /// Coordinates syncing all of the app's data (menu, shopping, tasks,
 /// calendar, reminders) with Supabase: initial load, real time from any
 /// device in the group, and uploading local changes.
@@ -283,12 +341,14 @@ final class AppDataSyncCoordinator: ObservableObject {
     private let houseTasks = RemoteSync<RemoteHouseTask>()
     private let houseTaskLogs = RemoteSync<RemoteHouseTaskLog>()
     private let familyEvents = RemoteSync<RemoteFamilyEvent>()
+    private let eventCategories = RemoteSync<RemoteEventCategory>()
     private let reminders = RemoteSync<RemoteReminder>()
     private let boardNotes = RemoteSync<RemoteBoardNote>()
     private let categories = RemoteSync<RemoteCategory>()
     private let expenses = RemoteSync<RemoteExpense>()
     private let activityLogEntries = RemoteSync<RemoteActivityLogEntry>()
     private let expenseArchives = RemoteSync<RemoteExpenseArchive>()
+    private let wifiNetworks = RemoteSync<RemoteWifiNetwork>()
 
     private var started = false
     /// Kept so `refreshWidgetSnapshot()` can be called from places (like
@@ -321,14 +381,41 @@ final class AppDataSyncCoordinator: ObservableObject {
         await startShoppingListEntries(familyID: familyID, modelContext: modelContext)
         await startHouseTasks(familyID: familyID, modelContext: modelContext)
         await startHouseTaskLogs(familyID: familyID, modelContext: modelContext)
+        await startEventCategories(familyID: familyID, modelContext: modelContext)
         await startFamilyEvents(familyID: familyID, modelContext: modelContext)
+        backfillEventCategories(familyID: familyID, modelContext: modelContext)
         await startReminders(familyID: familyID, modelContext: modelContext)
         await startBoardNotes(familyID: familyID, modelContext: modelContext)
         await startCategories(familyID: familyID, modelContext: modelContext)
         await startExpenses(familyID: familyID, modelContext: modelContext)
         await startActivityLogEntries(familyID: familyID, modelContext: modelContext)
         await startExpenseArchives(familyID: familyID, modelContext: modelContext)
+        await startWifiNetworks(familyID: familyID, modelContext: modelContext)
         refreshWidgetSnapshot()
+    }
+
+    /// Deletes local records of `type` that no longer exist on the server:
+    /// deletes missed while offline/suspended, or leftovers from another
+    /// family. The server is the source of truth after a full fetch.
+    private func pruneLocal<M: PersistentModel>(_ type: M.Type, id: KeyPath<M, UUID>, keeping remoteIDs: [UUID], modelContext: ModelContext) {
+        let keep = Set(remoteIDs)
+        guard let local = try? modelContext.fetch(FetchDescriptor<M>()) else { return }
+        for item in local where !keep.contains(item[keyPath: id]) {
+            modelContext.delete(item)
+        }
+    }
+
+    private var isResyncing = false
+
+    /// Re-fetches everything and reconnects the real-time channels when the
+    /// app returns from the background: iOS drops the socket while
+    /// suspended and changes made in that window are never replayed.
+    func resyncAfterBackground(familyID: UUID, currentMemberID: UUID, modelContext: ModelContext) async {
+        guard started, !isResyncing else { return }
+        isResyncing = true
+        defer { isResyncing = false }
+        await stopAll()
+        await startAll(familyID: familyID, currentMemberID: currentMemberID, modelContext: modelContext)
     }
 
     /// Closes all real-time channels (when leaving the family group).
@@ -345,12 +432,14 @@ final class AppDataSyncCoordinator: ObservableObject {
         await houseTasks.stop()
         await houseTaskLogs.stop()
         await familyEvents.stop()
+        await eventCategories.stop()
         await reminders.stop()
         await boardNotes.stop()
         await categories.stop()
         await expenses.stop()
         await activityLogEntries.stop()
         await expenseArchives.stop()
+        await wifiNetworks.stop()
     }
 
     // MARK: FamilyMembers
@@ -426,6 +515,7 @@ final class AppDataSyncCoordinator: ObservableObject {
         do {
             let remote = try await dishes.fetchAll(familyID: familyID)
             for r in remote { applyDish(r, modelContext: modelContext) }
+            pruneLocal(Dish.self, id: \.id, keeping: remote.map(\.id), modelContext: modelContext)
         } catch {
             lastError = error.localizedDescription
         }
@@ -468,6 +558,7 @@ final class AppDataSyncCoordinator: ObservableObject {
         do {
             let remote = try await recipes.fetchAll(familyID: familyID)
             for r in remote { applyRecipe(r, modelContext: modelContext) }
+            pruneLocal(Recipe.self, id: \.id, keeping: remote.map(\.id), modelContext: modelContext)
         } catch {
             lastError = error.localizedDescription
         }
@@ -497,6 +588,8 @@ final class AppDataSyncCoordinator: ObservableObject {
             existing.updatedAt = remote.updated_at
             existing.createdByID = remote.created_by
             existing.createdByName = remote.created_by_name
+            existing.links = remote.links ?? []
+            existing.linkNames = remote.link_names ?? []
             if existing.photoPath != remote.photo_path {
                 existing.photoPath = remote.photo_path
                 existing.photoData = nil
@@ -508,7 +601,9 @@ final class AppDataSyncCoordinator: ObservableObject {
                 ingredients: remote.ingredients, steps: remote.steps, servings: remote.servings,
                 prepMinutes: remote.prep_minutes, cookMinutes: remote.cook_minutes, photoPath: remote.photo_path,
                 createdAt: remote.created_at, updatedAt: remote.updated_at,
-                createdByID: remote.created_by, createdByName: remote.created_by_name
+                createdByID: remote.created_by, createdByName: remote.created_by_name,
+                links: remote.links ?? [],
+                linkNames: remote.link_names ?? []
             )
             modelContext.insert(recipe)
         }
@@ -571,7 +666,9 @@ final class AppDataSyncCoordinator: ObservableObject {
             ingredients: recipe.ingredients, steps: recipe.steps, servings: recipe.servings,
             prep_minutes: recipe.prepMinutes, cook_minutes: recipe.cookMinutes, photo_path: recipe.photoPath,
             created_at: recipe.createdAt, updated_at: recipe.updatedAt,
-            created_by: recipe.createdByID, created_by_name: recipe.createdByName
+            created_by: recipe.createdByID, created_by_name: recipe.createdByName,
+            links: recipe.links,
+            link_names: recipe.linkNames
         )
     }
 
@@ -581,6 +678,15 @@ final class AppDataSyncCoordinator: ObservableObject {
         do {
             let remote = try await mealPlanEntries.fetchAll(familyID: familyID)
             for r in remote { applyMealPlanEntry(r, modelContext: modelContext) }
+            // Prune local entries deleted remotely while this device was offline
+            // (missed realtime deletes leave stale duplicates for the same slot).
+            let remoteIDs = Set(remote.map(\.id))
+            if let local = try? modelContext.fetch(FetchDescriptor<MealPlanEntry>()) {
+                for entry in local where !remoteIDs.contains(entry.id) {
+                    modelContext.delete(entry)
+                }
+            }
+            refreshWidgetSnapshot()
         } catch {
             lastError = error.localizedDescription
         }
@@ -623,8 +729,41 @@ final class AppDataSyncCoordinator: ObservableObject {
             id: entry.id, family_id: familyID, weekday: entry.weekday, meal_type: entry.mealType,
             dish_id: entry.dishID, dish_name: entry.dishName, updated_at: entry.updatedAt
         )
-        Task { try? await mealPlanEntries.push(record) }
+        Task {
+            do {
+                try await mealPlanEntries.push(record)
+            } catch let error as PostgrestError where error.code == "23505" {
+                // Another device already filled this slot (day + meal) with a
+                // different id: adopt that row's id and overwrite its dish.
+                await resolveMealSlotConflict(record, localEntry: entry)
+            } catch {
+                lastError = error.localizedDescription
+            }
+        }
         refreshWidgetSnapshot()
+    }
+
+    private func resolveMealSlotConflict(_ record: RemoteMealPlanEntry, localEntry: MealPlanEntry) async {
+        do {
+            let existing: RemoteMealPlanEntry = try await supabase
+                .from(RemoteMealPlanEntry.tableName)
+                .select()
+                .eq("family_id", value: record.family_id)
+                .eq("weekday", value: record.weekday)
+                .eq("meal_type", value: record.meal_type)
+                .single()
+                .execute()
+                .value
+            var merged = record
+            merged.id = existing.id
+            merged.updated_at = .now
+            try await mealPlanEntries.push(merged)
+            localEntry.id = existing.id
+            localEntry.updatedAt = merged.updated_at
+            refreshWidgetSnapshot()
+        } catch {
+            lastError = error.localizedDescription
+        }
     }
 
     func deleteMealPlanEntry(id: UUID) {
@@ -638,6 +777,7 @@ final class AppDataSyncCoordinator: ObservableObject {
         do {
             let remote = try await groceryItems.fetchAll(familyID: familyID)
             for r in remote { applyGroceryItem(r, modelContext: modelContext) }
+            pruneLocal(GroceryItem.self, id: \.id, keeping: remote.map(\.id), modelContext: modelContext)
         } catch {
             lastError = error.localizedDescription
         }
@@ -657,13 +797,14 @@ final class AppDataSyncCoordinator: ObservableObject {
         let descriptor = FetchDescriptor<GroceryItem>(predicate: #Predicate { $0.id == remote.id })
         if let existing = try? modelContext.fetch(descriptor).first {
             existing.name = remote.name
+            existing.listID = remote.list_id
         } else {
-            modelContext.insert(GroceryItem(id: remote.id, name: remote.name, createdAt: remote.created_at))
+            modelContext.insert(GroceryItem(id: remote.id, name: remote.name, listID: remote.list_id, createdAt: remote.created_at))
         }
     }
 
     func pushGroceryItem(_ item: GroceryItem, familyID: UUID) {
-        let record = RemoteGroceryItem(id: item.id, family_id: familyID, name: item.name, created_at: item.createdAt)
+        let record = RemoteGroceryItem(id: item.id, family_id: familyID, name: item.name, created_at: item.createdAt, list_id: item.listID)
         Task { try? await groceryItems.push(record) }
     }
 
@@ -677,6 +818,7 @@ final class AppDataSyncCoordinator: ObservableObject {
         do {
             let remote = try await shoppingLists.fetchAll(familyID: familyID)
             for r in remote { applyShoppingList(r, modelContext: modelContext) }
+            pruneLocal(ShoppingList.self, id: \.id, keeping: remote.map(\.id), modelContext: modelContext)
         } catch {
             lastError = error.localizedDescription
         }
@@ -697,13 +839,20 @@ final class AppDataSyncCoordinator: ObservableObject {
         if let existing = try? modelContext.fetch(descriptor).first {
             existing.name = remote.name
             existing.position = remote.position
+            existing.ownerMemberID = remote.owner_member_id
         } else {
-            modelContext.insert(ShoppingList(id: remote.id, name: remote.name, position: remote.position, createdAt: remote.created_at))
+            modelContext.insert(ShoppingList(
+                id: remote.id, name: remote.name, position: remote.position,
+                ownerMemberID: remote.owner_member_id, createdAt: remote.created_at
+            ))
         }
     }
 
     func pushShoppingList(_ list: ShoppingList, familyID: UUID) {
-        let record = RemoteShoppingList(id: list.id, family_id: familyID, name: list.name, position: list.position, created_at: list.createdAt)
+        let record = RemoteShoppingList(
+            id: list.id, family_id: familyID, name: list.name, position: list.position,
+            created_at: list.createdAt, owner_member_id: list.ownerMemberID
+        )
         Task { try? await shoppingLists.push(record) }
     }
 
@@ -717,6 +866,7 @@ final class AppDataSyncCoordinator: ObservableObject {
         do {
             let remote = try await shoppingListEntries.fetchAll(familyID: familyID)
             for r in remote { applyShoppingListEntry(r, modelContext: modelContext) }
+            pruneLocal(ShoppingListEntry.self, id: \.id, keeping: remote.map(\.id), modelContext: modelContext)
         } catch {
             lastError = error.localizedDescription
         }
@@ -741,10 +891,12 @@ final class AppDataSyncCoordinator: ObservableObject {
             existing.isChecked = remote.is_checked
             existing.addedAt = remote.added_at
             existing.checkedAt = remote.checked_at
+            existing.quantity = remote.quantity
         } else {
             modelContext.insert(ShoppingListEntry(
                 id: remote.id, itemID: remote.item_id, listID: remote.list_id, name: remote.name,
-                isChecked: remote.is_checked, addedAt: remote.added_at, checkedAt: remote.checked_at
+                isChecked: remote.is_checked, addedAt: remote.added_at, checkedAt: remote.checked_at,
+                quantity: remote.quantity
             ))
         }
     }
@@ -752,7 +904,8 @@ final class AppDataSyncCoordinator: ObservableObject {
     func pushShoppingListEntry(_ entry: ShoppingListEntry, familyID: UUID) {
         let record = RemoteShoppingListEntry(
             id: entry.id, family_id: familyID, item_id: entry.itemID, list_id: entry.listID, name: entry.name,
-            is_checked: entry.isChecked, added_at: entry.addedAt, checked_at: entry.checkedAt
+            is_checked: entry.isChecked, added_at: entry.addedAt, checked_at: entry.checkedAt,
+            quantity: entry.quantity
         )
         Task { try? await shoppingListEntries.push(record) }
     }
@@ -767,6 +920,7 @@ final class AppDataSyncCoordinator: ObservableObject {
         do {
             let remote = try await houseTasks.fetchAll(familyID: familyID)
             for r in remote { applyHouseTask(r, modelContext: modelContext) }
+            pruneLocal(HouseTask.self, id: \.id, keeping: remote.map(\.id), modelContext: modelContext)
         } catch {
             lastError = error.localizedDescription
         }
@@ -793,11 +947,13 @@ final class AppDataSyncCoordinator: ObservableObject {
             existing.createdByID = remote.created_by
             existing.createdByName = remote.created_by_name
             existing.color = remote.color
+            existing.alertOffsets = remote.alert_offsets
         } else {
             modelContext.insert(HouseTask(
                 id: remote.id, name: remote.name, intervalDays: remote.interval_days,
                 scheduledAt: remote.scheduled_at, forEveryone: remote.for_everyone, memberIDs: remote.member_ids,
-                createdByID: remote.created_by, createdByName: remote.created_by_name, color: remote.color
+                createdByID: remote.created_by, createdByName: remote.created_by_name, color: remote.color,
+                alertOffsets: remote.alert_offsets
             ))
         }
     }
@@ -806,7 +962,8 @@ final class AppDataSyncCoordinator: ObservableObject {
         let record = RemoteHouseTask(
             id: task.id, family_id: familyID, name: task.name, interval_days: task.intervalDays,
             scheduled_at: task.scheduledAt, for_everyone: task.forEveryone, member_ids: task.memberIDs,
-            created_by: task.createdByID, created_by_name: task.createdByName, color: task.color
+            created_by: task.createdByID, created_by_name: task.createdByName, color: task.color,
+            alert_offsets: task.alertOffsets
         )
         Task { try? await houseTasks.push(record) }
     }
@@ -821,6 +978,7 @@ final class AppDataSyncCoordinator: ObservableObject {
         do {
             let remote = try await houseTaskLogs.fetchAll(familyID: familyID)
             for r in remote { applyHouseTaskLog(r, modelContext: modelContext) }
+            pruneLocal(HouseTaskLog.self, id: \.id, keeping: remote.map(\.id), modelContext: modelContext)
         } catch {
             lastError = error.localizedDescription
         }
@@ -873,6 +1031,7 @@ final class AppDataSyncCoordinator: ObservableObject {
         do {
             let remote = try await familyEvents.fetchAll(familyID: familyID)
             for r in remote { applyFamilyEvent(r, modelContext: modelContext) }
+            pruneLocal(FamilyEvent.self, id: \.id, keeping: remote.map(\.id), modelContext: modelContext)
         } catch {
             lastError = error.localizedDescription
         }
@@ -907,6 +1066,8 @@ final class AppDataSyncCoordinator: ObservableObject {
             existing.color = remote.color.flatMap { $0.isEmpty ? nil : $0 }
             existing.repeatUntil = remote.repeat_until
             existing.excludedDates = remote.excluded_dates ?? []
+            existing.alertOffsets = remote.alert_offsets
+            existing.categoryID = remote.category_id
         } else {
             modelContext.insert(FamilyEvent(
                 id: remote.id, title: remote.title, note: remote.note,
@@ -919,7 +1080,9 @@ final class AppDataSyncCoordinator: ObservableObject {
                 repeatUnit: remote.repeat_unit ?? FamilyEventRepeatUnit.week.rawValue,
                 color: remote.color.flatMap { $0.isEmpty ? nil : $0 },
                 repeatUntil: remote.repeat_until,
-                excludedDates: remote.excluded_dates ?? []
+                excludedDates: remote.excluded_dates ?? [],
+                alertOffsets: remote.alert_offsets,
+                categoryID: remote.category_id
             ))
         }
         refreshWidgetSnapshot()
@@ -934,10 +1097,98 @@ final class AppDataSyncCoordinator: ObservableObject {
             is_all_day: event.isAllDay,
             repeat_interval: event.repeatInterval, repeat_unit: event.repeatUnit,
             color: event.color ?? "",
-            repeat_until: event.repeatUntil, excluded_dates: event.excludedDates
+            repeat_until: event.repeatUntil, excluded_dates: event.excludedDates,
+            alert_offsets: event.alertOffsets,
+            category_id: event.categoryID
         )
         Task { try? await familyEvents.push(record) }
         refreshWidgetSnapshot()
+    }
+
+    // MARK: EventCategories
+
+    /// Events from before categories (no `category_id`, an old icon) get the
+    /// default category of their icon, once per family and device, and its
+    /// color (replacing the color they had). Idempotent, so several devices
+    /// doing it is harmless.
+    private func backfillEventCategories(familyID: UUID, modelContext: ModelContext) {
+        let key = "aliaro.eventCategories.backfilled.\(familyID.uuidString)"
+        guard !UserDefaults.standard.bool(forKey: key) else { return }
+        let categories = (try? modelContext.fetch(FetchDescriptor<EventCategory>())) ?? []
+        guard !categories.isEmpty else { return } // categories not loaded yet: next time
+        let events = (try? modelContext.fetch(FetchDescriptor<FamilyEvent>())) ?? []
+        for event in events where event.categoryID == nil {
+            guard let id = event.resolvedCategoryID(familyID: familyID),
+                  let category = categories.first(where: { $0.id == id }) else { continue }
+            event.categoryID = category.id
+            event.color = category.color
+            pushFamilyEvent(event, familyID: familyID)
+        }
+        try? modelContext.save()
+        UserDefaults.standard.set(true, forKey: key)
+    }
+
+    private func startEventCategories(familyID: UUID, modelContext: ModelContext) async {
+        do {
+            let remote = try await eventCategories.fetchAll(familyID: familyID)
+            for r in remote { applyEventCategory(r, modelContext: modelContext) }
+            let remoteIDs = Set(remote.map(\.id))
+            let local = (try? modelContext.fetch(FetchDescriptor<EventCategory>())) ?? []
+            for category in local where !remoteIDs.contains(category.id) { modelContext.delete(category) }
+            // The default categories (the old icons) are created once, when the
+            // family has none yet; after that they can be deleted like any
+            // other. Fixed ids: two devices doing it at once write the same rows.
+            let seededKey = "aliaro.eventCategories.seeded.\(familyID.uuidString)"
+            let seedDefaults = remote.isEmpty && !UserDefaults.standard.bool(forKey: seededKey)
+            UserDefaults.standard.set(true, forKey: seededKey)
+            for (index, preset) in EventCategory.defaults.enumerated() where seedDefaults {
+                let category = EventCategory(
+                    id: EventCategory.defaultID(familyID: familyID, key: preset.key),
+                    name: preset.name, color: preset.color, defaultKey: preset.key, position: index
+                )
+                if !local.contains(where: { $0.id == category.id }) { modelContext.insert(category) }
+                pushEventCategory(category, familyID: familyID)
+            }
+        } catch {
+            lastError = error.localizedDescription
+        }
+        await eventCategories.start(
+            familyID: familyID,
+            onUpsert: { [weak self] r in self?.applyEventCategory(r, modelContext: modelContext) },
+            onDelete: { id in
+                let descriptor = FetchDescriptor<EventCategory>(predicate: #Predicate { $0.id == id })
+                if let existing = try? modelContext.fetch(descriptor).first {
+                    modelContext.delete(existing)
+                }
+            }
+        )
+    }
+
+    private func applyEventCategory(_ remote: RemoteEventCategory, modelContext: ModelContext) {
+        let descriptor = FetchDescriptor<EventCategory>(predicate: #Predicate { $0.id == remote.id })
+        if let existing = try? modelContext.fetch(descriptor).first {
+            existing.name = remote.name
+            existing.color = remote.color
+            existing.defaultKey = remote.default_key
+            existing.position = remote.position
+        } else {
+            modelContext.insert(EventCategory(
+                id: remote.id, name: remote.name, color: remote.color, defaultKey: remote.default_key,
+                position: remote.position, createdAt: remote.created_at
+            ))
+        }
+    }
+
+    func pushEventCategory(_ category: EventCategory, familyID: UUID) {
+        let record = RemoteEventCategory(
+            id: category.id, family_id: familyID, name: category.name, color: category.color,
+            default_key: category.defaultKey, position: category.position, created_at: category.createdAt
+        )
+        Task { try? await eventCategories.push(record) }
+    }
+
+    func deleteEventCategory(id: UUID) {
+        Task { try? await eventCategories.remove(id: id) }
     }
 
     func deleteFamilyEvent(id: UUID) {
@@ -951,6 +1202,7 @@ final class AppDataSyncCoordinator: ObservableObject {
         do {
             let remote = try await reminders.fetchAll(familyID: familyID)
             for r in remote { applyReminder(r, modelContext: modelContext) }
+            pruneLocal(Reminder.self, id: \.id, keeping: remote.map(\.id), modelContext: modelContext)
         } catch {
             lastError = error.localizedDescription
         }
@@ -1071,12 +1323,72 @@ final class AppDataSyncCoordinator: ObservableObject {
         Task { try? await boardNotes.remove(id: id) }
     }
 
+    // MARK: WifiNetworks
+
+    private func startWifiNetworks(familyID: UUID, modelContext: ModelContext) async {
+        do {
+            let remote = try await wifiNetworks.fetchAll(familyID: familyID)
+            for r in remote { applyWifiNetwork(r, modelContext: modelContext) }
+            // Realtime doesn't deliver deletes filtered by family: purge on fetch.
+            let remoteIDs = Set(remote.map(\.id))
+            let local = (try? modelContext.fetch(FetchDescriptor<WifiNetwork>())) ?? []
+            for network in local where !remoteIDs.contains(network.id) { modelContext.delete(network) }
+        } catch {
+            lastError = error.localizedDescription
+        }
+        await wifiNetworks.start(
+            familyID: familyID,
+            onUpsert: { [weak self] r in self?.applyWifiNetwork(r, modelContext: modelContext) },
+            onDelete: { id in
+                let descriptor = FetchDescriptor<WifiNetwork>(predicate: #Predicate { $0.id == id })
+                if let existing = try? modelContext.fetch(descriptor).first {
+                    modelContext.delete(existing)
+                }
+            }
+        )
+    }
+
+    private func applyWifiNetwork(_ remote: RemoteWifiNetwork, modelContext: ModelContext) {
+        let descriptor = FetchDescriptor<WifiNetwork>(predicate: #Predicate { $0.id == remote.id })
+        if let existing = try? modelContext.fetch(descriptor).first {
+            existing.label = remote.label
+            existing.ssid = remote.ssid
+            existing.password = remote.password
+            existing.security = remote.security
+            existing.position = remote.position
+            existing.updatedAt = remote.updated_at
+            existing.createdByID = remote.created_by
+            existing.createdByName = remote.created_by_name
+        } else {
+            modelContext.insert(WifiNetwork(
+                id: remote.id, label: remote.label, ssid: remote.ssid, password: remote.password,
+                security: WifiNetwork.Security(rawValue: remote.security) ?? .wpa, position: remote.position,
+                createdAt: remote.created_at, updatedAt: remote.updated_at,
+                createdByID: remote.created_by, createdByName: remote.created_by_name
+            ))
+        }
+    }
+
+    func pushWifiNetwork(_ network: WifiNetwork, familyID: UUID) {
+        let record = RemoteWifiNetwork(
+            id: network.id, family_id: familyID, label: network.label, ssid: network.ssid, password: network.password,
+            security: network.security, position: network.position, created_at: network.createdAt,
+            updated_at: network.updatedAt, created_by: network.createdByID, created_by_name: network.createdByName
+        )
+        Task { try? await wifiNetworks.push(record) }
+    }
+
+    func deleteWifiNetwork(id: UUID) {
+        Task { try? await wifiNetworks.remove(id: id) }
+    }
+
     // MARK: Categories
 
     private func startCategories(familyID: UUID, modelContext: ModelContext) async {
         do {
             let remote = try await categories.fetchAll(familyID: familyID)
             for r in remote { applyCategory(r, modelContext: modelContext) }
+            pruneLocal(ExpenseCategory.self, id: \.id, keeping: remote.map(\.id), modelContext: modelContext)
         } catch {
             lastError = error.localizedDescription
         }
@@ -1124,6 +1436,7 @@ final class AppDataSyncCoordinator: ObservableObject {
         do {
             let remote = try await expenses.fetchAll(familyID: familyID)
             for r in remote { applyExpense(r, modelContext: modelContext) }
+            pruneLocal(Expense.self, id: \.id, keeping: remote.map(\.id), modelContext: modelContext)
         } catch {
             lastError = error.localizedDescription
         }
@@ -1180,6 +1493,7 @@ final class AppDataSyncCoordinator: ObservableObject {
         do {
             let remote = try await expenseArchives.fetchAll(familyID: familyID)
             for r in remote { applyExpenseArchive(r, modelContext: modelContext) }
+            pruneLocal(ExpenseArchive.self, id: \.id, keeping: remote.map(\.id), modelContext: modelContext)
         } catch {
             lastError = error.localizedDescription
         }
@@ -1242,6 +1556,7 @@ final class AppDataSyncCoordinator: ObservableObject {
         do {
             let remote = try await activityLogEntries.fetchAll(familyID: familyID)
             for r in remote { applyActivityLogEntry(r, modelContext: modelContext) }
+            pruneLocal(ActivityLogEntry.self, id: \.id, keeping: remote.map(\.id), modelContext: modelContext)
         } catch {
             lastError = error.localizedDescription
         }
@@ -1294,6 +1609,9 @@ final class AppDataSyncCoordinator: ObservableObject {
         // Names only for chores (product data), never for personal items.
         let chore = entityType == "house_task" || entityType == "house_task_log"
         Track.event("\(entityType)_\(action)", ["task_name": chore ? entityName : nil])
+        // Creating things (or completing a task: a new task log) is a good
+        // moment to ask for a rating.
+        if action == "created" { ReviewPrompt.shared.registerPositiveAction(entityType) }
 
         let entry = ActivityLogEntry(
             entityType: entityType, entityName: entityName, action: action,

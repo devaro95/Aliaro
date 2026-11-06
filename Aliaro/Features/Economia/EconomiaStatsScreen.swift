@@ -155,7 +155,7 @@ struct EconomiaStatsScreen: View {
         }
     }
 
-    private func summaryItem(title: String, value: Double, color: Color) -> some View {
+    private func summaryItem(title: LocalizedStringKey, value: Double, color: Color) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(title)
                 .font(ALITypography.labelLarge)
@@ -218,7 +218,7 @@ struct EconomiaStatsScreen: View {
             }
             for categoryID in expense.categoryIDs {
                 guard let category = categories.first(where: { $0.id == categoryID }) else { continue }
-                totals[categoryID, default: CategoryTotal(id: categoryID, name: category.name, emoji: category.emoji)].amount += expense.amount
+                totals[categoryID, default: CategoryTotal(id: categoryID, name: category.displayName, emoji: category.emoji)].amount += expense.amount
             }
         }
         var result = Array(totals.values)
@@ -312,7 +312,7 @@ enum EconomiaDemoData {
                 let variation = Double((day * 13 + index * 7) % 30) / 100 + 0.85
                 let person = people[(day + index) % people.count]
                 expenses.append(Expense(
-                    name: category.name,
+                    name: category.displayName,
                     amount: (entry.1 * variation).rounded(),
                     personID: person.id,
                     personName: person.name,

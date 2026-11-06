@@ -16,13 +16,13 @@ enum ALIIcon {
     static let graduation = "graduation", heart = "heart", calendar = "calendar"
     static let school = "school", user = "user", sparkles = "sparkles", history = "history"
     static let wave = "wave", euro = "euro", search = "search", archive = "archive"
-    static let cleaning = "cleaning", bell = "bell", check = "check"
+    static let cleaning = "cleaning", bell = "bell", check = "check", list = "list"
 
     static let all: Set<String> = [
         tag, cart, home, bulb, car, dining, pill, film, shopping, book, pet, plane, gift,
         laptop, receipt, gym, bookmark, coins, unknown, party, cake, beach, xmas, health,
         doctor, sport, graduation, heart, calendar, school, user, sparkles, history, wave,
-        euro, search, archive, cleaning, bell, check,
+        euro, search, archive, cleaning, bell, check, list,
     ]
 
     /// Emoji stored before the SVG migration → icon token.
@@ -66,5 +66,21 @@ struct ALIIconView: View {
             .frame(width: size, height: size)
             .foregroundStyle(color)
             .accessibilityHidden(true)
+    }
+}
+
+/// Small "repeats" marker next to the title of recurring tasks and events.
+struct ALIRepeatIcon: View {
+    var size: CGFloat = 13
+    var color: Color = ALIColors.mutedInk
+
+    var body: some View {
+        Image("ali_repeat")
+            .renderingMode(.template)
+            .resizable()
+            .scaledToFit()
+            .frame(width: size, height: size)
+            .foregroundStyle(color)
+            .accessibilityLabel(Text("Repeats"))
     }
 }

@@ -80,7 +80,7 @@ enum FamilyPermission: String, CaseIterable, Identifiable {
             switch self {
             case .weeklyMenu: return "Weekly menu"
             case .recipes: return "Recipes"
-            case .shopping: return "Shopping list"
+            case .shopping: return "Lists"
             case .board: return "Board"
             case .calendar: return "Family calendar"
             case .reminders: return "Reminders"

@@ -104,7 +104,7 @@ struct ExpenseArchiveSnapshot: Codable, Equatable {
                     amount: expense.amount,
                     isIncome: expense.isIncome,
                     personName: expense.personName,
-                    categories: cats.map(\.name),
+                    categories: cats.map(\.displayName),
                     emoji: cats.first?.emoji ?? (expense.isIncome ? ALIIcon.coins : ALIIcon.receipt),
                     occurredAt: expense.occurredAt.timeIntervalSince1970
                 )

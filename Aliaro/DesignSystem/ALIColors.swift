@@ -63,6 +63,7 @@ enum ALIColors {
     static let economiaAccent = ALIPalette.pistachio
     static let recipesAccent = ALIPalette.apricot
     static let boardAccent = ALIPalette.periwinkle
+    static let wifiAccent = ALIPalette.turquoise
 
     // Distinguish lunch/dinner at a glance within the weekly menu.
     static let mealLunchAccent = ALIPalette.sun
@@ -100,6 +101,17 @@ enum ALIItemColors {
     static func color(_ hex: String?, fallback: Color) -> Color {
         guard let hex, let value = UInt32(hex, radix: 16) else { return fallback }
         return Color(hex: value)
+    }
+
+    /// Solid, lighter version of a tag color (mixed with white): the same in
+    /// light and dark mode. Use it instead of `.opacity(…)`, which mixes with
+    /// the background and looks dull and different in dark mode. Text on top
+    /// goes in `ALIColors.onAccent` (always dark).
+    static func soft(_ color: Color, _ amount: Double) -> Color {
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        guard UIColor(color).getRed(&r, green: &g, blue: &b, alpha: &a) else { return color }
+        let t = CGFloat(amount)
+        return Color(red: Double(1 - t + r * t), green: Double(1 - t + g * t), blue: Double(1 - t + b * t))
     }
 }
 

@@ -8,9 +8,11 @@ import Combine
 /// `NavigationStack`, so new features never need a bar slot.
 struct MainTabContainer: View {
     @EnvironmentObject private var dataSync: AppDataSyncCoordinator
+    @ObservedObject private var whatsNew = WhatsNew.shared
     @EnvironmentObject private var familyService: FamilyService
     @EnvironmentObject private var familySession: FamilySession
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.scenePhase) private var scenePhase
 
     @State private var selected: AppTab
     /// Screens pushed on top of Home (features that aren't favorites, and People).
@@ -110,6 +112,19 @@ struct MainTabContainer: View {
                 "visible_tabs": AppTab.visibleFeatures(excluding: familySession.disabledTabs).count,
             ])
         }
+        .sheet(isPresented: $whatsNew.isPresented) {
+            WhatsNewSheet()
+        }
+        .onAppear { whatsNew.showIfNeeded() }
+        .onChange(of: scenePhase) { oldPhase, newPhase in
+            // Back from the background: catch up on changes missed while suspended.
+            guard oldPhase == .background, newPhase != .background,
+                  let familyID = familySession.familyID, let memberID = familySession.memberID else { return }
+            Task {
+                await dataSync.resyncAfterBackground(familyID: familyID, currentMemberID: memberID, modelContext: modelContext)
+                await familyService.refreshFamilySettings()
+            }
+        }
         .task {
             if let familyID = familySession.familyID, let memberID = familySession.memberID {
                 await dataSync.startAll(familyID: familyID, currentMemberID: memberID, modelContext: modelContext)
@@ -131,6 +146,7 @@ struct MainTabContainer: View {
         case .reminders: RemindersScreen()
         case .board: BoardScreen()
         case .economia: EconomiaScreen()
+        case .wifi: WifiScreen()
         case .people: PeopleScreen()
         }
     }

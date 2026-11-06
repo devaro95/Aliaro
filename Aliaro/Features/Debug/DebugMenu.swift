@@ -88,6 +88,20 @@ struct DebugMenuSheet: View {
                                 dismiss()
                                 ForceUpdate.shared.debugPreview = true
                             }
+
+                            ALISecondaryButton(text: "Show What's new (\(WhatsNew.release))") {
+                                dismiss()
+                                WhatsNew.shared.debugShow()
+                            }
+
+                            ALISecondaryButton(text: "Show rating dialog") {
+                                dismiss()
+                                ReviewPrompt.shared.debugRequestNow()
+                            }
+
+                            ALISecondaryButton(text: "Reset rating counters") {
+                                ReviewPrompt.shared.debugReset()
+                            }
                         }
                     }
                 }

@@ -29,6 +29,14 @@ final class HouseTask {
     var createdByName: String?
     /// Tag color ("RRGGBB" from `ALIItemColors`); nil = default accent.
     var color: String?
+    /// Push alerts before `scheduledAt`, in seconds (0 = at the time). Max 2.
+    /// nil = default (at the time), [] = none.
+    var alertOffsets: [Int]? = nil
+
+    /// The alerts that will actually be sent (only with `scheduledAt`).
+    var effectiveAlertOffsets: [Int] {
+        alertOffsets ?? ALIAlerts.defaultOffsets(isEvent: false, isAllDay: false)
+    }
 
     init(
         id: UUID = UUID(),
@@ -40,7 +48,8 @@ final class HouseTask {
         memberIDs: [UUID] = [],
         createdByID: UUID? = nil,
         createdByName: String? = nil,
-        color: String? = nil
+        color: String? = nil,
+        alertOffsets: [Int]? = nil
     ) {
         self.id = id
         self.name = name
@@ -52,6 +61,7 @@ final class HouseTask {
         self.createdByID = createdByID
         self.createdByName = createdByName
         self.color = color
+        self.alertOffsets = alertOffsets
     }
 
     /// Whether the task is assigned to this member (all tasks are, unless

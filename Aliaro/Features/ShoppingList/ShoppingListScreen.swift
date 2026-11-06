@@ -1,9 +1,10 @@
 import SwiftUI
 import SwiftData
 
-/// "Shopping" tab: at the top, the group's lists as tabs (there's
-/// always at least one); below, the active list. The items themselves
-/// (the catalog) are managed from the add sheet (`AddToShoppingListSheet`).
+/// "Lists" tab: at the top, the group's lists as tabs (there's always at
+/// least one; private ones only for their creator, with a lock); below,
+/// the active list. Each list's products are managed from the add sheet
+/// (`AddToShoppingListSheet`).
 struct ShoppingListScreen: View {
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var bottomBarScrollTracker: BottomBarScrollTracker
@@ -11,7 +12,8 @@ struct ShoppingListScreen: View {
     @EnvironmentObject private var familySession: FamilySession
     @EnvironmentObject private var premium: PremiumManager
 
-    @Query(sort: \ShoppingList.position) private var lists: [ShoppingList]
+    @Query(sort: \ShoppingList.position) private var allLists: [ShoppingList]
+    @Query private var catalog: [GroceryItem]
     @Query(sort: \FamilyMember.createdAt) private var members: [FamilyMember]
     @Query(sort: \ShoppingListEntry.addedAt, order: .reverse)
     private var allEntries: [ShoppingListEntry]
@@ -20,8 +22,9 @@ struct ShoppingListScreen: View {
     @State private var showAddSheet = false
     @State private var entryPendingDelete: ShoppingListEntry?
 
-    @State private var showNewListAlert = false
-    @State private var newListName = ""
+    @State private var showNewListSheet = false
+    @State private var quantityEntry: ShoppingListEntry?
+    @State private var quantityText = ""
     @State private var renamingList: ShoppingList?
     @State private var renameListText = ""
     @State private var listPendingDelete: ShoppingList?
@@ -32,6 +35,12 @@ struct ShoppingListScreen: View {
         return allEntries.filter { $0.listID == selectedListID }
     }
     private var currentMember: FamilyMember? { members.first(where: \.isCurrentDevice) }
+
+    /// Shared lists + this person's private ones (Supabase doesn't send
+    /// anyone else's, this is just a safety net).
+    private var lists: [ShoppingList] {
+        allLists.filter { !$0.isPrivate || $0.ownerMemberID == currentMember?.id }
+    }
     private var canAdd: Bool { currentMember?.can(.shoppingAdd) ?? true }
     private var canDelete: Bool { currentMember?.can(.shoppingDelete) ?? true }
 
@@ -50,7 +59,7 @@ struct ShoppingListScreen: View {
             Color.clear.frame(height: 0).trackBottomBarScroll(bottomBarScrollTracker)
 
             VStack(spacing: 16) {
-                ALITopBar(title: "Shopping list", accent: ALIColors.shoppingAccent) {
+                ALITopBar(title: "Lists", accent: ALIColors.shoppingAccent) {
                     if canAdd {
                         ALIFloatingButton(accent: ALIColors.shoppingAccent) {
                             Track.event("shopping_add_tap", ["pending": pending.count, "lists": lists.count])
@@ -64,18 +73,18 @@ struct ShoppingListScreen: View {
 
                 if entries.isEmpty {
                     ALIEmptyState(
-                        icon: ALIIcon.cart,
+                        icon: ALIIcon.list,
                         title: "The list is empty",
-                        subtitle: "Tap the + to add what you're missing at home."
+                        subtitle: "Tap the + to add something to it."
                     )
                 } else {
                     if !pending.isEmpty {
-                        sectionCard(title: "To buy (\(pending.count))", rows: pending)
+                        sectionCard(title: String(localized: "Pending (\(pending.count))"), rows: pending)
                     }
                     if !checked.isEmpty {
-                        sectionCard(title: "Bought (\(checked.count))", rows: checked, dimmed: true)
+                        sectionCard(title: String(localized: "Done (\(checked.count))"), rows: checked, dimmed: true)
                         if canDelete {
-                            ALITextButton(text: "Clear bought") {
+                            ALITextButton(text: "Clear done") {
                                 Track.event("shopping_clear_bought", ["count": checked.count])
                                 clearChecked()
                             }
@@ -108,12 +117,18 @@ struct ShoppingListScreen: View {
         ) {
             if let entry = entryPendingDelete { delete(entry) }
         }
-        .alert("New list", isPresented: $showNewListAlert) {
-            TextField("E.g. Groceries, Furniture…", text: $newListName)
-            Button("Cancel", role: .cancel) { newListName = "" }
-            Button("Create") { createList() }
+        .sheet(isPresented: $showNewListSheet) {
+            NewListSheet { name, isPrivate in createList(name: name, isPrivate: isPrivate) }
+        }
+        .alert(
+            "Quantity",
+            isPresented: Binding(get: { quantityEntry != nil }, set: { if !$0 { quantityEntry = nil } })
+        ) {
+            TextField("E.g. 2, 1 kg, 3 packs", text: $quantityText)
+            Button("Cancel", role: .cancel) { quantityEntry = nil }
+            Button("Save") { saveQuantity() }
         } message: {
-            Text("It will be added as a new tab.")
+            Text(quantityEntry?.name ?? "")
         }
         .alert(
             "Rename list",
@@ -125,7 +140,7 @@ struct ShoppingListScreen: View {
         }
         .aliDeleteConfirmDialog(
             isPresented: Binding(get: { listPendingDelete != nil }, set: { if !$0 { listPendingDelete = nil } }),
-            itemName: listPendingDelete?.name ?? ""
+            itemName: listPendingDelete?.displayName ?? ""
         ) {
             if let list = listPendingDelete { deleteList(list) }
         }
@@ -162,8 +177,7 @@ struct ShoppingListScreen: View {
                     if isNewListLocked {
                         showPaywall = Track.paywall("new_shopping_list")
                     } else {
-                        newListName = ""
-                        showNewListAlert = true
+                        showNewListSheet = true
                     }
                 } label: {
                     Image(systemName: "plus")
@@ -197,22 +211,29 @@ struct ShoppingListScreen: View {
                 withAnimation(.easeInOut(duration: 0.2)) { selectedListID = list.id }
             }
         } label: {
-            Text(list.name)
-                .font(ALITypography.labelLarge)
-                .foregroundStyle(isSelected ? ALIColors.onAccent : ALIColors.ink)
-                .lineLimit(1)
-                .padding(.horizontal, 16)
-                .frame(height: 34)
-                .background(isSelected ? ALIColors.shoppingAccent : ALIColors.surfaceVariant)
-                .clipShape(Capsule())
-                .aliPremiumLockOverlay(locked)
+            HStack(spacing: 5) {
+                if list.isPrivate {
+                    Image(systemName: "lock.fill")
+                        .font(.system(size: 10, weight: .bold))
+                        .accessibilityLabel(Text("Private"))
+                }
+                Text(list.displayName)
+                    .lineLimit(1)
+            }
+            .font(ALITypography.labelLarge)
+            .foregroundStyle(isSelected ? ALIColors.onAccent : ALIColors.ink)
+            .padding(.horizontal, 16)
+            .frame(height: 34)
+            .background(isSelected ? ALIColors.shoppingAccent : ALIColors.surfaceVariant)
+            .clipShape(Capsule())
+            .aliPremiumLockOverlay(locked)
         }
         .buttonStyle(.plain)
         .contextMenu {
             if canAdd {
                 Button {
                     Track.event("shopping_list_menu", ["action": "rename"])
-                    renameListText = list.name
+                    renameListText = list.displayName
                     renamingList = list
                 } label: {
                     Label("Rename", systemImage: "pencil")
@@ -239,8 +260,11 @@ struct ShoppingListScreen: View {
             ALICard {
                 VStack(spacing: 0) {
                     ForEach(Array(rows.enumerated()), id: \.element.id) { index, entry in
-                        ShoppingListRow(entry: entry, dimmed: dimmed, canDelete: canDelete) {
+                        ShoppingListRow(entry: entry, dimmed: dimmed, canEdit: canAdd, canDelete: canDelete) {
                             toggle(entry)
+                        } onQuantity: {
+                            quantityText = entry.quantity ?? ""
+                            quantityEntry = entry
                         } onDelete: {
                             entryPendingDelete = entry
                         }
@@ -264,6 +288,17 @@ struct ShoppingListScreen: View {
             "item_name": entry.name,
             "minutes_in_list": Int(Date.now.timeIntervalSince(entry.addedAt) / 60)
         ])
+        if let familyID = familySession.familyID { dataSync.pushShoppingListEntry(entry, familyID: familyID) }
+        if entry.isChecked { ReviewPrompt.shared.registerPositiveAction("shopping_item_checked") }
+    }
+
+    private func saveQuantity() {
+        defer { quantityEntry = nil }
+        guard let entry = quantityEntry else { return }
+        let value = quantityText.trimmed.isEmpty ? nil : quantityText.trimmed
+        guard value != entry.quantity else { return }
+        entry.quantity = value
+        Track.event("shopping_item_quantity", ["has_quantity": value != nil, "where": "list"])
         if let familyID = familySession.familyID { dataSync.pushShoppingListEntry(entry, familyID: familyID) }
     }
 
@@ -296,14 +331,16 @@ struct ShoppingListScreen: View {
         selectedListID = lists.first?.id
     }
 
-    private func createList() {
-        let name = newListName.trimmed
-        newListName = ""
+    private func createList(name: String, isPrivate: Bool) {
         guard !name.isEmpty else { return }
-        let list = ShoppingList(name: name, position: (lists.map(\.position).max() ?? -1) + 1)
+        let list = ShoppingList(
+            name: name,
+            position: (allLists.map(\.position).max() ?? -1) + 1,
+            ownerMemberID: isPrivate ? currentMember?.id : nil
+        )
         modelContext.insert(list)
         if let familyID = familySession.familyID { dataSync.pushShoppingList(list, familyID: familyID) }
-        Track.event("shopping_list_created", ["lists_total": lists.count + 1])
+        Track.event("shopping_list_created", ["lists_total": lists.count + 1, "private": list.isPrivate])
         selectedListID = list.id
     }
 
@@ -318,12 +355,20 @@ struct ShoppingListScreen: View {
     private func deleteList(_ list: ShoppingList) {
         let listID = list.id
         let entriesToDelete = allEntries.filter { $0.listID == listID }
-        Track.event("shopping_list_deleted", ["entries": entriesToDelete.count, "lists_total": lists.count - 1])
+        // Its products go with it (old ones without a list stay, they're
+        // the first list's).
+        let itemsToDelete = catalog.filter { $0.listID == listID }
+        Track.event("shopping_list_deleted", ["entries": entriesToDelete.count, "lists_total": lists.count - 1, "private": list.isPrivate])
         withAnimation {
             for entry in entriesToDelete {
                 let entryID = entry.id
                 modelContext.delete(entry)
                 dataSync.deleteShoppingListEntry(id: entryID)
+            }
+            for item in itemsToDelete {
+                let itemID = item.id
+                modelContext.delete(item)
+                dataSync.deleteGroceryItem(id: itemID)
             }
             modelContext.delete(list)
         }
@@ -334,14 +379,16 @@ struct ShoppingListScreen: View {
     }
 }
 
-/// Row for an item within the active list: pastel checkbox + name,
-/// swipeable to delete (only removes the entry from the list, not the
-/// catalog item).
+/// Row for an item within the active list: pastel checkbox + name (and
+/// quantity, if any); the menu sets the quantity or removes it from the
+/// list (only the entry, not the list's product).
 private struct ShoppingListRow: View {
     let entry: ShoppingListEntry
     var dimmed: Bool = false
+    var canEdit: Bool = true
     var canDelete: Bool = true
     let onToggle: () -> Void
+    let onQuantity: () -> Void
     let onDelete: () -> Void
 
     var body: some View {
@@ -358,26 +405,99 @@ private struct ShoppingListRow: View {
                                 .foregroundStyle(ALIColors.onAccent)
                         }
                     }
-                    Text(entry.name)
-                        .font(ALITypography.bodyLarge)
-                        .foregroundStyle(dimmed ? ALIColors.mutedInk : ALIColors.ink)
-                        .strikethrough(dimmed)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(entry.name)
+                            .font(ALITypography.bodyLarge)
+                            .foregroundStyle(dimmed ? ALIColors.mutedInk : ALIColors.ink)
+                            .strikethrough(dimmed)
+                        if let quantity = entry.quantity, !quantity.isEmpty {
+                            Text(quantity)
+                                .font(ALITypography.bodyMedium)
+                                .foregroundStyle(ALIColors.mutedInk)
+                        }
+                    }
                     Spacer()
                 }
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
 
-            if canDelete {
-                Button(action: onDelete) {
-                    Image(systemName: "trash")
-                        .font(.system(size: 14, weight: .medium))
+            if canEdit || canDelete {
+                Menu {
+                    if canEdit {
+                        Button(action: onQuantity) {
+                            Label(entry.quantity == nil ? LocalizedStringKey("Add quantity") : LocalizedStringKey("Edit quantity"), systemImage: "number")
+                        }
+                    }
+                    if canDelete {
+                        Button(role: .destructive, action: onDelete) {
+                            Label("Remove from list", systemImage: "trash")
+                        }
+                    }
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .font(.system(size: 15, weight: .semibold))
                         .foregroundStyle(ALIColors.mutedInk)
                         .frame(width: 32, height: 32)
+                        .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
             }
         }
         .padding(.vertical, 12)
+    }
+}
+
+/// Create a list: name + whether it's private. Private is chosen here
+/// only — it can't be changed later.
+private struct NewListSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    let onCreate: (String, Bool) -> Void
+
+    @State private var name = ""
+    @State private var isPrivate = false
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 16) {
+                ALITextField(placeholder: "E.g. Groceries, Pharmacy, Gifts…", text: $name, onSubmit: create)
+
+                ALICard {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Toggle(isOn: $isPrivate) {
+                            Label("Private list", systemImage: "lock.fill")
+                                .font(ALITypography.bodyLarge)
+                                .foregroundStyle(ALIColors.ink)
+                        }
+                        .tint(ALIColors.shoppingAccent)
+                        Text("Only you will see it and its products. This can't be changed later.")
+                            .font(ALITypography.bodyMedium)
+                            .foregroundStyle(ALIColors.mutedInk)
+                    }
+                }
+
+                Spacer()
+
+                ALIPrimaryButton(text: "Create list", enabled: !name.trimmed.isEmpty, accent: ALIColors.shoppingAccent) {
+                    create()
+                }
+            }
+            .padding(20)
+            .background(ALIColors.background)
+            .navigationTitle("New list")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+            }
+        }
+        .presentationDetents([.medium])
+        .trackScreen("shopping_new_list")
+    }
+
+    private func create() {
+        guard !name.trimmed.isEmpty else { return }
+        onCreate(name.trimmed, isPrivate)
+        dismiss()
     }
 }

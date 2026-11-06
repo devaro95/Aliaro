@@ -37,6 +37,17 @@ final class FamilyEvent {
     var repeatUntil: Date?
     /// Occurrences deleted on their own ("yyyy-MM-dd", local day of their start).
     var excludedDates: [String] = []
+    /// Push alerts, in seconds before the start (all-day: before 09:00 that
+    /// day). Max 2. nil = default (1 h before; all-day: 09:00), [] = none.
+    var alertOffsets: [Int]? = nil
+    /// `EventCategory` (nil in events from before categories: their icon
+    /// gives the default category, see `EventCategory.defaultKey(forIcon:)`).
+    var categoryID: UUID? = nil
+
+    /// The alerts that will actually be sent.
+    var effectiveAlertOffsets: [Int] {
+        alertOffsets ?? ALIAlerts.defaultOffsets(isEvent: true, isAllDay: isAllDay)
+    }
 
     init(
         id: UUID = UUID(),
@@ -55,7 +66,9 @@ final class FamilyEvent {
         repeatUnit: String = FamilyEventRepeatUnit.week.rawValue,
         color: String? = nil,
         repeatUntil: Date? = nil,
-        excludedDates: [String] = []
+        excludedDates: [String] = [],
+        alertOffsets: [Int]? = nil,
+        categoryID: UUID? = nil
     ) {
         self.id = id
         self.title = title
@@ -74,6 +87,8 @@ final class FamilyEvent {
         self.color = color
         self.repeatUntil = repeatUntil
         self.excludedDates = excludedDates
+        self.alertOffsets = alertOffsets
+        self.categoryID = categoryID
     }
 
     /// "Everyone" or the names of the people the event is for.

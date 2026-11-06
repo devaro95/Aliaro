@@ -32,6 +32,7 @@ struct PeopleScreen: View {
     @State private var memberForPermissions: FamilyMember?
     @State private var showAccountScreen = false
     @State private var showNotificationsScreen = false
+    @State private var showFeedbackSheet = false
     @State private var isRenamingFamily = false
     @State private var renameFamilyText = ""
     @State private var renameFamilyError: String?
@@ -59,6 +60,8 @@ struct PeopleScreen: View {
                 }
 
                 notificationsCard
+
+                feedbackCard
 
                 accountCard
             }
@@ -95,6 +98,9 @@ struct PeopleScreen: View {
         }
         .sheet(isPresented: $showNotificationsScreen) {
             NotificationsScreen()
+        }
+        .sheet(isPresented: $showFeedbackSheet) {
+            FeedbackSheet()
         }
         .alert(
             "Remove \(memberPendingRemoval?.name ?? String(localized: "this person")) from the group?",
@@ -230,6 +236,35 @@ struct PeopleScreen: View {
         .buttonStyle(.plain)
     }
 
+    /// Entry point into `FeedbackSheet`: send a suggestion or report a bug.
+    private var feedbackCard: some View {
+        Button {
+            Track.event("feedback_open")
+            showFeedbackSheet = true
+        } label: {
+            ALICard {
+                HStack(spacing: 12) {
+                    Image(systemName: "bubble.left.and.exclamationmark.bubble.right")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(ALIColors.peopleAccent)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Suggestions and bugs")
+                            .font(ALITypography.bodyLarge)
+                            .foregroundStyle(ALIColors.ink)
+                        Text("Tell us what to improve or what's failing")
+                            .font(ALITypography.labelLarge)
+                            .foregroundStyle(ALIColors.mutedInk)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(ALIColors.mutedInk)
+                }
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
     /// Entry point into `AccountScreen`: name, password and log out.
     private var accountCard: some View {
         Button {
@@ -338,7 +373,7 @@ struct PeopleScreen: View {
         .padding(.vertical, 10)
     }
 
-    private func memberBadge(_ text: String) -> some View {
+    private func memberBadge(_ text: LocalizedStringKey) -> some View {
         Text(text)
             .font(ALITypography.labelLarge)
             .foregroundStyle(ALIColors.mutedInk)

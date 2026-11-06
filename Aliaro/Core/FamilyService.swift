@@ -114,6 +114,7 @@ final class FamilyService: ObservableObject {
         async let minimumWait: Void = Task.sleep(for: Self.minimumCreatingDuration)
         session.setMembership(familyID: response.familyId, memberID: response.memberId, familyName: response.familyName)
         session.setDisabledTabs([]) // a brand-new group starts with every tab on
+        WhatsNew.shared.markSeen() // new to the app: nothing "new" to show
         PremiumManager.shared.syncFamilyPremiumStatus()
         upsertLocalMember(id: response.memberId, name: myName, isCurrentDevice: true, isCreator: true, modelContext: modelContext)
         // A newly created group has nothing to sync yet, but we start
@@ -121,7 +122,7 @@ final class FamilyService: ObservableObject {
         await dataSync.startAll(familyID: response.familyId, currentMemberID: response.memberId, modelContext: modelContext)
         await startSettingsSync(familyID: response.familyId)
         // Every family starts out with a default shopping list.
-        let defaultShoppingList = ShoppingList(name: "Shopping list", position: 0)
+        let defaultShoppingList = ShoppingList(name: String(localized: "Shopping list"), position: 0)
         modelContext.insert(defaultShoppingList)
         dataSync.pushShoppingList(defaultShoppingList, familyID: response.familyId)
         // ...and its 10 default spending categories, editable/extendable later.
@@ -230,6 +231,7 @@ final class FamilyService: ObservableObject {
         session.setMembership(familyID: response.familyId, memberID: response.memberId, familyName: response.familyName)
         PremiumManager.shared.syncFamilyPremiumStatus()
         upsertLocalMember(id: response.memberId, name: myName, isCurrentDevice: true, isCreator: false, modelContext: modelContext)
+        WhatsNew.shared.markSeen() // new to the app: nothing "new" to show
         await refreshMembers(modelContext: modelContext)
         // Joining an existing group inherits its configuration, same as
         // menu/calendar/etc: fetch which tabs the admin already hid.
@@ -637,16 +639,18 @@ final class FamilyService: ObservableObject {
     }
 
     private func clearAllLocalData(modelContext: ModelContext) {
-        let types: [any PersistentModel.Type] = [
-            FamilyMember.self, Dish.self, MealPlanEntry.self, GroceryItem.self,
-            ShoppingList.self, ShoppingListEntry.self, HouseTask.self, HouseTaskLog.self,
-            FamilyEvent.self, Reminder.self, BoardNote.self, Expense.self, ExpenseCategory.self, ActivityLogEntry.self,
-            ExpenseArchive.self,
-        ]
-        for type in types {
-            try? modelContext.delete(model: type)
+        // One by one instead of `delete(model:)`: the batch delete fails
+        // silently (hidden by `try?`) and left previous families' data behind.
+        func wipe<M: PersistentModel>(_ type: M.Type) {
+            guard let items = try? modelContext.fetch(FetchDescriptor<M>()) else { return }
+            for item in items { modelContext.delete(item) }
         }
-        try? modelContext.save()
+        wipe(FamilyMember.self); wipe(Dish.self); wipe(Recipe.self); wipe(MealPlanEntry.self)
+        wipe(GroceryItem.self); wipe(ShoppingList.self); wipe(ShoppingListEntry.self)
+        wipe(HouseTask.self); wipe(HouseTaskLog.self); wipe(FamilyEvent.self); wipe(EventCategory.self); wipe(Reminder.self)
+        wipe(BoardNote.self); wipe(Expense.self); wipe(ExpenseCategory.self); wipe(ExpenseArchive.self)
+        wipe(ActivityLogEntry.self); wipe(WifiNetwork.self)
+        do { try modelContext.save() } catch { print("clearAllLocalData save failed: \(error)") }
     }
 
     // MARK: - Family settings (which tabs show up in the bottom bar, and which one opens first)
