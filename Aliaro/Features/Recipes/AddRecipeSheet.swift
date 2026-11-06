@@ -28,7 +28,6 @@ struct AddRecipeSheet: View {
     @State private var steps: [TextDraft] = [TextDraft()]
     /// Web links being edited (raw text; normalized on save).
     @State private var links: [LinkDraft] = []
-    @State private var showGroceryPicker = false
     /// The vertical TextField reports a Return twice in the same update;
     /// remembers the last split ("<id>|<text>") so it only happens once.
     @State private var lastStepSplit: String?
@@ -142,11 +141,6 @@ struct AddRecipeSheet: View {
                     title: field == .prep ? "Prep time" : "Cooking time",
                     minutes: field == .prep ? $prepMinutes : $cookMinutes
                 )
-            }
-            .sheet(isPresented: $showGroceryPicker) {
-                GroceryIngredientPicker(alreadyAdded: Set(ingredients.map { $0.name.trimmed.lowercased() })) { names in
-                    addIngredients(names)
-                }
             }
             .onChange(of: photoItem) { _, item in
                 guard let item else { return }
@@ -305,14 +299,8 @@ struct AddRecipeSheet: View {
                     ingredientRow($ingredient)
                 }
 
-                HStack(spacing: 8) {
-                    addRowButton("Add ingredient", systemImage: "plus") {
-                        addIngredient(after: ingredients.last?.id)
-                    }
-                    addRowButton("From shopping list", systemImage: "cart.fill") {
-                        Track.event("recipe_ingredients_from_shopping_tap")
-                        showGroceryPicker = true
-                    }
+                addRowButton("Add ingredient", systemImage: "plus") {
+                    addIngredient(after: ingredients.last?.id)
                 }
                 .padding(.top, 4)
             }
@@ -601,15 +589,6 @@ struct AddRecipeSheet: View {
             let step = steps.remove(at: source)
             steps.insert(step, at: destination)
         }
-    }
-
-    /// Adds the picked catalog items as ingredients, filling the empty row first.
-    private func addIngredients(_ names: [String]) {
-        let existing = Set(ingredients.map { $0.name.trimmed.lowercased() })
-        let fresh = names.filter { !existing.contains($0.lowercased()) }
-        guard !fresh.isEmpty else { return }
-        ingredients.removeAll { $0.name.trimmed.isEmpty }
-        ingredients.append(contentsOf: fresh.map { IngredientDraft(name: $0) })
     }
 
     private func loadIfEditing() {
