@@ -7,6 +7,7 @@ import SwiftUI
 enum PremiumFeature: String, CaseIterable, Identifiable {
     // Case order = paywall order: the Board goes first (headline feature).
     case board
+    case places
     case historial
     case extraShoppingLists = "extra_shopping_lists"
     case unlimitedReminders = "unlimited_reminders"
@@ -36,6 +37,7 @@ enum PremiumFeature: String, CaseIterable, Identifiable {
         case .extraCategories: return "Custom finance categories"
         case .financeArchive: return "Archive finances and export to PDF"
         case .board: return "Family board"
+        case .places: return "Family places"
         }
     }
 
@@ -54,6 +56,7 @@ enum PremiumFeature: String, CaseIterable, Identifiable {
         case .extraCategories: return "Organise your expenses your way."
         case .financeArchive: return "Close periods and keep your accounts as a PDF."
         case .board: return "Pin messages on your family's Home screen."
+        case .places: return "Save your family's favourite spots on a map and get there in a tap."
         }
     }
 
@@ -67,6 +70,7 @@ enum PremiumFeature: String, CaseIterable, Identifiable {
         case .economiaStats, .extraCategories, .financeArchive: return ALIColors.economiaAccent
         case .extraMembers: return ALIColors.peopleAccent
         case .board: return ALIColors.boardAccent
+        case .places: return ALIColors.placesAccent
         }
     }
 
@@ -84,6 +88,7 @@ enum PremiumFeature: String, CaseIterable, Identifiable {
         case .extraCategories: return "tag.fill"
         case .financeArchive: return "archivebox.fill"
         case .board: return "pin.fill"
+        case .places: return "map.fill"
         }
     }
 }

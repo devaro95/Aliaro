@@ -614,6 +614,7 @@ pbxproj = f"""// !$*UTF8*$!
 \t\t\t\t\t}},
 \t\t\t\t);
 \t\t\t\tINFOPLIST_KEY_NSCameraUsageDescription = "Aliaro necesita la cámara para escanear el código QR de invitación al grupo familiar y para hacer fotos de tus recetas.";
+\t\t\t\tINFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Aliaro usa tu ubicación para mostrarte en el mapa de lugares y ordenar los sitios de la familia por cercanía.";
 \t\t\t\tINFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 \t\t\t\tINFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 \t\t\t\tINFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -663,6 +664,7 @@ pbxproj = f"""// !$*UTF8*$!
 \t\t\t\t\t}},
 \t\t\t\t);
 \t\t\t\tINFOPLIST_KEY_NSCameraUsageDescription = "Aliaro necesita la cámara para escanear el código QR de invitación al grupo familiar y para hacer fotos de tus recetas.";
+\t\t\t\tINFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Aliaro usa tu ubicación para mostrarte en el mapa de lugares y ordenar los sitios de la familia por cercanía.";
 \t\t\t\tINFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 \t\t\t\tINFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 \t\t\t\tINFOPLIST_KEY_UILaunchScreen_Generation = YES;

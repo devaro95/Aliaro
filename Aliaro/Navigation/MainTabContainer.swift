@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import Combine
 
 /// Container for the top-level screens with the floating bar on top.
@@ -28,6 +29,18 @@ struct MainTabContainer: View {
     /// The (up to 5) favorite features next to Home in the bar.
     private var favorites: [AppTab] {
         AppTab.favorites(stored: familySession.favoriteTabs, excluding: familySession.disabledTabs)
+    }
+
+    /// The screen on top right now (a favorite, or what's pushed on Home).
+    private var currentScreen: AppTab { selected == .home ? (homePath.last ?? .home) : selected }
+
+    /// Full-screen screens (the Places map) hide the floating bar and show
+    /// their own back button instead.
+    private var hidesBottomBar: Bool { currentScreen == .places }
+
+    /// Back from a full-screen screen: pop it from Home, or go to Home if it's a favorite.
+    private func leaveFullScreen() {
+        if !homePath.isEmpty { homePath.removeLast() } else { selected = .home }
     }
 
     /// What the bottom bar shows, in order.
@@ -62,6 +75,8 @@ struct MainTabContainer: View {
                                 screen(for: tab)
                                     .navigationBarTitleDisplayMode(.inline)
                                     .toolbarBackground(.hidden, for: .navigationBar)
+                                    // Full-screen screens bring their own back button.
+                                    .toolbar(tab == .places ? .hidden : .automatic, for: .navigationBar)
                                     .background(ALIColors.background)
                             }
                             .toolbar(.hidden, for: .navigationBar)
@@ -72,18 +87,33 @@ struct MainTabContainer: View {
                 }
             }
             .environmentObject(bottomBarScrollTracker)
+            .environment(\.leaveFullScreen, LeaveFullScreenAction(run: leaveFullScreen))
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            ALIBottomBar(
-                selected: $selected,
-                visibleTabs: barTabs,
-                collapseFraction: bottomBarScrollTracker.collapseFraction,
-                onReselect: { tab in
-                    // Tapping Home again goes back to the Home root.
-                    if tab == .home, !homePath.isEmpty { homePath.removeAll() }
-                }
-            )
+            if !hidesBottomBar {
+                ALIBottomBar(
+                    // Places asks for location before opening (not on top of the map).
+                    selected: Binding(
+                        get: { selected },
+                        set: { tab in
+                            if tab == .places {
+                                LocationPermission.shared.requestIfNeeded { selected = tab }
+                            } else {
+                                selected = tab
+                            }
+                        }
+                    ),
+                    visibleTabs: barTabs,
+                    collapseFraction: bottomBarScrollTracker.collapseFraction,
+                    onReselect: { tab in
+                        // Tapping Home again goes back to the Home root.
+                        if tab == .home, !homePath.isEmpty { homePath.removeAll() }
+                    }
+                )
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
         }
+        .animation(.easeInOut(duration: 0.25), value: hidesBottomBar)
         .background(ALIColors.background)
         .ignoresSafeArea(.keyboard)
         .onReceive(PushNotificationManager.shared.$pendingTab.compactMap { $0 }) { tab in
@@ -147,6 +177,7 @@ struct MainTabContainer: View {
         case .board: BoardScreen()
         case .economia: EconomiaScreen()
         case .wifi: WifiScreen()
+        case .places: PlacesScreen()
         case .people: PeopleScreen()
         }
     }
@@ -155,6 +186,15 @@ struct MainTabContainer: View {
     /// selection so there's only ever one copy of a screen; the rest are
     /// pushed on Home's stack.
     private func openFeature(_ tab: AppTab) {
+        // Places asks for location before opening (not on top of the map).
+        if tab == .places {
+            LocationPermission.shared.requestIfNeeded { openFeatureNow(tab) }
+        } else {
+            openFeatureNow(tab)
+        }
+    }
+
+    private func openFeatureNow(_ tab: AppTab) {
         Track.event("home_feature_open", ["tab": tab.settingsKey, "is_favorite": favorites.contains(tab)])
         if favorites.contains(tab) {
             homePath.removeAll()
@@ -185,5 +225,36 @@ struct MainTabContainer: View {
             selected = .home
         }
         homePath.removeAll { $0.isFeature && familySession.disabledTabs.contains($0.settingsKey) }
+    }
+}
+
+/// "Back" for full-screen screens without the floating bar (Places).
+struct LeaveFullScreenAction {
+    let run: () -> Void
+    func callAsFunction() { run() }
+}
+
+private struct LeaveFullScreenKey: EnvironmentKey {
+    static let defaultValue = LeaveFullScreenAction(run: {})
+}
+
+extension EnvironmentValues {
+    var leaveFullScreen: LeaveFullScreenAction {
+        get { self[LeaveFullScreenKey.self] }
+        set { self[LeaveFullScreenKey.self] = newValue }
+    }
+}
+
+/// Keeps the swipe-from-the-edge "back" working on pushed screens that hide
+/// the navigation bar (Places draws its own back button): SwiftUI turns the
+/// gesture off when the bar is hidden.
+extension UINavigationController: @retroactive UIGestureRecognizerDelegate {
+    override open func viewDidLoad() {
+        super.viewDidLoad()
+        interactivePopGestureRecognizer?.delegate = self
+    }
+
+    public func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+        viewControllers.count > 1
     }
 }

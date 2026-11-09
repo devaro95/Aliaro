@@ -1,6 +1,118 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Family places" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Family places"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lugares de la familia"
+          }
+        }
+      }
+    },
+    "Save your family's favourite spots on a map and get there in a tap." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save your family's favourite spots on a map and get there in a tap."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guarda los sitios favoritos de la familia en un mapa y llega con un toque."
+          }
+        }
+      }
+    },
+    "Unlock places" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unlock places"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desbloquear lugares"
+          }
+        }
+      }
+    },
+    "Grandma's favourite restaurant" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grandma's favourite restaurant"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El restaurante favorito de la abuela"
+          }
+        }
+      }
+    },
+    "Park with swings" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Park with swings"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parque con columpios"
+          }
+        }
+      }
+    },
+    "Sunday café" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sunday café"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Café de los domingos"
+          }
+        }
+      }
+    },
+    "Science museum" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Science museum"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Museo de ciencias"
+          }
+        }
+      }
+    },
     "" : {
 
     },
@@ -504,6 +616,22 @@
         }
       }
     },
+    "%lld places" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld places"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld lugares"
+          }
+        }
+      }
+    },
     "%lld recipes" : {
       "localizations" : {
         "en" : {
@@ -842,6 +970,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "1 cosa pendiente"
+          }
+        }
+      }
+    },
+    "1 place" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 place"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 lugar"
           }
         }
       }
@@ -1797,6 +1941,22 @@
         }
       }
     },
+    "Apple Maps" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Maps"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mapas de Apple"
+          }
+        }
+      }
+    },
     "Apply filter" : {
       "localizations" : {
         "en" : {
@@ -2140,6 +2300,22 @@
         }
       }
     },
+    "Cafés & bars" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cafés & bars"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cafés y bares"
+          }
+        }
+      }
+    },
     "Calendar" : {
       "localizations" : {
         "en" : {
@@ -2285,6 +2461,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nombre de categoría"
+          }
+        }
+      }
+    },
+    "Change" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cambiar"
           }
         }
       }
@@ -3345,6 +3537,22 @@
         }
       }
     },
+    "Culture" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Culture"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cultura"
+          }
+        }
+      }
+    },
     "cup" : {
       "localizations" : {
         "en" : {
@@ -3916,6 +4124,22 @@
         }
       }
     },
+    "Directions" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Directions"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cómo llegar"
+          }
+        }
+      }
+    },
     "Dishes" : {
       "localizations" : {
         "es" : {
@@ -4277,6 +4501,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Editar notas"
+          }
+        }
+      }
+    },
+    "Edit place" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit place"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Editar lugar"
           }
         }
       }
@@ -5234,6 +5474,22 @@
         }
       }
     },
+    "Fun & kids" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fun & kids"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ocio y niños"
+          }
+        }
+      }
+    },
     "Generate another code" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -5311,6 +5567,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ir a hoy"
+          }
+        }
+      }
+    },
+    "Google Maps" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Google Maps"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Google Maps"
           }
         }
       }
@@ -5533,6 +5805,22 @@
         }
       }
     },
+    "Hotels & trips" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hotels & trips"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hoteles y viajes"
+          }
+        }
+      }
+    },
     "hours" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -5674,7 +5962,6 @@
       }
     },
     "Icon" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5925,6 +6212,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sus eventos se quedarán sin categoría."
+          }
+        }
+      }
+    },
+    "Its places will move to \"Other\"." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Its places will move to \"Other\"."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sus sitios pasarán a «Otros»."
           }
         }
       }
@@ -6192,6 +6495,23 @@
         }
       }
     },
+    "List" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "List"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lista"
+          }
+        }
+      }
+    },
     "Lists" : {
       "localizations" : {
         "en" : {
@@ -6354,6 +6674,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Gestionar suscripción"
+          }
+        }
+      }
+    },
+    "Map" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Map"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mapa"
           }
         }
       }
@@ -6751,6 +7088,22 @@
         }
       }
     },
+    "My location" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "My location"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mi ubicación"
+          }
+        }
+      }
+    },
     "Name" : {
       "localizations" : {
         "en" : {
@@ -6763,6 +7116,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nombre"
+          }
+        }
+      }
+    },
+    "Name (e.g. Casa Lucio)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Name (e.g. Casa Lucio)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nombre (p. ej. Casa Lucio)"
           }
         }
       }
@@ -6811,6 +7180,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nombre (opcional)"
+          }
+        }
+      }
+    },
+    "Nearest first" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nearest first"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Más cerca primero"
           }
         }
       }
@@ -7105,6 +7491,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nueva contraseña"
+          }
+        }
+      }
+    },
+    "New place" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New place"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nuevo lugar"
           }
         }
       }
@@ -7427,6 +7829,22 @@
         }
       }
     },
+    "No places yet" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No places yet"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aún no hay lugares"
+          }
+        }
+      }
+    },
     "No recipes yet" : {
       "localizations" : {
         "en" : {
@@ -7487,6 +7905,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sin resultados"
+          }
+        }
+      }
+    },
+    "No results. Try another search or tap the map." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No results. Try another search or tap the map."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sin resultados. Prueba otra búsqueda o toca el mapa."
           }
         }
       }
@@ -7684,6 +8119,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nota (opcional)"
+          }
+        }
+      }
+    },
+    "Notes (optional)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notes (optional)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notas (opcional)"
           }
         }
       }
@@ -8111,6 +8562,22 @@
         }
       }
     },
+    "Parks & nature" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parks & nature"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parques y naturaleza"
+          }
+        }
+      }
+    },
     "Participants" : {
       "localizations" : {
         "es" : {
@@ -8508,6 +8975,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Pizza"
+          }
+        }
+      }
+    },
+    "Place" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Place"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lugar"
+          }
+        }
+      }
+    },
+    "Places" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Places"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lugares"
           }
         }
       }
@@ -9229,6 +9728,22 @@
         }
       }
     },
+    "Restaurants" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restaurants"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restaurantes"
+          }
+        }
+      }
+    },
     "Restore purchases" : {
       "comment" : "Button text to restore purchases.",
       "isCommentAutoGenerated" : true,
@@ -9299,6 +9814,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Guardar e iniciar sesión"
+          }
+        }
+      }
+    },
+    "Save the restaurants, parks and spots your family loves, and find them here on the map." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save the restaurants, parks and spots your family loves, and find them here on the map."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guarda los restaurantes, parques y sitios que le gustan a tu familia y encuéntralos aquí en el mapa."
           }
         }
       }
@@ -9431,6 +9962,56 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Colegio"
+          }
+        }
+      }
+    },
+    "Search" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscar"
+          }
+        }
+      }
+    },
+    "Search a place or address" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search a place or address"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Busca un sitio o una dirección"
+          }
+        }
+      }
+    },
+    "Search above or tap the map to drop the pin." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search above or tap the map to drop the pin."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Busca arriba o toca el mapa para poner el pin."
           }
         }
       }
@@ -9797,6 +10378,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Lista de la compra"
+          }
+        }
+      }
+    },
+    "Shops" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shops"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tiendas"
           }
         }
       }
@@ -11234,7 +11831,6 @@
       }
     },
     "Try another search." : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -11767,6 +12363,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Regar las plantas"
+          }
+        }
+      }
+    },
+    "Waze" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Waze"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Waze"
           }
         }
       }
