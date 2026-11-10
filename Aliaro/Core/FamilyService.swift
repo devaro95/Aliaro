@@ -766,17 +766,22 @@ final class FamilyService: ObservableObject {
 
     func registerPushToken(_ apnsToken: String) async {
         guard let memberID = session.memberID else { return }
-        struct Body: Encodable { let memberId: UUID; let apnsToken: String; let locale: String }
+        struct Body: Encodable { let memberId: UUID; let apnsToken: String; let locale: String; let timeZone: String }
         struct OKResponse: Decodable { let ok: Bool }
         // Language the app UI is actually shown in (one of the app's
         // localizations), so push notifications — written server-side —
         // arrive in that same language. Re-sent on every launch, so a change
         // of the iPhone's language is picked up automatically.
         let locale = Bundle.main.preferredLocalizations.first ?? "en"
+        // IANA time zone of this iPhone ("Atlantic/Canary", "America/New_York"…),
+        // so the server writes times in push texts — and sends all-day events
+        // and the daily tasks summary at 09:00 — in the user's own local time.
+        // Re-sent on every launch, so travelling is picked up on the next one.
+        let timeZone = TimeZone.current.identifier
         do {
             let _: OKResponse = try await invokeEdgeFunction(
                 "register-push-token",
-                options: FunctionInvokeOptions(body: Body(memberId: memberID, apnsToken: apnsToken, locale: locale))
+                options: FunctionInvokeOptions(body: Body(memberId: memberID, apnsToken: apnsToken, locale: locale, timeZone: timeZone))
             )
         } catch {
             lastError = error.localizedDescription
