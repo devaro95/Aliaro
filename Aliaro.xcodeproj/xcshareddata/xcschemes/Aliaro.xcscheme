@@ -51,6 +51,13 @@
             ReferencedContainer = "container:Aliaro.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
+      <EnvironmentVariables>
+         <EnvironmentVariable
+            key = "TZ"
+            value = "Atlantic/Canaty"
+            isEnabled = "YES">
+         </EnvironmentVariable>
+      </EnvironmentVariables>
       <StoreKitConfigurationFileReference
          identifier = "../../Aliaro/Products.storekit">
       </StoreKitConfigurationFileReference>
