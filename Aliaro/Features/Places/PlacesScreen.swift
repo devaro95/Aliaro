@@ -829,9 +829,106 @@ private struct PlaceSample: Identifiable {
     ]
 }
 
-/// Drawn stand-in for a map (roads, a park, water and sample pins) behind the
-/// locked premium preview: no MapKit, so it appears instantly. Same as Android.
+/// Backdrop of the locked premium preview: a still image of the real Apple
+/// map (`MKMapSnapshotter`, no interactive map, so no heavy MapKit setup)
+/// with sample pins. Until it's ready (or if it fails) the drawn map shows,
+/// which appears instantly. The image is kept for the rest of the session.
 private struct SampleMapBackdrop: View {
+    @ObservedObject private var store = SampleMapSnapshotStore.shared
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        GeometryReader { geo in
+            ZStack(alignment: .topLeading) {
+                DrawnSampleMap()
+                if let snapshot = store.snapshot(size: geo.size, colorScheme: colorScheme) {
+                    ZStack(alignment: .topLeading) {
+                        Image(uiImage: snapshot.image)
+                            .resizable()
+                            .frame(width: geo.size.width, height: geo.size.height)
+                        ForEach(SampleMapSnapshotStore.pins) { pin in
+                            let point = snapshot.point(for: pin.coordinate)
+                            PlaceMarker(style: PlaceCategoryStyle(pin.category))
+                                .position(x: point.x, y: point.y - 22) // tip of the pin on the spot
+                        }
+                    }
+                    .transition(.opacity)
+                }
+            }
+            .animation(.easeIn(duration: 0.25), value: store.version)
+            .task(id: "\(Int(geo.size.width))x\(Int(geo.size.height))-\(colorScheme == .dark)") {
+                await store.load(size: geo.size, colorScheme: colorScheme)
+            }
+        }
+    }
+}
+
+/// Makes (once per size and appearance) the still image of the sample map.
+@MainActor
+private final class SampleMapSnapshotStore: ObservableObject {
+    static let shared = SampleMapSnapshotStore()
+
+    struct Pin: Identifiable {
+        let id = UUID()
+        let coordinate: CLLocationCoordinate2D
+        let category: PlaceCategory
+    }
+
+    /// Central Madrid (Gran Vía, Chueca, Huertas, the Prado…), zoomed out.
+    static let region = MKCoordinateRegion(
+        center: CLLocationCoordinate2D(latitude: 40.4180, longitude: -3.6985),
+        span: MKCoordinateSpan(latitudeDelta: 0.022, longitudeDelta: 0.022)
+    )
+
+    static let pins: [Pin] = [
+        Pin(coordinate: .init(latitude: 40.4199, longitude: -3.6990), category: .restaurant),
+        Pin(coordinate: .init(latitude: 40.4235, longitude: -3.6975), category: .cafe),
+        Pin(coordinate: .init(latitude: 40.4252, longitude: -3.7035), category: .shopping),
+        Pin(coordinate: .init(latitude: 40.4150, longitude: -3.6920), category: .culture),
+        Pin(coordinate: .init(latitude: 40.4205, longitude: -3.6895), category: .nature),
+        Pin(coordinate: .init(latitude: 40.4140, longitude: -3.7010), category: .restaurant),
+        Pin(coordinate: .init(latitude: 40.4115, longitude: -3.6950), category: .leisure),
+        Pin(coordinate: .init(latitude: 40.4170, longitude: -3.7055), category: .cafe),
+        Pin(coordinate: .init(latitude: 40.4225, longitude: -3.6930), category: .travel),
+        Pin(coordinate: .init(latitude: 40.4100, longitude: -3.6900), category: .culture),
+        Pin(coordinate: .init(latitude: 40.4265, longitude: -3.6950), category: .restaurant),
+        Pin(coordinate: .init(latitude: 40.4128, longitude: -3.7045), category: .shopping),
+    ]
+
+    /// Bumps when a snapshot arrives (drives the fade-in).
+    @Published private(set) var version = 0
+    private var snapshots: [String: MKMapSnapshotter.Snapshot] = [:]
+    private var inFlight: Set<String> = []
+
+    private func key(_ size: CGSize, _ colorScheme: ColorScheme) -> String {
+        "\(Int(size.width))x\(Int(size.height))-\(colorScheme == .dark)"
+    }
+
+    func snapshot(size: CGSize, colorScheme: ColorScheme) -> MKMapSnapshotter.Snapshot? {
+        snapshots[key(size, colorScheme)]
+    }
+
+    func load(size: CGSize, colorScheme: ColorScheme) async {
+        guard size.width > 0, size.height > 0 else { return }
+        let key = key(size, colorScheme)
+        guard snapshots[key] == nil, !inFlight.contains(key) else { return }
+        inFlight.insert(key)
+        defer { inFlight.remove(key) }
+
+        let options = MKMapSnapshotter.Options()
+        options.region = Self.region
+        options.size = size
+        options.pointOfInterestFilter = .excludingAll
+        options.traitCollection = UITraitCollection(userInterfaceStyle: colorScheme == .dark ? .dark : .light)
+        guard let snapshot = try? await MKMapSnapshotter(options: options).start() else { return }
+        snapshots[key] = snapshot
+        version += 1
+    }
+}
+
+/// Drawn stand-in for a map (streets, parks, a river and sample pins): shows
+/// instantly while the real map image is being made. Same as Android.
+private struct DrawnSampleMap: View {
     private let pins: [(x: CGFloat, y: CGFloat, category: PlaceCategory)] = [
         (0.38, 0.22, .restaurant), (0.22, 0.33, .shopping), (0.55, 0.15, .cafe),
         (0.76, 0.36, .nature), (0.62, 0.44, .culture), (0.15, 0.48, .leisure),
