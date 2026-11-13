@@ -233,6 +233,23 @@ enum DebugMockData {
             ))
         }
 
+        // World map: different countries for each member, some shared (stronger color on "Everyone").
+        // Countries the member had already marked are left alone, so `clear` never removes real ones.
+        let trips: [[String]] = [
+            ["ES", "PT", "FR", "IT", "GB", "MA", "US", "MX", "GR", "DE"],
+            ["ES", "FR", "IT", "NL", "BE", "CH", "AT", "JP", "TH"],
+            ["ES", "PT", "FR", "AR", "BR", "PE", "IE", "NO"],
+            ["ES", "IT", "HR", "TR", "EG", "MA", "CA"],
+        ]
+        let existingVisits = Set(((try? modelContext.fetch(FetchDescriptor<VisitedCountry>())) ?? []).map(\.id))
+        for (member, codes) in zip(members, trips) {
+            for code in codes where !existingVisits.contains(VisitedCountry.id(for: member.id, code: code)) {
+                let daysAgo = Int.random(in: 1...400)
+                track(VisitedCountry(memberID: member.id, countryCode: code,
+                                     createdAt: calendar.date(byAdding: .day, value: -daysAgo, to: .now) ?? .now))
+            }
+        }
+
         try? modelContext.save()
         UserDefaults.standard.set(Array(seededIDs), forKey: seededIDsKey)
     }
@@ -270,6 +287,7 @@ enum DebugMockData {
         purge(BoardNote.self)
         purge(Expense.self)
         purge(ExpenseCategory.self)
+        purge(VisitedCountry.self)
         purge(FamilyMember.self)
 
         try? modelContext.save()
@@ -295,4 +313,5 @@ extension Reminder: DebugMockTrackable {}
 extension BoardNote: DebugMockTrackable {}
 extension ExpenseCategory: DebugMockTrackable {}
 extension Expense: DebugMockTrackable {}
+extension VisitedCountry: DebugMockTrackable {}
 #endif
