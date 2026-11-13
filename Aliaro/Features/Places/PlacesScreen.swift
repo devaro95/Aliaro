@@ -173,7 +173,7 @@ struct PlacesScreen: View {
             let liveTop = min(max(restTop + sheetDrag, sheetTop(for: .medium, height: height)), sheetTop(for: .collapsed, height: height))
             ZStack(alignment: .top) {
                 Group {
-                    if mapReady { map } else { Color(hex: 0xEEF0E8) }
+                    if mapReady { map } else { ALIColors.background }
                 }
                     // Visible part of the map: below the title/chips, above the sheet.
                     .safeAreaPadding(.top, 120)
@@ -831,8 +831,9 @@ private struct PlaceSample: Identifiable {
 
 /// Backdrop of the locked premium preview: a still image of the real Apple
 /// map (`MKMapSnapshotter`, no interactive map, so no heavy MapKit setup)
-/// with sample pins. Until it's ready (or if it fails) the drawn map shows,
-/// which appears instantly. The image is kept for the rest of the session.
+/// with sample pins. It's made at app start (`SampleMapSnapshotStore.preload`)
+/// so it's normally ready when the screen opens; otherwise the background
+/// color shows until it fades in. Kept for the rest of the session.
 private struct SampleMapBackdrop: View {
     @ObservedObject private var store = SampleMapSnapshotStore.shared
     @Environment(\.colorScheme) private var colorScheme
@@ -840,7 +841,7 @@ private struct SampleMapBackdrop: View {
     var body: some View {
         GeometryReader { geo in
             ZStack(alignment: .topLeading) {
-                DrawnSampleMap()
+                ALIColors.background
                 if let snapshot = store.snapshot(size: geo.size, colorScheme: colorScheme) {
                     ZStack(alignment: .topLeading) {
                         Image(uiImage: snapshot.image)
@@ -865,7 +866,7 @@ private struct SampleMapBackdrop: View {
 
 /// Makes (once per size and appearance) the still image of the sample map.
 @MainActor
-private final class SampleMapSnapshotStore: ObservableObject {
+final class SampleMapSnapshotStore: ObservableObject {
     static let shared = SampleMapSnapshotStore()
 
     struct Pin: Identifiable {
@@ -904,6 +905,14 @@ private final class SampleMapSnapshotStore: ObservableObject {
         "\(Int(size.width))x\(Int(size.height))-\(colorScheme == .dark)"
     }
 
+    /// At app start, for the full screen, when Places is locked (premium): so the
+    /// preview opens with its map already there.
+    static func preload(colorScheme: ColorScheme) {
+        guard PremiumManager.shared.isLocked(.places) else { return }
+        let size = UIScreen.main.bounds.size
+        Task { await shared.load(size: size, colorScheme: colorScheme) }
+    }
+
     func snapshot(size: CGSize, colorScheme: ColorScheme) -> MKMapSnapshotter.Snapshot? {
         snapshots[key(size, colorScheme)]
     }
@@ -923,82 +932,5 @@ private final class SampleMapSnapshotStore: ObservableObject {
         guard let snapshot = try? await MKMapSnapshotter(options: options).start() else { return }
         snapshots[key] = snapshot
         version += 1
-    }
-}
-
-/// Drawn stand-in for a map (streets, parks, a river and sample pins): shows
-/// instantly while the real map image is being made. Same as Android.
-private struct DrawnSampleMap: View {
-    private let pins: [(x: CGFloat, y: CGFloat, category: PlaceCategory)] = [
-        (0.38, 0.22, .restaurant), (0.22, 0.33, .shopping), (0.55, 0.15, .cafe),
-        (0.76, 0.36, .nature), (0.62, 0.44, .culture), (0.15, 0.48, .leisure),
-        (0.86, 0.18, .travel), (0.45, 0.38, .restaurant),
-    ]
-
-    var body: some View {
-        GeometryReader { geo in
-            let w = geo.size.width
-            let h = geo.size.height
-            ZStack(alignment: .topLeading) {
-                Canvas { context, size in
-                    let w = size.width
-                    let h = size.height
-                    // Zoomed out: a dense grid of small streets, a few avenues, parks and a river.
-                    context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(Color(hex: 0xEEF0E8)))
-                    for park in [
-                        CGRect(x: w * 0.62, y: h * 0.30, width: w * 0.30, height: h * 0.16),
-                        CGRect(x: w * 0.08, y: h * 0.12, width: w * 0.16, height: h * 0.08),
-                        CGRect(x: w * 0.30, y: h * 0.66, width: w * 0.22, height: h * 0.10),
-                        CGRect(x: w * 0.78, y: h * 0.78, width: w * 0.18, height: h * 0.09),
-                    ] {
-                        context.fill(Path(roundedRect: park, cornerRadius: 10), with: .color(Color(hex: 0xCFE8C4)))
-                    }
-                    var river = Path()
-                    river.move(to: CGPoint(x: -20, y: h * 0.86))
-                    river.addCurve(
-                        to: CGPoint(x: w + 20, y: h * 0.70),
-                        control1: CGPoint(x: w * 0.3, y: h * 0.78),
-                        control2: CGPoint(x: w * 0.6, y: h * 0.96)
-                    )
-                    context.stroke(river, with: .color(Color(hex: 0xCFE3F2)), style: StrokeStyle(lineWidth: 22, lineCap: .round))
-                    // Small streets (slightly tilted grid).
-                    let step: CGFloat = 26
-                    var x: CGFloat = -h * 0.1
-                    while x < w + h * 0.1 {
-                        var street = Path()
-                        street.move(to: CGPoint(x: x, y: -10))
-                        street.addLine(to: CGPoint(x: x + h * 0.08, y: h + 10))
-                        context.stroke(street, with: .color(.white), lineWidth: 2.5)
-                        x += step
-                    }
-                    var y: CGFloat = 0
-                    while y < h + 20 {
-                        var street = Path()
-                        street.move(to: CGPoint(x: -10, y: y))
-                        street.addLine(to: CGPoint(x: w + 10, y: y - w * 0.06))
-                        context.stroke(street, with: .color(.white), lineWidth: 2.5)
-                        y += step
-                    }
-                    // Avenues.
-                    let avenues: [(CGPoint, CGPoint)] = [
-                        (CGPoint(x: -20, y: h * 0.28), CGPoint(x: w + 20, y: h * 0.20)),
-                        (CGPoint(x: w * 0.30, y: -20), CGPoint(x: w * 0.42, y: h + 20)),
-                        (CGPoint(x: -20, y: h * 0.58), CGPoint(x: w + 20, y: h * 0.50)),
-                        (CGPoint(x: -20, y: h * 0.05), CGPoint(x: w * 0.9, y: h + 20)),
-                    ]
-                    for (from, to) in avenues {
-                        var avenue = Path()
-                        avenue.move(to: from)
-                        avenue.addLine(to: to)
-                        context.stroke(avenue, with: .color(.white), style: StrokeStyle(lineWidth: 7, lineCap: .round))
-                        context.stroke(avenue, with: .color(Color(hex: 0xFCE6B5)), style: StrokeStyle(lineWidth: 3, lineCap: .round))
-                    }
-                }
-                ForEach(Array(pins.enumerated()), id: \.offset) { _, pin in
-                    PlaceMarker(style: PlaceCategoryStyle(pin.category))
-                        .position(x: w * pin.x, y: h * pin.y)
-                }
-            }
-        }
     }
 }

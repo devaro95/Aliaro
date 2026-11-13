@@ -1,4 +1,5 @@
 import SwiftUI
+import MapKit
 import UIKit
 import Combine
 
@@ -21,6 +22,7 @@ struct MainTabContainer: View {
     @StateObject private var bottomBarScrollTracker = BottomBarScrollTracker()
     /// Screens shown over everything (Lists → add products) hide the bar too.
     @StateObject private var screenChrome = ScreenChrome()
+    @Environment(\.colorScheme) private var colorScheme
 
     init() {
         let initial = MainTabContainer.initialNavigation()
@@ -159,6 +161,13 @@ struct MainTabContainer: View {
             }
         }
         .task {
+            // Places: warm up MapKit (the first map is slow to set up) and make the
+            // locked preview's map image, a few seconds after launch.
+            Task {
+                try? await Task.sleep(for: .seconds(2))
+                MapKitWarmUp.run()
+                SampleMapSnapshotStore.preload(colorScheme: colorScheme)
+            }
             if let familyID = familySession.familyID, let memberID = familySession.memberID {
                 await dataSync.startAll(familyID: familyID, currentMemberID: memberID, modelContext: modelContext)
                 await familyService.refreshFamilySettings()
@@ -266,4 +275,20 @@ extension UINavigationController: @retroactive UIGestureRecognizerDelegate {
 @MainActor
 final class ScreenChrome: ObservableObject {
     @Published var coversBottomBar = false
+}
+
+/// Creates (and drops) one map view off screen so MapKit's first-time setup
+/// (rendering engine, styles) happens before the user opens Places.
+@MainActor
+enum MapKitWarmUp {
+    private static var done = false
+
+    static func run() {
+        guard !done else { return }
+        done = true
+        let view = MKMapView(frame: CGRect(x: 0, y: 0, width: 64, height: 64))
+        view.pointOfInterestFilter = .excludingAll
+        // Keep it alive briefly so it loads its resources, then release it.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) { _ = view }
+    }
 }
