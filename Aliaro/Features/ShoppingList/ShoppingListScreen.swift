@@ -3,14 +3,15 @@ import SwiftData
 
 /// "Lists" tab: at the top, the group's lists as tabs (there's always at
 /// least one; private ones only for their creator, with a lock); below,
-/// the active list. Each list's products are managed from the add sheet
-/// (`AddToShoppingListSheet`).
+/// the active list. Each list's products are managed from the add screen
+/// (`AddToShoppingListScreen`, full screen sliding in from the right).
 struct ShoppingListScreen: View {
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var bottomBarScrollTracker: BottomBarScrollTracker
     @EnvironmentObject private var dataSync: AppDataSyncCoordinator
     @EnvironmentObject private var familySession: FamilySession
     @EnvironmentObject private var premium: PremiumManager
+    @EnvironmentObject private var screenChrome: ScreenChrome
 
     @Query(sort: \ShoppingList.position) private var allLists: [ShoppingList]
     @Query private var catalog: [GroceryItem]
@@ -19,12 +20,11 @@ struct ShoppingListScreen: View {
     private var allEntries: [ShoppingListEntry]
 
     @State private var selectedListID: UUID?
-    @State private var showAddSheet = false
+    @State private var showAddScreen = false
+    @State private var confirmClearChecked = false
     @State private var entryPendingDelete: ShoppingListEntry?
 
     @State private var showNewListSheet = false
-    @State private var quantityEntry: ShoppingListEntry?
-    @State private var quantityText = ""
     @State private var renamingList: ShoppingList?
     @State private var renameListText = ""
     @State private var listPendingDelete: ShoppingList?
@@ -63,7 +63,7 @@ struct ShoppingListScreen: View {
                     if canAdd {
                         ALIFloatingButton(accent: ALIColors.shoppingAccent) {
                             Track.event("shopping_add_tap", ["pending": pending.count, "lists": lists.count])
-                            showAddSheet = true
+                            showAddScreen = true
                         }
                             .scaleEffect(0.72)
                     }
@@ -84,10 +84,7 @@ struct ShoppingListScreen: View {
                     if !checked.isEmpty {
                         sectionCard(title: String(localized: "Done (\(checked.count))"), rows: checked, dimmed: true)
                         if canDelete {
-                            ALITextButton(text: "Clear done") {
-                                Track.event("shopping_clear_bought", ["count": checked.count])
-                                clearChecked()
-                            }
+                            ALITextButton(text: "Clear done") { confirmClearChecked = true }
                         }
                     }
                 }
@@ -106,10 +103,28 @@ struct ShoppingListScreen: View {
             guard locked, let selected = lists.first(where: { $0.id == selectedListID }) else { return }
             if isListLocked(selected) { selectedListID = lists.first?.id }
         }
-        .sheet(isPresented: $showAddSheet) {
-            if let selectedListID {
-                AddToShoppingListSheet(listID: selectedListID)
+        // Add products: full screen over the list (and the bar), sliding in from the right.
+        .overlay {
+            if showAddScreen, let selectedListID {
+                AddToShoppingListScreen(listID: selectedListID) { showAddScreen = false }
+                    .transition(.move(edge: .trailing))
+                    .zIndex(1)
             }
+        }
+        .animation(.easeInOut(duration: 0.28), value: showAddScreen)
+        .toolbar(showAddScreen ? .hidden : .automatic, for: .navigationBar)
+        .onChange(of: showAddScreen) { _, shown in
+            withAnimation(.easeInOut(duration: 0.25)) { screenChrome.coversBottomBar = shown }
+        }
+        .onDisappear { screenChrome.coversBottomBar = false }
+        .alert("Clear done items?", isPresented: $confirmClearChecked) {
+            Button("Delete", role: .destructive) {
+                Track.event("shopping_clear_bought", ["count": checked.count])
+                clearChecked()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This action cannot be undone.")
         }
         .aliDeleteConfirmDialog(
             isPresented: Binding(get: { entryPendingDelete != nil }, set: { if !$0 { entryPendingDelete = nil } }),
@@ -119,16 +134,6 @@ struct ShoppingListScreen: View {
         }
         .sheet(isPresented: $showNewListSheet) {
             NewListSheet { name, isPrivate in createList(name: name, isPrivate: isPrivate) }
-        }
-        .alert(
-            "Quantity",
-            isPresented: Binding(get: { quantityEntry != nil }, set: { if !$0 { quantityEntry = nil } })
-        ) {
-            TextField("E.g. 2, 1 kg, 3 packs", text: $quantityText)
-            Button("Cancel", role: .cancel) { quantityEntry = nil }
-            Button("Save") { saveQuantity() }
-        } message: {
-            Text(quantityEntry?.name ?? "")
         }
         .alert(
             "Rename list",
@@ -262,9 +267,8 @@ struct ShoppingListScreen: View {
                     ForEach(Array(rows.enumerated()), id: \.element.id) { index, entry in
                         ShoppingListRow(entry: entry, dimmed: dimmed, canEdit: canAdd, canDelete: canDelete) {
                             toggle(entry)
-                        } onQuantity: {
-                            quantityText = entry.quantity ?? ""
-                            quantityEntry = entry
+                        } onSetQuantity: { value in
+                            setQuantity(entry, value)
                         } onDelete: {
                             entryPendingDelete = entry
                         }
@@ -292,13 +296,11 @@ struct ShoppingListScreen: View {
         if entry.isChecked { ReviewPrompt.shared.registerPositiveAction("shopping_item_checked") }
     }
 
-    private func saveQuantity() {
-        defer { quantityEntry = nil }
-        guard let entry = quantityEntry else { return }
-        let value = quantityText.trimmed.isEmpty ? nil : quantityText.trimmed
+    /// Quantity from the inline − n + (nil = 1).
+    private func setQuantity(_ entry: ShoppingListEntry, _ value: String?) {
         guard value != entry.quantity else { return }
         entry.quantity = value
-        Track.event("shopping_item_quantity", ["has_quantity": value != nil, "where": "list"])
+        Track.event("shopping_item_quantity", ["has_quantity": value != nil, "where": "list_inline"])
         if let familyID = familySession.familyID { dataSync.pushShoppingListEntry(entry, familyID: familyID) }
     }
 
@@ -379,8 +381,9 @@ struct ShoppingListScreen: View {
     }
 }
 
-/// Row for an item within the active list: pastel checkbox + name (and
-/// quantity, if any); the menu sets the quantity or removes it from the
+/// Row for an item within the active list: pastel checkbox + name, with
+/// "×n" below (1 when it has no quantity). Tap marks it done. The menu
+/// edits the quantity right in the row (− n + ✓) or removes it from the
 /// list (only the entry, not the list's product).
 private struct ShoppingListRow: View {
     let entry: ShoppingListEntry
@@ -388,8 +391,14 @@ private struct ShoppingListRow: View {
     var canEdit: Bool = true
     var canDelete: Bool = true
     let onToggle: () -> Void
-    let onQuantity: () -> Void
+    /// New quantity (nil = 1).
+    let onSetQuantity: (String?) -> Void
     let onDelete: () -> Void
+
+    @State private var editing = false
+    @State private var draft = 1
+
+    private var accent: Color { ALIColors.shoppingAccent }
 
     var body: some View {
         HStack(spacing: 14) {
@@ -410,8 +419,8 @@ private struct ShoppingListRow: View {
                             .font(ALITypography.bodyLarge)
                             .foregroundStyle(dimmed ? ALIColors.mutedInk : ALIColors.ink)
                             .strikethrough(dimmed)
-                        if let quantity = entry.quantity, !quantity.isEmpty {
-                            Text(quantity)
+                        if !editing {
+                            Text(verbatim: "×" + shoppingQuantityLabel(entry.quantity))
                                 .font(ALITypography.bodyMedium)
                                 .foregroundStyle(ALIColors.mutedInk)
                         }
@@ -421,12 +430,32 @@ private struct ShoppingListRow: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .disabled(editing)
 
-            if canEdit || canDelete {
+            if editing {
+                QuantityCircleButton(systemImage: "minus", foreground: draft > 1 ? accent : ALIColors.mutedInk, background: ALIColors.surfaceVariant) {
+                    draft -= 1
+                }
+                .disabled(draft <= 1)
+                Text(verbatim: "\(draft)")
+                    .font(ALITypography.titleLarge)
+                    .foregroundStyle(ALIColors.ink)
+                    .frame(minWidth: 20)
+                QuantityCircleButton(systemImage: "plus", foreground: accent, background: ALIColors.surfaceVariant) {
+                    draft += 1
+                }
+                QuantityCircleButton(systemImage: "checkmark", foreground: ALIColors.onAccent, background: accent) {
+                    editing = false
+                    onSetQuantity(draft > 1 ? "\(draft)" : nil)
+                }
+            } else if canEdit || canDelete {
                 Menu {
                     if canEdit {
-                        Button(action: onQuantity) {
-                            Label(entry.quantity == nil ? LocalizedStringKey("Add quantity") : LocalizedStringKey("Edit quantity"), systemImage: "number")
+                        Button {
+                            draft = Int(entry.quantity?.trimmed ?? "") ?? 1
+                            editing = true
+                        } label: {
+                            Label("Edit quantity", systemImage: "number")
                         }
                     }
                     if canDelete {
@@ -445,6 +474,32 @@ private struct ShoppingListRow: View {
         }
         .padding(.vertical, 12)
     }
+}
+
+/// Round 32 pt button for the quantity controls (− + ✓).
+struct QuantityCircleButton: View {
+    let systemImage: String
+    let foreground: Color
+    let background: Color
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: systemImage)
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(foreground)
+                .frame(width: 32, height: 32)
+                .background(background)
+                .clipShape(Circle())
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+/// Quantity as shown: 1 when empty; free text (old "1 kg" values) as is.
+func shoppingQuantityLabel(_ quantity: String?) -> String {
+    let text = quantity?.trimmed ?? ""
+    return text.isEmpty ? "1" : text
 }
 
 /// Create a list: name + whether it's private. Private is chosen here

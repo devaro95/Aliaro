@@ -1,118 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "Family places" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Family places"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lugares de la familia"
-          }
-        }
-      }
-    },
-    "Save your family's favourite spots on a map and get there in a tap." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Save your family's favourite spots on a map and get there in a tap."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Guarda los sitios favoritos de la familia en un mapa y llega con un toque."
-          }
-        }
-      }
-    },
-    "Unlock places" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Unlock places"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Desbloquear lugares"
-          }
-        }
-      }
-    },
-    "Grandma's favourite restaurant" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Grandma's favourite restaurant"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "El restaurante favorito de la abuela"
-          }
-        }
-      }
-    },
-    "Park with swings" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Park with swings"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Parque con columpios"
-          }
-        }
-      }
-    },
-    "Sunday café" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sunday café"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Café de los domingos"
-          }
-        }
-      }
-    },
-    "Science museum" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Science museum"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Museo de ciencias"
-          }
-        }
-      }
-    },
     "" : {
 
     },
@@ -451,6 +339,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld h antes"
+          }
+        }
+      }
+    },
+    "%lld items" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld items"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld productos"
           }
         }
       }
@@ -1474,6 +1378,7 @@
       }
     },
     "Add quantity" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2801,6 +2706,22 @@
         }
       }
     },
+    "Clear done items?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear done items?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Borrar los productos hechos?"
+          }
+        }
+      }
+    },
     "Clear the weekly menu?" : {
       "localizations" : {
         "en" : {
@@ -3772,6 +3693,22 @@
         }
       }
     },
+    "Delete (%lld)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete (%lld)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar (%lld)"
+          }
+        }
+      }
+    },
     "Delete account" : {
       "localizations" : {
         "es" : {
@@ -4309,6 +4246,7 @@
       }
     },
     "E.g. 2, 1 kg, 3 packs" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5232,6 +5170,22 @@
         }
       }
     },
+    "Family places" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Family places"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lugares de la familia"
+          }
+        }
+      }
+    },
     "Family Wi-Fi" : {
       "localizations" : {
         "en" : {
@@ -5641,6 +5595,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "¡El domingo es el cumple de la abuela! 🎂"
+          }
+        }
+      }
+    },
+    "Grandma's favourite restaurant" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grandma's favourite restaurant"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El restaurante favorito de la abuela"
           }
         }
       }
@@ -8562,6 +8532,22 @@
         }
       }
     },
+    "Park with swings" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Park with swings"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parque con columpios"
+          }
+        }
+      }
+    },
     "Parks & nature" : {
       "localizations" : {
         "en" : {
@@ -9189,6 +9175,7 @@
       }
     },
     "Quantity" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -9205,6 +9192,7 @@
       }
     },
     "Quantity (optional)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -9876,6 +9864,22 @@
         }
       }
     },
+    "Save your family's favourite spots on a map and get there in a tap." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save your family's favourite spots on a map and get there in a tap."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guarda los sitios favoritos de la familia en un mapa y llega con un toque."
+          }
+        }
+      }
+    },
     "Save your family's recipes here and plan them in the weekly menu." : {
       "localizations" : {
         "en" : {
@@ -9962,6 +9966,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Colegio"
+          }
+        }
+      }
+    },
+    "Science museum" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Science museum"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Museo de ciencias"
           }
         }
       }
@@ -10759,6 +10779,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Domingo"
+          }
+        }
+      }
+    },
+    "Sunday café" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sunday café"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Café de los domingos"
           }
         }
       }
@@ -12081,6 +12117,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Desbloquear historial"
+          }
+        }
+      }
+    },
+    "Unlock places" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unlock places"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desbloquear lugares"
           }
         }
       }

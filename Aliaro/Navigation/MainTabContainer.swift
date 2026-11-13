@@ -1,4 +1,5 @@
 import SwiftUI
+import MapKit
 import UIKit
 import Combine
 
@@ -19,6 +20,9 @@ struct MainTabContainer: View {
     /// Screens pushed on top of Home (features that aren't favorites, and People).
     @State private var homePath: [AppTab]
     @StateObject private var bottomBarScrollTracker = BottomBarScrollTracker()
+    /// Screens shown over everything (Lists → add products) hide the bar too.
+    @StateObject private var screenChrome = ScreenChrome()
+    @Environment(\.colorScheme) private var colorScheme
 
     init() {
         let initial = MainTabContainer.initialNavigation()
@@ -36,7 +40,7 @@ struct MainTabContainer: View {
 
     /// Full-screen screens (the Places map) hide the floating bar and show
     /// their own back button instead.
-    private var hidesBottomBar: Bool { currentScreen == .places }
+    private var hidesBottomBar: Bool { currentScreen == .places || screenChrome.coversBottomBar }
 
     /// Back from a full-screen screen: pop it from Home, or go to Home if it's a favorite.
     private func leaveFullScreen() {
@@ -87,6 +91,7 @@ struct MainTabContainer: View {
                 }
             }
             .environmentObject(bottomBarScrollTracker)
+            .environmentObject(screenChrome)
             .environment(\.leaveFullScreen, LeaveFullScreenAction(run: leaveFullScreen))
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
@@ -156,6 +161,13 @@ struct MainTabContainer: View {
             }
         }
         .task {
+            // Places: warm up MapKit (the first map is slow to set up) and make the
+            // locked preview's map image, a few seconds after launch.
+            Task {
+                try? await Task.sleep(for: .seconds(2))
+                MapKitWarmUp.run()
+                SampleMapSnapshotStore.preload(colorScheme: colorScheme)
+            }
             if let familyID = familySession.familyID, let memberID = familySession.memberID {
                 await dataSync.startAll(familyID: familyID, currentMemberID: memberID, modelContext: modelContext)
                 await familyService.refreshFamilySettings()
@@ -256,5 +268,27 @@ extension UINavigationController: @retroactive UIGestureRecognizerDelegate {
 
     public func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
         viewControllers.count > 1
+    }
+}
+
+/// Lets a screen hide the floating bar while it shows something full screen over itself.
+@MainActor
+final class ScreenChrome: ObservableObject {
+    @Published var coversBottomBar = false
+}
+
+/// Creates (and drops) one map view off screen so MapKit's first-time setup
+/// (rendering engine, styles) happens before the user opens Places.
+@MainActor
+enum MapKitWarmUp {
+    private static var done = false
+
+    static func run() {
+        guard !done else { return }
+        done = true
+        let view = MKMapView(frame: CGRect(x: 0, y: 0, width: 64, height: 64))
+        view.pointOfInterestFilter = .excludingAll
+        // Keep it alive briefly so it loads its resources, then release it.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) { _ = view }
     }
 }

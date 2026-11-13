@@ -1,19 +1,24 @@
 import SwiftUI
 import SwiftData
 
-/// Sheet to add products to the active list. It's also where the list's
-/// own products live: search, create, edit and delete them. Each product
-/// belongs to its list; products of the other lists show below ("From
-/// other lists") and adding one copies it into this list. Once added, a
-/// product can get an optional quantity right there.
-struct AddToShoppingListSheet: View {
-    @Environment(\.dismiss) private var dismiss
+/// Full screen (sliding in from the right) to add products to the active
+/// list. It's also where the list's own products live. Each product belongs
+/// to its list; products of the other lists show below ("From other lists")
+/// and adding one copies it into this list.
+/// - Tapping a product adds one more (the first tap adds it); once in the
+///   list, − n + adjusts it (− to 0 removes it).
+/// - "Edit" (pencil, top right): select products to delete several at once,
+///   or rename one with its pencil. Create and "From other lists" hide meanwhile.
+/// Same as `AddToShoppingListScreen` on Android.
+struct AddToShoppingListScreen: View {
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var dataSync: AppDataSyncCoordinator
     @EnvironmentObject private var familySession: FamilySession
 
     /// Active list (tab) that the products chosen here get added to.
     let listID: UUID
+    /// Back to the list.
+    let onClose: () -> Void
 
     @Query(sort: \GroceryItem.name) private var catalog: [GroceryItem]
     @Query(sort: \ShoppingList.position) private var lists: [ShoppingList]
@@ -22,8 +27,12 @@ struct AddToShoppingListSheet: View {
     @State private var searchText = ""
     @State private var renamingItem: GroceryItem?
     @State private var renameText = ""
-    @State private var itemPendingDelete: GroceryItem?
     @State private var showOtherLists = false
+    @State private var editMode = false
+    @State private var selected: Set<UUID> = []
+    @State private var confirmBulkDelete = false
+    /// Edge swipe to go back (like a pushed screen).
+    @State private var swipeOffset: CGFloat = 0
 
     private var firstListID: UUID? { lists.first?.id }
 
@@ -76,13 +85,15 @@ struct AddToShoppingListSheet: View {
 
     @ViewBuilder
     private var trackedBody: some View {
-        NavigationStack {
-            VStack(spacing: 14) {
-                ALITextField(placeholder: "Search or create item…", text: $searchText, onSubmit: createFromSearchIfNeeded)
-                    .padding(.horizontal, 20)
-                    .padding(.top, 12)
+        VStack(spacing: 14) {
+            header
 
-                if !searchText.trimmed.isEmpty && !exactMatchExists {
+            VStack(spacing: 14) {
+                ALITextField(placeholder: "Search or create item…", text: $searchText, onSubmit: {
+                    if !editMode { createFromSearchIfNeeded() }
+                })
+
+                if !editMode && !searchText.trimmed.isEmpty && !exactMatchExists {
                     Button(action: createFromSearchIfNeeded) {
                         HStack {
                             Image(systemName: "sparkles")
@@ -96,78 +107,172 @@ struct AddToShoppingListSheet: View {
                         .background(ALIColors.shoppingAccent)
                         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                     }
-                    .padding(.horizontal, 20)
                 }
+            }
+            .padding(.horizontal, 20)
 
-                let others = otherProducts
-                if filteredCatalog.isEmpty && others.isEmpty {
-                    ALIEmptyState(
-                        icon: ALIIcon.list,
-                        title: listCatalog.isEmpty ? "No items yet" : "No results",
-                        subtitle: listCatalog.isEmpty ? "Type above to create the first one." : "Try another search or create it."
-                    )
-                    Spacer()
-                } else {
-                    ScrollView {
-                        VStack(spacing: 8) {
-                            ForEach(filteredCatalog) { item in
-                                CatalogItemRow(
-                                    item: item,
-                                    pendingEntry: pendingEntries[item.id],
-                                    onAdd: { addToList(item) },
-                                    onQuantityCommit: { entry in pushEntry(entry) },
-                                    onEdit: {
-                                        Track.event("grocery_item_edit_tap")
-                                        renamingItem = item
-                                        renameText = item.name
-                                    },
-                                    onDelete: { itemPendingDelete = item }
-                                )
+            let others = editMode ? [] : otherProducts
+            if filteredCatalog.isEmpty && others.isEmpty {
+                ALIEmptyState(
+                    icon: ALIIcon.list,
+                    title: listCatalog.isEmpty ? "No items yet" : "No results",
+                    subtitle: listCatalog.isEmpty ? "Type above to create the first one." : "Try another search or create it."
+                )
+                Spacer()
+            } else {
+                ScrollView {
+                    VStack(spacing: 8) {
+                        if !filteredCatalog.isEmpty {
+                            // The list's products in one card.
+                            VStack(spacing: 0) {
+                                ForEach(Array(filteredCatalog.enumerated()), id: \.element.id) { index, item in
+                                    if index > 0 {
+                                        Rectangle().fill(ALIColors.outline).frame(height: 1).padding(.leading, 30)
+                                    }
+                                    if editMode {
+                                        EditableCatalogRow(
+                                            item: item,
+                                            isSelected: selected.contains(item.id),
+                                            onToggle: {
+                                                if selected.contains(item.id) { selected.remove(item.id) } else { selected.insert(item.id) }
+                                            },
+                                            onRename: {
+                                                Track.event("grocery_item_edit_tap")
+                                                renamingItem = item
+                                                renameText = item.name
+                                            }
+                                        )
+                                    } else {
+                                        CatalogItemRow(
+                                            item: item,
+                                            pendingEntry: pendingEntries[item.id],
+                                            onAdd: { addToList(item) },
+                                            onQuantityCommit: { entry in pushEntry(entry) },
+                                            onRemove: { entry in removeEntry(entry) }
+                                        )
+                                    }
+                                }
                             }
-
-                            if !others.isEmpty {
-                                otherListsSection(others)
-                            }
+                            .background(ALIColors.surface)
+                            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                    .stroke(ALIColors.outline, lineWidth: 1)
+                            )
                         }
-                        .padding(.horizontal, 20)
-                        .padding(.bottom, 20)
+
+                        if !others.isEmpty {
+                            otherListsSection(others)
+                        }
                     }
-                    .scrollDismissesKeyboard(.interactively)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 20)
                 }
+                .scrollDismissesKeyboard(.interactively)
             }
-            .background(ALIColors.background)
-            .navigationTitle(Text("Add to \(currentListName)"))
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
-                }
-            }
-            .alert("Rename item", isPresented: Binding(get: { renamingItem != nil }, set: { if !$0 { renamingItem = nil } })) {
-                TextField("Name", text: $renameText)
-                Button("Cancel", role: .cancel) { renamingItem = nil }
-                Button("Save") {
-                    if let item = renamingItem, !renameText.trimmed.isEmpty {
-                        Track.event("grocery_item_renamed", ["item_name": renameText.trimmed])
-                        item.name = renameText.trimmed
-                        if let familyID = familySession.familyID { dataSync.pushGroceryItem(item, familyID: familyID) }
-                    }
-                    renamingItem = nil
-                }
-            }
-            .aliDeleteConfirmDialog(
-                isPresented: Binding(get: { itemPendingDelete != nil }, set: { if !$0 { itemPendingDelete = nil } }),
-                itemName: itemPendingDelete?.name ?? ""
-            ) {
-                if let item = itemPendingDelete {
-                    let itemID = item.id
-                    Track.event("grocery_item_deleted", ["item_name": item.name])
-                    modelContext.delete(item)
-                    dataSync.deleteGroceryItem(id: itemID)
-                }
+
+            // Edit mode: delete the selected products in one go.
+            if editMode {
+                ALIPrimaryButton(
+                    text: selected.isEmpty ? "Delete" : "Delete (\(selected.count))",
+                    enabled: !selected.isEmpty,
+                    accent: ALIColors.error
+                ) { confirmBulkDelete = true }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 12)
             }
         }
-        .presentationDetents([.medium, .large])
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .background(ALIColors.background.ignoresSafeArea())
+        .offset(x: swipeOffset)
+        .simultaneousGesture(edgeSwipeBack)
+        .alert("Rename item", isPresented: Binding(get: { renamingItem != nil }, set: { if !$0 { renamingItem = nil } })) {
+            TextField("Name", text: $renameText)
+            Button("Cancel", role: .cancel) { renamingItem = nil }
+            Button("Save") {
+                if let item = renamingItem, !renameText.trimmed.isEmpty {
+                    Track.event("grocery_item_renamed", ["item_name": renameText.trimmed])
+                    item.name = renameText.trimmed
+                    if let familyID = familySession.familyID { dataSync.pushGroceryItem(item, familyID: familyID) }
+                }
+                renamingItem = nil
+            }
+        }
+        .aliDeleteConfirmDialog(
+            isPresented: $confirmBulkDelete,
+            itemName: bulkDeleteName
+        ) {
+            deleteSelected()
+        }
+    }
+
+    /// Back, title, Edit / Done (same round buttons as the other screens).
+    private var header: some View {
+        HStack(spacing: 12) {
+            Button(action: onClose) {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundStyle(ALIColors.ink)
+                    .frame(width: 36, height: 36)
+                    .background(ALIColors.surface)
+                    .clipShape(Circle())
+                    .shadow(color: .black.opacity(0.10), radius: 4, y: 2)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Back")
+
+            Text("Add to \(currentListName)")
+                .font(ALITypography.titleLarge)
+                .foregroundStyle(ALIColors.ink)
+                .lineLimit(1)
+            Spacer(minLength: 0)
+
+            if !listCatalog.isEmpty || editMode {
+                Button {
+                    if !editMode { Track.event("grocery_edit_mode") }
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        editMode.toggle()
+                        selected = []
+                    }
+                } label: {
+                    Image(systemName: editMode ? "checkmark" : "pencil")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(editMode ? ALIColors.onAccent : ALIColors.shoppingAccent)
+                        .frame(width: 36, height: 36)
+                        .background(editMode ? ALIColors.shoppingAccent : ALIColors.surface)
+                        .clipShape(Circle())
+                        .shadow(color: .black.opacity(0.10), radius: 4, y: 2)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(editMode ? Text("Done") : Text("Edit"))
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 8)
+        .frame(minHeight: 56)
+    }
+
+    /// Swipe from the left edge to go back.
+    private var edgeSwipeBack: some Gesture {
+        DragGesture(minimumDistance: 10, coordinateSpace: .global)
+            .onChanged { value in
+                guard value.startLocation.x < 30, value.translation.width > 0 else { return }
+                swipeOffset = value.translation.width
+            }
+            .onEnded { value in
+                guard value.startLocation.x < 30 else { return }
+                if value.translation.width > 120 || value.predictedEndTranslation.width > 240 {
+                    onClose()
+                } else {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) { swipeOffset = 0 }
+                }
+            }
+    }
+
+    private var bulkDeleteName: String {
+        let items = catalog.filter { selected.contains($0.id) }
+        if items.count == 1 { return items[0].name }
+        return String(localized: "\(items.count) items")
     }
 
     @ViewBuilder
@@ -223,6 +328,25 @@ struct AddToShoppingListSheet: View {
         pushEntry(entry)
     }
 
+    private func removeEntry(_ entry: ShoppingListEntry) {
+        let entryID = entry.id
+        Track.event("shopping_item_removed", ["item_name": entry.name, "was_checked": false, "where": "add_screen"])
+        modelContext.delete(entry)
+        dataSync.deleteShoppingListEntry(id: entryID)
+    }
+
+    private func deleteSelected() {
+        let items = catalog.filter { selected.contains($0.id) }
+        Track.event("grocery_items_deleted", ["count": items.count])
+        for item in items {
+            let itemID = item.id
+            modelContext.delete(item)
+            dataSync.deleteGroceryItem(id: itemID)
+        }
+        selected = []
+        withAnimation(.easeInOut(duration: 0.2)) { editMode = false }
+    }
+
     private func pushEntry(_ entry: ShoppingListEntry) {
         if let familyID = familySession.familyID { dataSync.pushShoppingListEntry(entry, familyID: familyID) }
     }
@@ -254,88 +378,143 @@ private struct OtherProduct: Identifiable {
     var id: UUID { item.id }
 }
 
-/// Row for a catalog item within the add sheet. Once it's in the list, an
-/// optional quantity can be typed right below the name.
+/// A product of this list. Tap adds one more (the first tap adds it); once
+/// added, − n + adjusts it (− to 0 removes it). Taps update a local count
+/// right away and are saved after a short pause, so fast taps don't race
+/// the sync.
 private struct CatalogItemRow: View {
     let item: GroceryItem
     let pendingEntry: ShoppingListEntry?
     let onAdd: () -> Void
     let onQuantityCommit: (ShoppingListEntry) -> Void
-    let onEdit: () -> Void
-    let onDelete: () -> Void
+    let onRemove: (ShoppingListEntry) -> Void
 
-    @State private var quantity = ""
-    @FocusState private var quantityFocused: Bool
+    /// Count not saved yet (nil = show what's saved). 0 = being removed.
+    @State private var local: Int?
 
-    private var isPending: Bool { pendingEntry != nil }
+    private var accent: Color { ALIColors.shoppingAccent }
+    private var savedCount: Int { Int(pendingEntry?.quantity?.trimmed ?? "") ?? 1 }
+    private var inList: Bool { local.map { $0 > 0 } ?? (pendingEntry != nil) }
+    private var shown: Int { local ?? savedCount }
+
+    var body: some View {
+        HStack(spacing: 10) {
+            // Accent bar marks the products already in the list.
+            RoundedRectangle(cornerRadius: 2)
+                .fill(inList ? accent : Color.clear)
+                .frame(width: 4, height: 24)
+            Text(item.name)
+                .font(ALITypography.bodyLarge)
+                .foregroundStyle(ALIColors.ink)
+                .lineLimit(1)
+            Spacer(minLength: 0)
+            if inList {
+                QuantityCircleButton(systemImage: "minus", foreground: accent, background: ALIColors.surfaceVariant) {
+                    change(shown - 1, where: "add_screen_stepper")
+                }
+                Text(verbatim: local == nil ? shoppingQuantityLabel(pendingEntry?.quantity) : "\(shown)")
+                    .font(ALITypography.titleLarge)
+                    .foregroundStyle(ALIColors.ink)
+                    .lineLimit(1)
+                    .frame(minWidth: 20)
+                QuantityCircleButton(systemImage: "plus", foreground: ALIColors.onAccent, background: accent) {
+                    change(shown + 1, where: "add_screen_stepper")
+                }
+            } else {
+                Image(systemName: "plus.circle")
+                    .font(.system(size: 24, weight: .regular))
+                    .foregroundStyle(accent)
+            }
+        }
+        .padding(.leading, 12)
+        .padding(.trailing, 14)
+        .padding(.vertical, 14)
+        .frame(minHeight: 64)
+        .contentShape(Rectangle())
+        .onTapGesture { change(inList ? shown + 1 : 1, where: "add_screen_tap") }
+        // Save after a pause (and once the entry exists).
+        .task(id: TaskKey(local: local, entryID: pendingEntry?.id)) {
+            guard let value = local else { return }
+            guard let entry = pendingEntry else {
+                if value == 0 { local = nil }
+                return
+            }
+            try? await Task.sleep(for: .milliseconds(400))
+            guard !Task.isCancelled else { return }
+            if value < 1 {
+                onRemove(entry)
+            } else if value != savedCount {
+                entry.quantity = value > 1 ? "\(value)" : nil
+                onQuantityCommit(entry)
+            }
+        }
+        // The saved value caught up: drop the local one.
+        .onChange(of: savedCount) { _, saved in
+            if pendingEntry != nil, local == saved { local = nil }
+        }
+        .onChange(of: pendingEntry?.quantity) { _, _ in
+            if pendingEntry != nil, local == savedCount { local = nil }
+        }
+    }
+
+    private struct TaskKey: Equatable {
+        let local: Int?
+        let entryID: UUID?
+    }
+
+    private func change(_ value: Int, where source: String) {
+        if pendingEntry == nil && local == nil {
+            onAdd()
+            local = 1
+            return
+        }
+        Track.event("shopping_item_quantity", ["has_quantity": value > 1, "where": source])
+        local = max(0, value)
+    }
+}
+
+/// Edit mode row: tap selects it (for bulk delete); the pencil renames it.
+private struct EditableCatalogRow: View {
+    let item: GroceryItem
+    let isSelected: Bool
+    let onToggle: () -> Void
+    let onRename: () -> Void
 
     var body: some View {
         HStack(spacing: 12) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(item.name)
-                    .font(ALITypography.bodyLarge)
-                    .foregroundStyle(ALIColors.ink)
-                    .lineLimit(1)
-                if pendingEntry != nil {
-                    TextField("Quantity (optional)", text: $quantity)
-                        .font(ALITypography.bodyMedium)
-                        .foregroundStyle(ALIColors.ink)
-                        .focused($quantityFocused)
-                        .submitLabel(.done)
-                        .onSubmit(commitQuantity)
+            ZStack {
+                Circle()
+                    .fill(isSelected ? ALIColors.error : ALIColors.surface)
+                    .frame(width: 24, height: 24)
+                Circle()
+                    .stroke(isSelected ? ALIColors.error : ALIColors.outline, lineWidth: 1.5)
+                    .frame(width: 24, height: 24)
+                if isSelected {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(ALIColors.onAccent)
                 }
             }
-
-            Spacer()
-
-            Button(action: onEdit) {
+            Text(item.name)
+                .font(ALITypography.bodyLarge)
+                .foregroundStyle(ALIColors.ink)
+                .lineLimit(1)
+            Spacer(minLength: 0)
+            Button(action: onRename) {
                 Image(systemName: "pencil")
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(ALIColors.mutedInk)
-                    .frame(width: 30, height: 30)
-            }
-            .buttonStyle(.plain)
-
-            Button(action: onDelete) {
-                Image(systemName: "trash")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(ALIColors.mutedInk)
-                    .frame(width: 30, height: 30)
-            }
-            .buttonStyle(.plain)
-
-            Button(action: onAdd) {
-                Image(systemName: isPending ? "checkmark" : "plus")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(ALIColors.onAccent)
                     .frame(width: 34, height: 34)
-                    .background(isPending ? ALIColors.success : ALIColors.shoppingAccent)
-                    .clipShape(Circle())
             }
             .buttonStyle(.plain)
-            .disabled(isPending)
+            .accessibilityLabel("Rename item")
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
-        .background(ALIColors.surface)
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(ALIColors.outline, lineWidth: 1)
-        )
-        .onAppear { quantity = pendingEntry?.quantity ?? "" }
-        .onChange(of: pendingEntry?.id) { _, _ in quantity = pendingEntry?.quantity ?? "" }
-        .onChange(of: quantityFocused) { _, focused in if !focused { commitQuantity() } }
-        .onDisappear(perform: commitQuantity)
-    }
-
-    private func commitQuantity() {
-        guard let entry = pendingEntry else { return }
-        let value = quantity.trimmed.isEmpty ? nil : quantity.trimmed
-        guard value != entry.quantity else { return }
-        entry.quantity = value
-        Track.event("shopping_item_quantity", ["has_quantity": value != nil, "where": "add_sheet"])
-        onQuantityCommit(entry)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 14)
+        .frame(minHeight: 64)
+        .background(isSelected ? ALIColors.error.opacity(0.08) : Color.clear)
+        .contentShape(Rectangle())
+        .onTapGesture(perform: onToggle)
     }
 }
 
@@ -358,15 +537,12 @@ private struct OtherListItemRow: View {
                     .lineLimit(1)
             }
             Spacer()
-            Button(action: onAdd) {
-                Image(systemName: "plus")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(ALIColors.shoppingAccent)
-                    .frame(width: 34, height: 34)
-                    .background(ALIColors.surfaceVariant)
-                    .clipShape(Circle())
-            }
-            .buttonStyle(.plain)
+            Image(systemName: "plus")
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(ALIColors.shoppingAccent)
+                .frame(width: 34, height: 34)
+                .background(ALIColors.surfaceVariant)
+                .clipShape(Circle())
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
@@ -376,6 +552,9 @@ private struct OtherListItemRow: View {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .stroke(ALIColors.outline, style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
         )
+        // The whole row adds it.
+        .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .onTapGesture(perform: onAdd)
     }
 }
 

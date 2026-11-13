@@ -101,26 +101,10 @@ struct PlacesScreen: View {
     /// Locked (premium): a sample map and list, blurred and inert, under the banner.
     private var lockedPreview: some View {
         ZStack(alignment: .top) {
-            if mapReady {
-            Map(
-                initialPosition: .region(MKCoordinateRegion(
-                    center: CLLocationCoordinate2D(latitude: 40.4168, longitude: -3.7000),
-                    span: MKCoordinateSpan(latitudeDelta: 0.035, longitudeDelta: 0.035)
-                )),
-                interactionModes: []
-            ) {
-                ForEach(PlaceSample.all) { sample in
-                    Annotation("", coordinate: sample.place.coordinate, anchor: .bottom) {
-                        PlaceMarker(style: PlaceCategoryStyle(sample.category))
-                    }
-                }
-            }
-            .mapStyle(.standard(pointsOfInterest: .excludingAll))
-            .aliPremiumPreview(true)
-            .ignoresSafeArea()
-            } else {
-                Color(hex: 0xEEF0E8).ignoresSafeArea()
-            }
+            // Drawn map (not MapKit): shows instantly, it's only a blurred backdrop.
+            SampleMapBackdrop()
+                .aliPremiumPreview(true)
+                .ignoresSafeArea()
 
             HStack(spacing: 10) {
                 Button {
@@ -171,7 +155,7 @@ struct PlacesScreen: View {
             .ignoresSafeArea(edges: .bottom)
         }
         .background(ALIColors.background)
-        .aliPremiumPreviewBanner(true, buttonTitle: "Unlock places") {
+        .aliPremiumPreviewBanner(true, buttonTitle: "Unlock places", accent: ALIColors.placesAccent) {
             showPaywall = Track.paywall("places_banner")
         }
         .sheet(isPresented: $showPaywall) {
@@ -189,7 +173,7 @@ struct PlacesScreen: View {
             let liveTop = min(max(restTop + sheetDrag, sheetTop(for: .medium, height: height)), sheetTop(for: .collapsed, height: height))
             ZStack(alignment: .top) {
                 Group {
-                    if mapReady { map } else { Color(hex: 0xEEF0E8) }
+                    if mapReady { map } else { ALIColors.background }
                 }
                     // Visible part of the map: below the title/chips, above the sheet.
                     .safeAreaPadding(.top, 120)
@@ -843,4 +827,110 @@ private struct PlaceSample: Identifiable {
             category: .culture, distance: 2100
         ),
     ]
+}
+
+/// Backdrop of the locked premium preview: a still image of the real Apple
+/// map (`MKMapSnapshotter`, no interactive map, so no heavy MapKit setup)
+/// with sample pins. It's made at app start (`SampleMapSnapshotStore.preload`)
+/// so it's normally ready when the screen opens; otherwise the background
+/// color shows until it fades in. Kept for the rest of the session.
+private struct SampleMapBackdrop: View {
+    @ObservedObject private var store = SampleMapSnapshotStore.shared
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        GeometryReader { geo in
+            ZStack(alignment: .topLeading) {
+                ALIColors.background
+                if let snapshot = store.snapshot(size: geo.size, colorScheme: colorScheme) {
+                    ZStack(alignment: .topLeading) {
+                        Image(uiImage: snapshot.image)
+                            .resizable()
+                            .frame(width: geo.size.width, height: geo.size.height)
+                        ForEach(SampleMapSnapshotStore.pins) { pin in
+                            let point = snapshot.point(for: pin.coordinate)
+                            PlaceMarker(style: PlaceCategoryStyle(pin.category))
+                                .position(x: point.x, y: point.y - 22) // tip of the pin on the spot
+                        }
+                    }
+                    .transition(.opacity)
+                }
+            }
+            .animation(.easeIn(duration: 0.25), value: store.version)
+            .task(id: "\(Int(geo.size.width))x\(Int(geo.size.height))-\(colorScheme == .dark)") {
+                await store.load(size: geo.size, colorScheme: colorScheme)
+            }
+        }
+    }
+}
+
+/// Makes (once per size and appearance) the still image of the sample map.
+@MainActor
+final class SampleMapSnapshotStore: ObservableObject {
+    static let shared = SampleMapSnapshotStore()
+
+    struct Pin: Identifiable {
+        let id = UUID()
+        let coordinate: CLLocationCoordinate2D
+        let category: PlaceCategory
+    }
+
+    /// Central Madrid (Gran Vía, Chueca, Huertas, the Prado…), zoomed out.
+    static let region = MKCoordinateRegion(
+        center: CLLocationCoordinate2D(latitude: 40.4180, longitude: -3.6985),
+        span: MKCoordinateSpan(latitudeDelta: 0.022, longitudeDelta: 0.022)
+    )
+
+    static let pins: [Pin] = [
+        Pin(coordinate: .init(latitude: 40.4199, longitude: -3.6990), category: .restaurant),
+        Pin(coordinate: .init(latitude: 40.4235, longitude: -3.6975), category: .cafe),
+        Pin(coordinate: .init(latitude: 40.4252, longitude: -3.7035), category: .shopping),
+        Pin(coordinate: .init(latitude: 40.4150, longitude: -3.6920), category: .culture),
+        Pin(coordinate: .init(latitude: 40.4205, longitude: -3.6895), category: .nature),
+        Pin(coordinate: .init(latitude: 40.4140, longitude: -3.7010), category: .restaurant),
+        Pin(coordinate: .init(latitude: 40.4115, longitude: -3.6950), category: .leisure),
+        Pin(coordinate: .init(latitude: 40.4170, longitude: -3.7055), category: .cafe),
+        Pin(coordinate: .init(latitude: 40.4225, longitude: -3.6930), category: .travel),
+        Pin(coordinate: .init(latitude: 40.4100, longitude: -3.6900), category: .culture),
+        Pin(coordinate: .init(latitude: 40.4265, longitude: -3.6950), category: .restaurant),
+        Pin(coordinate: .init(latitude: 40.4128, longitude: -3.7045), category: .shopping),
+    ]
+
+    /// Bumps when a snapshot arrives (drives the fade-in).
+    @Published private(set) var version = 0
+    private var snapshots: [String: MKMapSnapshotter.Snapshot] = [:]
+    private var inFlight: Set<String> = []
+
+    private func key(_ size: CGSize, _ colorScheme: ColorScheme) -> String {
+        "\(Int(size.width))x\(Int(size.height))-\(colorScheme == .dark)"
+    }
+
+    /// At app start, for the full screen, when Places is locked (premium): so the
+    /// preview opens with its map already there.
+    static func preload(colorScheme: ColorScheme) {
+        guard PremiumManager.shared.isLocked(.places) else { return }
+        let size = UIScreen.main.bounds.size
+        Task { await shared.load(size: size, colorScheme: colorScheme) }
+    }
+
+    func snapshot(size: CGSize, colorScheme: ColorScheme) -> MKMapSnapshotter.Snapshot? {
+        snapshots[key(size, colorScheme)]
+    }
+
+    func load(size: CGSize, colorScheme: ColorScheme) async {
+        guard size.width > 0, size.height > 0 else { return }
+        let key = key(size, colorScheme)
+        guard snapshots[key] == nil, !inFlight.contains(key) else { return }
+        inFlight.insert(key)
+        defer { inFlight.remove(key) }
+
+        let options = MKMapSnapshotter.Options()
+        options.region = Self.region
+        options.size = size
+        options.pointOfInterestFilter = .excludingAll
+        options.traitCollection = UITraitCollection(userInterfaceStyle: colorScheme == .dark ? .dark : .light)
+        guard let snapshot = try? await MKMapSnapshotter(options: options).start() else { return }
+        snapshots[key] = snapshot
+        version += 1
+    }
 }
