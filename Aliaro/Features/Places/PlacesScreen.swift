@@ -101,26 +101,10 @@ struct PlacesScreen: View {
     /// Locked (premium): a sample map and list, blurred and inert, under the banner.
     private var lockedPreview: some View {
         ZStack(alignment: .top) {
-            if mapReady {
-            Map(
-                initialPosition: .region(MKCoordinateRegion(
-                    center: CLLocationCoordinate2D(latitude: 40.4168, longitude: -3.7000),
-                    span: MKCoordinateSpan(latitudeDelta: 0.035, longitudeDelta: 0.035)
-                )),
-                interactionModes: []
-            ) {
-                ForEach(PlaceSample.all) { sample in
-                    Annotation("", coordinate: sample.place.coordinate, anchor: .bottom) {
-                        PlaceMarker(style: PlaceCategoryStyle(sample.category))
-                    }
-                }
-            }
-            .mapStyle(.standard(pointsOfInterest: .excludingAll))
-            .aliPremiumPreview(true)
-            .ignoresSafeArea()
-            } else {
-                Color(hex: 0xEEF0E8).ignoresSafeArea()
-            }
+            // Drawn map (not MapKit): shows instantly, it's only a blurred backdrop.
+            SampleMapBackdrop()
+                .aliPremiumPreview(true)
+                .ignoresSafeArea()
 
             HStack(spacing: 10) {
                 Button {
@@ -843,4 +827,51 @@ private struct PlaceSample: Identifiable {
             category: .culture, distance: 2100
         ),
     ]
+}
+
+/// Drawn stand-in for a map (roads, a park, water and sample pins) behind the
+/// locked premium preview: no MapKit, so it appears instantly. Same as Android.
+private struct SampleMapBackdrop: View {
+    private let pins: [(x: CGFloat, y: CGFloat, category: PlaceCategory)] = [
+        (0.38, 0.22, .restaurant), (0.22, 0.33, .shopping), (0.55, 0.15, .cafe),
+        (0.76, 0.36, .nature), (0.62, 0.44, .culture),
+    ]
+
+    var body: some View {
+        GeometryReader { geo in
+            let w = geo.size.width
+            let h = geo.size.height
+            ZStack(alignment: .topLeading) {
+                Canvas { context, size in
+                    let w = size.width
+                    let h = size.height
+                    context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(Color(hex: 0xEEF0E8)))
+                    context.fill(
+                        Path(ellipseIn: CGRect(x: w * 0.53, y: h * 0.42 - w * 0.32, width: w * 0.64, height: w * 0.64)),
+                        with: .color(Color(hex: 0xCFE8C4))
+                    )
+                    context.fill(
+                        Path(ellipseIn: CGRect(x: w * 0.1 - w * 0.45, y: h * 0.95 - w * 0.45, width: w * 0.9, height: w * 0.9)),
+                        with: .color(Color(hex: 0xCFE3F2))
+                    )
+                    let roads: [(CGPoint, CGPoint, CGFloat)] = [
+                        (CGPoint(x: -20, y: h * 0.30), CGPoint(x: w + 20, y: h * 0.25), 20),
+                        (CGPoint(x: w * 0.35, y: -20), CGPoint(x: w * 0.45, y: h + 20), 16),
+                        (CGPoint(x: -20, y: h * 0.60), CGPoint(x: w + 20, y: h * 0.55), 13),
+                        (CGPoint(x: w * 0.7, y: -20), CGPoint(x: w * 0.8, y: h + 20), 10),
+                    ]
+                    for (from, to, width) in roads {
+                        var road = Path()
+                        road.move(to: from)
+                        road.addLine(to: to)
+                        context.stroke(road, with: .color(.white), style: StrokeStyle(lineWidth: width, lineCap: .round))
+                    }
+                }
+                ForEach(Array(pins.enumerated()), id: \.offset) { _, pin in
+                    PlaceMarker(style: PlaceCategoryStyle(pin.category))
+                        .position(x: w * pin.x, y: h * pin.y)
+                }
+            }
+        }
+    }
 }
