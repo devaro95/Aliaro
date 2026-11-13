@@ -34,6 +34,10 @@ struct EconomiaScreen: View {
     @State private var expensePendingDelete: Expense?
     @State private var expenseToEdit: Expense?
     @State private var showPaywall = false
+    /// Top card: just your expenses and the family's total (default), or who owes whom.
+    @AppStorage("economia.summaryMode") private var summaryMode: SummaryMode = .totals
+
+    enum SummaryMode: String { case totals, balance }
 
     private var currentMember: FamilyMember? { members.first(where: \.isCurrentDevice) }
     private var canAdd: Bool { currentMember?.can(.financesAdd) ?? true }
@@ -94,7 +98,7 @@ struct EconomiaScreen: View {
                     }
                 }
 
-                if members.count > 1 {
+                if !members.isEmpty {
                     balancesCard
                 }
 
@@ -326,14 +330,67 @@ struct EconomiaScreen: View {
         FinanceBalances.settlements(expenses: expenses, members: members)
     }
 
-    private var balancesCard: some View {
-        ALICard {
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Balance between you")
-                    .font(ALITypography.labelLarge)
-                    .foregroundStyle(ALIColors.mutedInk)
+    /// Expenses (not income) paid by you / by the whole family.
+    private var myExpensesTotal: Double {
+        guard let me = currentMember?.id else { return 0 }
+        return expenses.filter { !$0.isIncome && $0.personID == me }.reduce(0) { $0 + $1.amount }
+    }
+    private var totalExpenses: Double {
+        expenses.filter { !$0.isIncome }.reduce(0) { $0 + $1.amount }
+    }
 
-                if settlements.isEmpty {
+    private func setSummaryMode(_ mode: SummaryMode) {
+        guard mode != summaryMode else { return }
+        Track.event("finances_summary_mode", ["mode": mode.rawValue])
+        summaryMode = mode
+    }
+
+    private func totalRow(_ label: LocalizedStringKey, _ amount: Double) -> some View {
+        HStack {
+            Text(label)
+            Spacer()
+            Text(amount.formattedEuros).fontWeight(.semibold)
+        }
+        .font(ALITypography.bodyMedium)
+        .foregroundStyle(ALIColors.ink)
+    }
+
+    private func summaryChip(_ title: LocalizedStringKey, selected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(ALITypography.labelLarge)
+                .foregroundStyle(selected ? ALIColors.onAccent : ALIColors.ink)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(selected ? ALIColors.economiaAccent : ALIColors.surface)
+                .clipShape(Capsule())
+                .overlay(Capsule().stroke(selected ? Color.clear : ALIColors.outline, lineWidth: 1))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var balancesCard: some View {
+        // Alone in the family there's no balance: just the total.
+        let shared = members.count > 1
+        let totals = !shared || summaryMode == .totals
+        return ALICard {
+            VStack(alignment: .leading, spacing: 10) {
+                // Header: title + switch between totals and balance.
+                HStack(spacing: 6) {
+                    Text(totals ? LocalizedStringKey("Expenses") : LocalizedStringKey("Balance between you"))
+                        .font(ALITypography.labelLarge)
+                        .foregroundStyle(ALIColors.mutedInk)
+                    Spacer()
+                    if shared {
+                        summaryChip("Totals", selected: totals) { setSummaryMode(.totals) }
+                        summaryChip("Balance", selected: !totals) { setSummaryMode(.balance) }
+                    }
+                }
+
+                if totals {
+                    if shared { totalRow("Your expenses", myExpensesTotal) }
+                    totalRow("Total expenses", totalExpenses)
+                } else if settlements.isEmpty {
                     Text(expenses.isEmpty ? "There's nothing to split yet." : "You're all even, no one owes anything.")
                         .font(ALITypography.bodyMedium)
                         .foregroundStyle(ALIColors.mutedInk)
