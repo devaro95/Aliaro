@@ -834,7 +834,8 @@ private struct PlaceSample: Identifiable {
 private struct SampleMapBackdrop: View {
     private let pins: [(x: CGFloat, y: CGFloat, category: PlaceCategory)] = [
         (0.38, 0.22, .restaurant), (0.22, 0.33, .shopping), (0.55, 0.15, .cafe),
-        (0.76, 0.36, .nature), (0.62, 0.44, .culture),
+        (0.76, 0.36, .nature), (0.62, 0.44, .culture), (0.15, 0.48, .leisure),
+        (0.86, 0.18, .travel), (0.45, 0.38, .restaurant),
     ]
 
     var body: some View {
@@ -845,26 +846,55 @@ private struct SampleMapBackdrop: View {
                 Canvas { context, size in
                     let w = size.width
                     let h = size.height
+                    // Zoomed out: a dense grid of small streets, a few avenues, parks and a river.
                     context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(Color(hex: 0xEEF0E8)))
-                    context.fill(
-                        Path(ellipseIn: CGRect(x: w * 0.53, y: h * 0.42 - w * 0.32, width: w * 0.64, height: w * 0.64)),
-                        with: .color(Color(hex: 0xCFE8C4))
+                    for park in [
+                        CGRect(x: w * 0.62, y: h * 0.30, width: w * 0.30, height: h * 0.16),
+                        CGRect(x: w * 0.08, y: h * 0.12, width: w * 0.16, height: h * 0.08),
+                        CGRect(x: w * 0.30, y: h * 0.66, width: w * 0.22, height: h * 0.10),
+                        CGRect(x: w * 0.78, y: h * 0.78, width: w * 0.18, height: h * 0.09),
+                    ] {
+                        context.fill(Path(roundedRect: park, cornerRadius: 10), with: .color(Color(hex: 0xCFE8C4)))
+                    }
+                    var river = Path()
+                    river.move(to: CGPoint(x: -20, y: h * 0.86))
+                    river.addCurve(
+                        to: CGPoint(x: w + 20, y: h * 0.70),
+                        control1: CGPoint(x: w * 0.3, y: h * 0.78),
+                        control2: CGPoint(x: w * 0.6, y: h * 0.96)
                     )
-                    context.fill(
-                        Path(ellipseIn: CGRect(x: w * 0.1 - w * 0.45, y: h * 0.95 - w * 0.45, width: w * 0.9, height: w * 0.9)),
-                        with: .color(Color(hex: 0xCFE3F2))
-                    )
-                    let roads: [(CGPoint, CGPoint, CGFloat)] = [
-                        (CGPoint(x: -20, y: h * 0.30), CGPoint(x: w + 20, y: h * 0.25), 20),
-                        (CGPoint(x: w * 0.35, y: -20), CGPoint(x: w * 0.45, y: h + 20), 16),
-                        (CGPoint(x: -20, y: h * 0.60), CGPoint(x: w + 20, y: h * 0.55), 13),
-                        (CGPoint(x: w * 0.7, y: -20), CGPoint(x: w * 0.8, y: h + 20), 10),
+                    context.stroke(river, with: .color(Color(hex: 0xCFE3F2)), style: StrokeStyle(lineWidth: 22, lineCap: .round))
+                    // Small streets (slightly tilted grid).
+                    let step: CGFloat = 26
+                    var x: CGFloat = -h * 0.1
+                    while x < w + h * 0.1 {
+                        var street = Path()
+                        street.move(to: CGPoint(x: x, y: -10))
+                        street.addLine(to: CGPoint(x: x + h * 0.08, y: h + 10))
+                        context.stroke(street, with: .color(.white), lineWidth: 2.5)
+                        x += step
+                    }
+                    var y: CGFloat = 0
+                    while y < h + 20 {
+                        var street = Path()
+                        street.move(to: CGPoint(x: -10, y: y))
+                        street.addLine(to: CGPoint(x: w + 10, y: y - w * 0.06))
+                        context.stroke(street, with: .color(.white), lineWidth: 2.5)
+                        y += step
+                    }
+                    // Avenues.
+                    let avenues: [(CGPoint, CGPoint)] = [
+                        (CGPoint(x: -20, y: h * 0.28), CGPoint(x: w + 20, y: h * 0.20)),
+                        (CGPoint(x: w * 0.30, y: -20), CGPoint(x: w * 0.42, y: h + 20)),
+                        (CGPoint(x: -20, y: h * 0.58), CGPoint(x: w + 20, y: h * 0.50)),
+                        (CGPoint(x: -20, y: h * 0.05), CGPoint(x: w * 0.9, y: h + 20)),
                     ]
-                    for (from, to, width) in roads {
-                        var road = Path()
-                        road.move(to: from)
-                        road.addLine(to: to)
-                        context.stroke(road, with: .color(.white), style: StrokeStyle(lineWidth: width, lineCap: .round))
+                    for (from, to) in avenues {
+                        var avenue = Path()
+                        avenue.move(to: from)
+                        avenue.addLine(to: to)
+                        context.stroke(avenue, with: .color(.white), style: StrokeStyle(lineWidth: 7, lineCap: .round))
+                        context.stroke(avenue, with: .color(Color(hex: 0xFCE6B5)), style: StrokeStyle(lineWidth: 3, lineCap: .round))
                     }
                 }
                 ForEach(Array(pins.enumerated()), id: \.offset) { _, pin in
