@@ -23,6 +23,9 @@ final class FamilyMember {
     /// `FamilyPermission.rawValue`s this member does NOT have. Ignored
     /// for the creator and for admins, who always have everything.
     var restrictedPermissions: [String] = []
+    /// "RRGGBB" for this member's countries on the World map; nil = the
+    /// default for their position in the group.
+    var mapColor: String?
 
     init(
         id: UUID = UUID(),

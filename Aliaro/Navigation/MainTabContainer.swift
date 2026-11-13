@@ -190,6 +190,7 @@ struct MainTabContainer: View {
         case .economia: EconomiaScreen()
         case .wifi: WifiScreen()
         case .places: PlacesScreen()
+        case .worldMap: WorldMapScreen()
         case .people: PeopleScreen()
         }
     }
