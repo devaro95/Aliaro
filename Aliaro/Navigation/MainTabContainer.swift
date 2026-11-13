@@ -19,6 +19,8 @@ struct MainTabContainer: View {
     /// Screens pushed on top of Home (features that aren't favorites, and People).
     @State private var homePath: [AppTab]
     @StateObject private var bottomBarScrollTracker = BottomBarScrollTracker()
+    /// Screens shown over everything (Lists → add products) hide the bar too.
+    @StateObject private var screenChrome = ScreenChrome()
 
     init() {
         let initial = MainTabContainer.initialNavigation()
@@ -36,7 +38,7 @@ struct MainTabContainer: View {
 
     /// Full-screen screens (the Places map) hide the floating bar and show
     /// their own back button instead.
-    private var hidesBottomBar: Bool { currentScreen == .places }
+    private var hidesBottomBar: Bool { currentScreen == .places || screenChrome.coversBottomBar }
 
     /// Back from a full-screen screen: pop it from Home, or go to Home if it's a favorite.
     private func leaveFullScreen() {
@@ -87,6 +89,7 @@ struct MainTabContainer: View {
                 }
             }
             .environmentObject(bottomBarScrollTracker)
+            .environmentObject(screenChrome)
             .environment(\.leaveFullScreen, LeaveFullScreenAction(run: leaveFullScreen))
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
@@ -257,4 +260,10 @@ extension UINavigationController: @retroactive UIGestureRecognizerDelegate {
     public func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
         viewControllers.count > 1
     }
+}
+
+/// Lets a screen hide the floating bar while it shows something full screen over itself.
+@MainActor
+final class ScreenChrome: ObservableObject {
+    @Published var coversBottomBar = false
 }

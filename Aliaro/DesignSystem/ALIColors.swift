@@ -32,7 +32,8 @@ enum ALIPalette {
     static let pistachio = Color(hex: 0xB8D9A0) // finances
     static let apricot = Color(hex: 0xFFC49B)   // recipes
     static let periwinkle = Color(hex: 0xB5C0F5) // board
-    static let leaf = Color(hex: 0xA9DFA0)       // places
+    static let leaf = Color(hex: 0xA9DFA0)
+    static let orchid = Color(hex: 0xE8A6E6)     // places
 }
 
 /// Semantic palette, dynamic based on light/dark mode.
@@ -65,7 +66,7 @@ enum ALIColors {
     static let recipesAccent = ALIPalette.apricot
     static let boardAccent = ALIPalette.periwinkle
     static let wifiAccent = ALIPalette.turquoise
-    static let placesAccent = ALIPalette.leaf
+    static let placesAccent = ALIPalette.orchid
 
     // Distinguish lunch/dinner at a glance within the weekly menu.
     static let mealLunchAccent = ALIPalette.sun

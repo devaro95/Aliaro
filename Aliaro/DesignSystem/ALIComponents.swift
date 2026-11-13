@@ -295,6 +295,8 @@ struct ALIPremiumPreviewBanner: View {
     /// Which explanation to show; see `messageText`.
     var message: Message = .familyData
     let buttonTitle: LocalizedStringKey
+    /// Border and button color (the feature's accent).
+    var accent: Color = ALIColors.primary
     let action: () -> Void
 
     @Environment(\.colorScheme) private var colorScheme
@@ -337,14 +339,15 @@ struct ALIPremiumPreviewBanner: View {
                 }
                 Spacer(minLength: 0)
             }
-            ALIPrimaryButton(text: buttonTitle, action: action)
+            ALIPrimaryButton(text: buttonTitle, accent: accent, action: action)
         }
         .padding(18)
         .background(ALIColors.surface)
         .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        // Accent border so it stands out over the blurred preview.
         .overlay(
             RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .stroke(ALIColors.outline, lineWidth: 1)
+                .stroke(accent, lineWidth: 2)
         )
         .shadow(color: .black.opacity(0.12), radius: 16, y: 4)
     }
@@ -369,10 +372,10 @@ extension View {
     /// Premium preview for a full screen: `aliPremiumPreview` on the
     /// content plus the banner pinned to the bottom.
     @ViewBuilder
-    func aliPremiumPreviewBanner(_ locked: Bool, buttonTitle: LocalizedStringKey, action: @escaping () -> Void) -> some View {
+    func aliPremiumPreviewBanner(_ locked: Bool, buttonTitle: LocalizedStringKey, accent: Color = ALIColors.primary, action: @escaping () -> Void) -> some View {
         safeAreaInset(edge: .bottom) {
             if locked {
-                ALIPremiumPreviewBanner(buttonTitle: buttonTitle, action: action)
+                ALIPremiumPreviewBanner(buttonTitle: buttonTitle, accent: accent, action: action)
                     .padding(.horizontal, 16)
                     .padding(.bottom, 8)
             }

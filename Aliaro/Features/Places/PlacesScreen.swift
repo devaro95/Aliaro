@@ -171,7 +171,7 @@ struct PlacesScreen: View {
             .ignoresSafeArea(edges: .bottom)
         }
         .background(ALIColors.background)
-        .aliPremiumPreviewBanner(true, buttonTitle: "Unlock places") {
+        .aliPremiumPreviewBanner(true, buttonTitle: "Unlock places", accent: ALIColors.placesAccent) {
             showPaywall = Track.paywall("places_banner")
         }
         .sheet(isPresented: $showPaywall) {
