@@ -493,6 +493,8 @@ struct ALIFeatureIcon: View {
     let title: LocalizedStringKey
     let systemImage: String
     let accent: Color
+    /// Premium crown on the icon's corner (not the cell's, which is wider).
+    var premium: Bool = false
 
     var body: some View {
         VStack(spacing: 6) {
@@ -502,6 +504,7 @@ struct ALIFeatureIcon: View {
                 .frame(width: 60, height: 60)
                 .background(accent)
                 .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .aliPremiumLockOverlay(premium)
             Text(title)
                 .font(ALITypography.labelLarge)
                 .foregroundStyle(ALIColors.ink)

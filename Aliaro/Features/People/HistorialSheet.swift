@@ -104,6 +104,7 @@ private struct HistorialRow: View {
         case "board_note": return String(localized: "Board")
         case "recipe": return String(localized: "Recipe")
         case "wifi": return String(localized: "Wi-Fi")
+        case "place": return String(localized: "Place")
         case "expense": return String(localized: "Finances")
         case "expense_archive": return String(localized: "Finances archive")
         default: return entry.entityType.capitalized

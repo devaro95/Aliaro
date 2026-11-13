@@ -45,6 +45,7 @@ struct HomeScreen: View {
     @Query(sort: \ShoppingListEntry.addedAt) private var shoppingEntries: [ShoppingListEntry]
     @Query(sort: \Reminder.fireDate) private var reminders: [Reminder]
     @Query private var recipes: [Recipe]
+    @Query private var places: [FamilyPlace]
     /// Same order as the Board (manual `position`, then newest first).
     @Query(sort: [SortDescriptor(\BoardNote.position), SortDescriptor(\BoardNote.createdAt, order: .reverse)])
     private var boardNotes: [BoardNote]
@@ -541,7 +542,7 @@ struct HomeScreen: View {
             }
         } label: {
             if layout.featureStyle == .icons {
-                ALIFeatureIcon(title: tab.label, systemImage: tab.systemImage, accent: tab.accent)
+                ALIFeatureIcon(title: tab.label, systemImage: tab.systemImage, accent: tab.accent, premium: showsCrown(tab) && !isReordering)
             } else {
                 ALIFeatureTile(
                     title: tab.label,
@@ -554,7 +555,8 @@ struct HomeScreen: View {
         .buttonStyle(.plain)
         // The Board opens as a blurred preview when locked, but still
         // gets the crown so it reads as premium from the grid.
-        .aliPremiumLockOverlay(showsCrown(tab) && !isReordering)
+        // (Icons carry the crown on the icon itself.)
+        .aliPremiumLockOverlay(showsCrown(tab) && !isReordering && layout.featureStyle != .icons)
         .overlay(alignment: .topTrailing) {
             if isReordering && layout.featureStyle == .icons {
                 // Icons are small: a round grip badge on the corner.
@@ -668,10 +670,12 @@ struct HomeScreen: View {
         Track.event("home_features_reset")
     }
 
-    /// Whole-feature locks, plus the Board, which opens as a blurred
-    /// preview when locked but still reads as premium from the grid.
+    /// Whole-feature locks, plus the Board and Places, which open as a
+    /// blurred preview when locked but still read as premium from the grid.
     private func showsCrown(_ tab: AppTab) -> Bool {
-        isLocked(tab) || (tab == .board && premium.isLocked(.board))
+        isLocked(tab)
+            || (tab == .board && premium.isLocked(.board))
+            || (tab == .places && premium.isLocked(.places))
     }
 
     /// Stable stat line for each feature tile — different from the "Today"
@@ -718,6 +722,10 @@ struct HomeScreen: View {
             let count = wifiNetworks.count
             if count == 0 { return String(localized: "Add your Wi-Fi") }
             return count == 1 ? String(localized: "1 network") : String(localized: "\(count) networks")
+        case .places:
+            let count = places.count
+            if count == 0 { return String(localized: "No places yet") }
+            return count == 1 ? String(localized: "1 place") : String(localized: "\(count) places")
         case .home, .people:
             return nil
         }
@@ -742,7 +750,7 @@ struct HomeScreen: View {
         case .shoppingList: return shoppingSummary
         case .reminders: return remindersSummary
         case .economia: return financesSummary
-        case .recipes, .board, .wifi, .home, .people: return nil
+        case .recipes, .board, .wifi, .places, .home, .people: return nil
         }
     }
 
