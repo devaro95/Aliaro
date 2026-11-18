@@ -13661,6 +13661,174 @@
           }
         }
       }
+    },
+    "Today's lunch" : {
+      "comment" : "Siri action title / short title",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comida de hoy"
+          }
+        }
+      }
+    },
+    "Today's dinner" : {
+      "comment" : "Siri action title / short title",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cena de hoy"
+          }
+        }
+      }
+    },
+    "Today's menu" : {
+      "comment" : "Siri action title / short title",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Menú de hoy"
+          }
+        }
+      }
+    },
+    "Tells you what's for lunch today in your Aliaro menu." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Te dice qué hay hoy de comer en tu menú de Aliaro."
+          }
+        }
+      }
+    },
+    "Tells you what's for dinner today in your Aliaro menu." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Te dice qué hay hoy de cena en tu menú de Aliaro."
+          }
+        }
+      }
+    },
+    "Tells you today's lunch and dinner from your Aliaro menu." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Te dice la comida y la cena de hoy de tu menú de Aliaro."
+          }
+        }
+      }
+    },
+    "Open Aliaro and join a family group to check the menu." : {
+      "comment" : "Siri answer when there's no family group",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre Aliaro y únete a un grupo familiar para ver el menú."
+          }
+        }
+      }
+    },
+    "Today for lunch: %@." : {
+      "comment" : "Siri answer. %@ = dish",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hoy de comer hay %@."
+          }
+        }
+      }
+    },
+    "Today for dinner: %@." : {
+      "comment" : "Siri answer. %@ = dish",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hoy de cena hay %@."
+          }
+        }
+      }
+    },
+    "There's nothing planned for lunch today." : {
+      "comment" : "Siri answer",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hoy no hay nada planificado para comer."
+          }
+        }
+      }
+    },
+    "There's nothing planned for dinner today." : {
+      "comment" : "Siri answer",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hoy no hay nada planificado para cenar."
+          }
+        }
+      }
+    },
+    "Today for lunch: %@, and for dinner: %@." : {
+      "comment" : "Siri answer. 1 = lunch dish, 2 = dinner dish",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today for lunch: %1$@, and for dinner: %2$@."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hoy de comer hay %1$@ y de cena %2$@."
+          }
+        }
+      }
+    },
+    "Today for lunch: %@. Dinner isn't planned yet." : {
+      "comment" : "Siri answer. %@ = lunch dish",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hoy de comer hay %@. La cena aún no está planificada."
+          }
+        }
+      }
+    },
+    "Lunch isn't planned yet. Today for dinner: %@." : {
+      "comment" : "Siri answer. %@ = dinner dish",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La comida aún no está planificada. Hoy de cena hay %@."
+          }
+        }
+      }
+    },
+    "There's nothing on today's menu." : {
+      "comment" : "Siri answer",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hoy no hay nada en el menú."
+          }
+        }
+      }
     }
   },
   "version" : "1.1"

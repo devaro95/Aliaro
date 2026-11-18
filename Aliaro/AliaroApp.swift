@@ -13,7 +13,9 @@ struct AliaroApp: App {
     @StateObject private var pendingInvite = PendingInvite.shared
     @Environment(\.scenePhase) private var scenePhase
 
-    let modelContainer: ModelContainer = {
+    /// Static so App Intents (Siri, see WeeklyMenuIntents) can read the same
+    /// local store when they run in the background without any UI.
+    static let sharedModelContainer: ModelContainer = {
         let schema = Schema([
             GroceryItem.self,
             ShoppingList.self,
@@ -104,6 +106,6 @@ struct AliaroApp: App {
                     }
                 }
         }
-        .modelContainer(modelContainer)
+        .modelContainer(Self.sharedModelContainer)
     }
 }

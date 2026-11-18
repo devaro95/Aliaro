@@ -1,0 +1,96 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "What's for dinner in ${applicationName}?" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué hay de cena en ${applicationName}?"
+          }
+        }
+      }
+    },
+    "${applicationName}, what's for dinner today?" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "${applicationName}, ¿qué cenamos hoy?"
+          }
+        }
+      }
+    },
+    "What's for dinner today in ${applicationName}?" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué hay de cenar en ${applicationName}?"
+          }
+        }
+      }
+    },
+    "What's for lunch in ${applicationName}?" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué hay de comer en ${applicationName}?"
+          }
+        }
+      }
+    },
+    "${applicationName}, what's for lunch today?" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "${applicationName}, ¿qué comemos hoy?"
+          }
+        }
+      }
+    },
+    "What's for lunch today in ${applicationName}?" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué hay de comida en ${applicationName}?"
+          }
+        }
+      }
+    },
+    "What's on the menu in ${applicationName}?" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué hay de menú en ${applicationName}?"
+          }
+        }
+      }
+    },
+    "What's on today's menu in ${applicationName}?" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué hay hoy en el menú de ${applicationName}?"
+          }
+        }
+      }
+    },
+    "${applicationName}, what's on the menu today?" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "${applicationName}, ¿qué menú hay hoy?"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}
