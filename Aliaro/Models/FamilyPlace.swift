@@ -118,6 +118,10 @@ final class PlaceCustomCategory {
 
     static let maxNameLength = 30
 
+    /// Value stored in `FamilyPlace.category`: the id in lowercase, as Android and
+    /// Supabase write it (`uuidString` is uppercase).
+    var storedID: String { id.uuidString.lowercased() }
+
     init(
         id: UUID = UUID(),
         name: String,
@@ -183,7 +187,7 @@ struct PlaceCategoryStyle: Identifiable, Equatable {
     }
 
     init(_ custom: PlaceCustomCategory) {
-        id = custom.id.uuidString
+        id = custom.storedID
         builtin = nil
         self.custom = custom
         icon = custom.icon
@@ -193,7 +197,7 @@ struct PlaceCategoryStyle: Identifiable, Equatable {
     /// The style for a stored value; unknown (e.g. a deleted category) → "Other".
     static func resolve(_ raw: String, customs: [PlaceCustomCategory]) -> PlaceCategoryStyle {
         if let builtin = PlaceCategory(rawValue: raw) { return PlaceCategoryStyle(builtin) }
-        if let custom = customs.first(where: { $0.id.uuidString == raw }) { return PlaceCategoryStyle(custom) }
+        if let custom = customs.first(where: { $0.storedID == raw.lowercased() }) { return PlaceCategoryStyle(custom) }
         return PlaceCategoryStyle(.other)
     }
 

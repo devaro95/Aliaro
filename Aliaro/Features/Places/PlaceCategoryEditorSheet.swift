@@ -150,15 +150,15 @@ struct PlaceCategoryEditorSheet: View {
         try? modelContext.save()
         dataSync.pushPlaceCategory(category, familyID: familyID)
         Track.event(categoryToEdit == nil ? "place_category_new" : "place_category_edited", ["icon": icon])
-        if categoryToEdit == nil { onCreate(category.id.uuidString) }
+        if categoryToEdit == nil { onCreate(category.storedID) }
         dismiss()
     }
 
     private func delete() {
         guard let category = categoryToEdit, let familyID = familySession.familyID else { return }
-        let raw = category.id.uuidString
+        let raw = category.storedID
         let places = (try? modelContext.fetch(FetchDescriptor<FamilyPlace>())) ?? []
-        for place in places where place.category == raw {
+        for place in places where place.category.lowercased() == raw {
             place.category = PlaceCategory.other.rawValue
             place.updatedAt = .now
             dataSync.pushFamilyPlace(place, familyID: familyID)
