@@ -57,6 +57,8 @@ struct PeopleScreen: View {
 
                 if premium.subscriptions.isSubscribed {
                     subscriptionCard
+                } else if familySession.isFamilyPremium {
+                    familyPremiumCard
                 }
 
                 notificationsCard
@@ -415,6 +417,34 @@ struct PeopleScreen: View {
         }
         .buttonStyle(.plain)
         .manageSubscriptionsSheet(isPresented: $showManageSubscription)
+    }
+
+    /// Shown to members who get Premium through the group (someone else
+    /// pays): tells them who to thank. Not tappable — only the payer can
+    /// manage the subscription.
+    private var familyPremiumCard: some View {
+        ALICard {
+            HStack(spacing: 12) {
+                Image(systemName: "crown.fill")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(ALIColors.sun)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Aliaro Premium")
+                        .font(ALITypography.bodyLarge)
+                        .foregroundStyle(ALIColors.ink)
+                    Group {
+                        if let payer = members.first(where: { $0.id == familySession.premiumMemberID }) {
+                            Text("Your family has Premium thanks to \(payer.name)")
+                        } else {
+                            Text("Your family has Premium")
+                        }
+                    }
+                    .font(ALITypography.labelLarge)
+                    .foregroundStyle(ALIColors.mutedInk)
+                }
+                Spacer()
+            }
+        }
     }
 
     private var appFeaturesCard: some View {

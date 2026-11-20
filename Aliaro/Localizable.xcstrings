@@ -13636,6 +13636,26 @@
         }
       }
     },
+    "Your family has Premium" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu familia tiene Premium"
+          }
+        }
+      }
+    },
+    "Your family has Premium thanks to %@" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu familia tiene Premium gracias a %@"
+          }
+        }
+      }
+    },
     "Your name" : {
       "localizations" : {
         "en" : {
