@@ -55,7 +55,7 @@ final class GlobeData {
         let scale = half / (0.8707 * .pi)
         let seam = Double.pi * 179.3 / 180
 
-        countries = map.rawCountries.map { entry in
+        let drawn: [Country] = map.rawCountries.map { entry in
             let rings: [Ring] = entry.rings.filter { $0.count >= 6 }.map { raw in
                 let n = raw.count / 2
                 var xyz = [Float](repeating: 0, count: n * 3)
@@ -84,6 +84,13 @@ final class GlobeData {
             let len = (c * c).sum().squareRoot()
             return Country(code: entry.code, rings: rings, center: len > 0 ? c / len : SIMD3(0, 0, 1))
         }
+        let dots: [Country] = map.points.compactMap { code, latLon -> Country? in
+            // Too small to draw: no rings, a dot at its position when visited.
+            guard latLon.count >= 2 else { return nil }
+            let v = Self.unit(lat: latLon[0] * .pi / 180, lon: latLon[1] * .pi / 180)
+            return Country(code: code, rings: [], center: SIMD3(v[0], v[1], v[2]))
+        }
+        countries = drawn + dots
 
         func ring(_ points: [(Double, Double)]) -> Ring {
             let xyz = points.flatMap { Self.unit(lat: $0.0 * .pi / 180, lon: $0.1 * .pi / 180) }
@@ -198,8 +205,17 @@ private final class GlobeMotion {
 
     struct FillAnim {
         var from: Double, to: Double, start: Date, duration: Double, bouncy: Bool
+        /// A second step after this one, from 0 (filter change: out, then in).
+        var then: (to: Double, start: Date, duration: Double)? = nil
+
+        /// Where it ends up.
+        var final: Double { then?.to ?? to }
 
         func value(at now: Date) -> Double {
+            if let then, now >= then.start {
+                let p = min(now.timeIntervalSince(then.start) / then.duration, 1)
+                return p >= 1 ? then.to : then.to * (1 - pow(1 - p, 3))
+            }
             let p = min(max(now.timeIntervalSince(start) / duration, 0), 1)
             let eased = bouncy ? 1 - exp(-5 * p) * cos(9 * p) : 1 - pow(1 - p, 3)
             return p >= 1 ? to : from + (to - from) * eased
@@ -222,8 +238,12 @@ private final class GlobeMotion {
     var fills: [String: FillAnim] = [:]
     var pulses: [String: Date] = [:]
     var lastTargets: [String: Color?]?
+    /// Filter of the last update: changing it (another member) is never "a new country".
+    var lastFilter: String?
     /// Current color of each visited country (changes are instant; only showing / hiding animates).
     var colors: [String: Color] = [:]
+    /// Colors that take over once a country has swept out (filter change).
+    var pendingColors: [String: (color: Color, at: Date)] = [:]
     var radius: CGFloat = 150
     var time = 0.0
 
@@ -234,6 +254,15 @@ private final class GlobeMotion {
     }
 
     func fill(_ code: String, at now: Date) -> Double { fills[code]?.value(at: now) ?? 0 }
+
+    /// Color of a visited country now (a pending one once its time comes).
+    func color(_ code: String, at now: Date) -> Color {
+        if let pending = pendingColors[code], now >= pending.at {
+            colors[code] = pending.color
+            pendingColors[code] = nil
+        }
+        return colors[code] ?? ALIPalette.coral
+    }
 
     func step(_ now: Date) {
         let dt = min(lastStep.map { now.timeIntervalSince($0) } ?? 0, 0.05)
@@ -279,13 +308,42 @@ private final class GlobeMotion {
 
     /// New fill targets: a wave on load / filter change; a pop, spin and
     /// pulse for a single newly marked country.
-    func update(targets colorTargets: [String: Color?], countries: [GlobeData.Country], now: Date) {
-        for (code, color) in colorTargets { if let color { colors[code] = color } }
+    func update(targets colorTargets: [String: Color?], filter: String?, countries: [GlobeData.Country], now: Date) {
         let targets = colorTargets.mapValues { $0 == nil ? 0.0 : 1.0 }
         let previous = lastTargets
         lastTargets = colorTargets
+        let sameFilter = filter == lastFilter
+        lastFilter = filter
+        pendingColors = [:]
+        // Another member: first the shown countries sweep out, then the new ones sweep in (in their color).
+        if previous != nil && !sameFilter {
+            let anyShown = countries.contains { fill($0.code, at: now) > 0 }
+            let outLength = anyShown ? 0.7 : 0
+            for country in countries {
+                let lon = Double(atan2(country.center.x, country.center.z)) + yaw
+                let delay = ((lon / (2 * .pi)).truncatingRemainder(dividingBy: 1) + 1.5).truncatingRemainder(dividingBy: 1) * 0.35
+                let current = fill(country.code, at: now)
+                let color = colorTargets[country.code] ?? nil
+                var anim: FillAnim? = current > 0
+                    ? FillAnim(from: current, to: 0, start: now.addingTimeInterval(delay), duration: 0.35, bouncy: false)
+                    : nil
+                if let color {
+                    let start = now.addingTimeInterval(outLength + delay)
+                    if anim != nil {
+                        anim?.then = (to: 1, start: start, duration: 0.55)
+                        pendingColors[country.code] = (color, start)
+                    } else {
+                        colors[country.code] = color
+                        anim = FillAnim(from: 0, to: 1, start: start, duration: 0.55, bouncy: false)
+                    }
+                }
+                fills[country.code] = anim
+            }
+            return
+        }
+        for (code, color) in colorTargets { if let color { colors[code] = color } }
         var added: Set<String> = []
-        if let previous, introDone {
+        if let previous, introDone, sameFilter {
             added = Set(colorTargets.filter { $0.value != nil && (previous[$0.key] ?? nil) == nil }.keys)
         }
         let single = added.count == 1
@@ -295,7 +353,7 @@ private final class GlobeMotion {
         for country in countries {
             let target = targets[country.code] ?? 0
             let current = fill(country.code, at: now)
-            if current == target && (fills[country.code]?.to ?? 0) == target { continue }
+            if current == target && (fills[country.code]?.final ?? 0) == target { continue }
             if single && added.contains(country.code) {
                 fills[country.code] = FillAnim(from: current, to: target, start: now.addingTimeInterval(0.65), duration: 0.9, bouncy: true)
             } else {
@@ -332,6 +390,32 @@ private func mix(_ a: Color, _ b: Color, _ t: Double, _ scheme: ColorScheme) -> 
     return Color(red: r1 + (r2 - r1) * t, green: g1 + (g2 - g1) * t, blue: b1 + (b2 - b1) * t, opacity: a1 + (a2 - a1) * t)
 }
 
+/// A pin stuck in the globe: a thin stick from `base` (on the surface) to `head`
+/// (out along the surface normal, so it leans with the globe) and a ball with a
+/// white border and a small shine. `scale` is the fill (0…1, overshoots on the pop).
+private enum GlobePin {
+    /// Height of the pin, as a fraction of the globe's radius.
+    static let length = 0.11
+
+    static func draw(in ctx: GraphicsContext, base: CGPoint, head: CGPoint, scale: Double, color: Color) {
+        let alpha = min(1, scale * 6)
+        let s = CGFloat(scale)
+        let ball = 3.5 * s
+        func circle(_ center: CGPoint, _ radius: CGFloat) -> Path {
+            Path(ellipseIn: CGRect(x: center.x - radius, y: center.y - radius, width: radius * 2, height: radius * 2))
+        }
+        // Where it goes in: a soft dark dot.
+        ctx.fill(circle(base, 1.6 * s), with: .color(GlobeColors.ink.opacity(0.35 * alpha)))
+        var stick = Path()
+        stick.move(to: base)
+        stick.addLine(to: head)
+        ctx.stroke(stick, with: .color(GlobeColors.ink.opacity(0.75 * alpha)), style: StrokeStyle(lineWidth: 1.4, lineCap: .round))
+        ctx.fill(circle(head, ball + 1.2 * s), with: .color(.white.opacity(alpha)))
+        ctx.fill(circle(head, ball), with: .color(color.opacity(alpha)))
+        ctx.fill(circle(CGPoint(x: head.x - ball * 0.35, y: head.y - ball * 0.35), ball * 0.32), with: .color(.white.opacity(0.7 * alpha)))
+    }
+}
+
 /// Globe colors (same in light and dark mode).
 private enum GlobeColors {
     static let oceanLight = Color(red: 0xB8 / 255, green: 0xE6 / 255, blue: 0xFB / 255)
@@ -349,6 +433,8 @@ private enum GlobeColors {
 /// spins into view with a pop and a coral pulse. `colorFor` gives each visited country its color (nil = not visited).
 struct WorldGlobe: View {
     let colorFor: (String) -> Color?
+    /// What the map is showing (e.g. the selected member): when it changes, fills just sweep in.
+    var filter: String? = nil
 
     @Environment(\.colorScheme) private var colorScheme
     @State private var motion = GlobeMotion()
@@ -424,7 +510,7 @@ struct WorldGlobe: View {
                         }
                         guard !path.isEmpty else { continue }
                         let alpha = min(1, amount * 6)
-                        ctx.fill(path, with: .color((motion.colors[country.code] ?? ALIPalette.coral).opacity(alpha)), style: eo)
+                        ctx.fill(path, with: .color(motion.color(country.code, at: now).opacity(alpha)), style: eo)
                         // Overshoot of the pop shows as a brief highlight.
                         if amount > 1 {
                             ctx.fill(path, with: .color(.white.opacity(min(0.5, (amount - 1) * 2))), style: eo)
@@ -443,6 +529,25 @@ struct WorldGlobe: View {
                         shine.fill(Path(ellipseIn: CGRect(x: c.x - r * 0.2, y: c.y - r * 0.76, width: r * 0.08, height: r * 0.08)),
                                    with: .color(.white.opacity(0.63)))
                     }
+                }
+
+                // Every visited country: a pin standing out of the globe (a thin stick along
+                // the surface normal with a ball on top), farthest first. It grows with the fill, so it pops too.
+                let pins = data.countries
+                    .filter { motion.fill($0.code, at: now) > 0.001 }
+                    .map { (country: $0, v: projector.rotate($0.center)) }
+                    .filter { $0.v.z > 0 }
+                    .sorted { $0.v.z < $1.v.z }
+                for pin in pins {
+                    let amount = motion.fill(pin.country.code, at: now)
+                    let length = Float(1 + GlobePin.length * amount)
+                    GlobePin.draw(
+                        in: context,
+                        base: projector.point(pin.v.x, pin.v.y),
+                        head: projector.point(pin.v.x * length, pin.v.y * length),
+                        scale: amount,
+                        color: motion.color(pin.country.code, at: now)
+                    )
                 }
 
                 // Pulses on newly marked countries.
@@ -489,7 +594,7 @@ struct WorldGlobe: View {
                     motion.velPitch = value.velocity.height / r
                 }
         )
-        .onAppear { motion.update(targets: targets, countries: data.countries, now: Date()) }
-        .onChange(of: targets) { _, new in motion.update(targets: new, countries: data.countries, now: Date()) }
+        .onAppear { motion.update(targets: targets, filter: filter, countries: data.countries, now: Date()) }
+        .onChange(of: targets) { _, new in motion.update(targets: new, filter: filter, countries: data.countries, now: Date()) }
     }
 }
