@@ -18,12 +18,15 @@ final class WorldMapData {
     let allCodes: [String]
     /// Raw outlines (code → rings of x, y pairs in map coordinates), for the globe.
     let rawCountries: [(code: String, rings: [[Double]])]
+    /// Countries too small to draw: code → [latitude, longitude] in degrees (a dot on the globe).
+    let points: [String: [Double]]
 
     private struct File: Decodable {
         let w: Double
         let h: Double
         let countries: [Entry]
         let all: [String]
+        let p: [String: [Double]]?
 
         struct Entry: Decodable {
             let c: String
@@ -40,6 +43,7 @@ final class WorldMapData {
             countries = []
             allCodes = []
             rawCountries = []
+            points = [:]
             return
         }
         size = CGSize(width: file.w, height: file.h)
@@ -57,6 +61,7 @@ final class WorldMapData {
             return Country(code: entry.c, path: path)
         }
         allCodes = file.all
+        points = file.p ?? [:]
         rawCountries = file.countries.map { ($0.c, $0.r) }
     }
 

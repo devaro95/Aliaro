@@ -55,7 +55,7 @@ final class GlobeData {
         let scale = half / (0.8707 * .pi)
         let seam = Double.pi * 179.3 / 180
 
-        countries = map.rawCountries.map { entry in
+        let drawn: [Country] = map.rawCountries.map { entry in
             let rings: [Ring] = entry.rings.filter { $0.count >= 6 }.map { raw in
                 let n = raw.count / 2
                 var xyz = [Float](repeating: 0, count: n * 3)
@@ -84,6 +84,13 @@ final class GlobeData {
             let len = (c * c).sum().squareRoot()
             return Country(code: entry.code, rings: rings, center: len > 0 ? c / len : SIMD3(0, 0, 1))
         }
+        let dots: [Country] = map.points.compactMap { code, latLon -> Country? in
+            // Too small to draw: no rings, a dot at its position when visited.
+            guard latLon.count >= 2 else { return nil }
+            let v = Self.unit(lat: latLon[0] * .pi / 180, lon: latLon[1] * .pi / 180)
+            return Country(code: code, rings: [], center: SIMD3(v[0], v[1], v[2]))
+        }
+        countries = drawn + dots
 
         func ring(_ points: [(Double, Double)]) -> Ring {
             let xyz = points.flatMap { Self.unit(lat: $0.0 * .pi / 180, lon: $0.1 * .pi / 180) }
@@ -332,6 +339,32 @@ private func mix(_ a: Color, _ b: Color, _ t: Double, _ scheme: ColorScheme) -> 
     return Color(red: r1 + (r2 - r1) * t, green: g1 + (g2 - g1) * t, blue: b1 + (b2 - b1) * t, opacity: a1 + (a2 - a1) * t)
 }
 
+/// A pin stuck in the globe: a thin stick from `base` (on the surface) to `head`
+/// (out along the surface normal, so it leans with the globe) and a ball with a
+/// white border and a small shine. `scale` is the fill (0…1, overshoots on the pop).
+private enum GlobePin {
+    /// Height of the pin, as a fraction of the globe's radius.
+    static let length = 0.11
+
+    static func draw(in ctx: GraphicsContext, base: CGPoint, head: CGPoint, scale: Double, color: Color) {
+        let alpha = min(1, scale * 6)
+        let s = CGFloat(scale)
+        let ball = 3.5 * s
+        func circle(_ center: CGPoint, _ radius: CGFloat) -> Path {
+            Path(ellipseIn: CGRect(x: center.x - radius, y: center.y - radius, width: radius * 2, height: radius * 2))
+        }
+        // Where it goes in: a soft dark dot.
+        ctx.fill(circle(base, 1.6 * s), with: .color(GlobeColors.ink.opacity(0.35 * alpha)))
+        var stick = Path()
+        stick.move(to: base)
+        stick.addLine(to: head)
+        ctx.stroke(stick, with: .color(GlobeColors.ink.opacity(0.75 * alpha)), style: StrokeStyle(lineWidth: 1.4, lineCap: .round))
+        ctx.fill(circle(head, ball + 1.2 * s), with: .color(.white.opacity(alpha)))
+        ctx.fill(circle(head, ball), with: .color(color.opacity(alpha)))
+        ctx.fill(circle(CGPoint(x: head.x - ball * 0.35, y: head.y - ball * 0.35), ball * 0.32), with: .color(.white.opacity(0.7 * alpha)))
+    }
+}
+
 /// Globe colors (same in light and dark mode).
 private enum GlobeColors {
     static let oceanLight = Color(red: 0xB8 / 255, green: 0xE6 / 255, blue: 0xFB / 255)
@@ -443,6 +476,25 @@ struct WorldGlobe: View {
                         shine.fill(Path(ellipseIn: CGRect(x: c.x - r * 0.2, y: c.y - r * 0.76, width: r * 0.08, height: r * 0.08)),
                                    with: .color(.white.opacity(0.63)))
                     }
+                }
+
+                // Every visited country: a pin standing out of the globe (a thin stick along
+                // the surface normal with a ball on top), farthest first. It grows with the fill, so it pops too.
+                let pins = data.countries
+                    .filter { motion.fill($0.code, at: now) > 0.001 }
+                    .map { (country: $0, v: projector.rotate($0.center)) }
+                    .filter { $0.v.z > 0 }
+                    .sorted { $0.v.z < $1.v.z }
+                for pin in pins {
+                    let amount = motion.fill(pin.country.code, at: now)
+                    let length = Float(1 + GlobePin.length * amount)
+                    GlobePin.draw(
+                        in: context,
+                        base: projector.point(pin.v.x, pin.v.y),
+                        head: projector.point(pin.v.x * length, pin.v.y * length),
+                        scale: amount,
+                        color: motion.colors[pin.country.code] ?? ALIPalette.coral
+                    )
                 }
 
                 // Pulses on newly marked countries.
