@@ -71,7 +71,7 @@ struct WorldMapScreen: View {
                 .onAppear { updateCount(visitors.count) }
                 .onChange(of: visitors.count) { _, new in updateCount(new) }
 
-            WorldGlobe(colorFor: { code in (visitors[code]?.isEmpty ?? true) ? nil : selectedColor })
+            WorldGlobe(colorFor: { code in (visitors[code]?.isEmpty ?? true) ? nil : selectedColor }, filter: selectedMemberID?.uuidString)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .padding(.bottom, 100)

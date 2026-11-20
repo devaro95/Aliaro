@@ -229,6 +229,8 @@ private final class GlobeMotion {
     var fills: [String: FillAnim] = [:]
     var pulses: [String: Date] = [:]
     var lastTargets: [String: Color?]?
+    /// Filter of the last update: changing it (another member) is never "a new country".
+    var lastFilter: String?
     /// Current color of each visited country (changes are instant; only showing / hiding animates).
     var colors: [String: Color] = [:]
     var radius: CGFloat = 150
@@ -286,13 +288,15 @@ private final class GlobeMotion {
 
     /// New fill targets: a wave on load / filter change; a pop, spin and
     /// pulse for a single newly marked country.
-    func update(targets colorTargets: [String: Color?], countries: [GlobeData.Country], now: Date) {
+    func update(targets colorTargets: [String: Color?], filter: String?, countries: [GlobeData.Country], now: Date) {
         for (code, color) in colorTargets { if let color { colors[code] = color } }
         let targets = colorTargets.mapValues { $0 == nil ? 0.0 : 1.0 }
         let previous = lastTargets
         lastTargets = colorTargets
+        let sameFilter = filter == lastFilter
+        lastFilter = filter
         var added: Set<String> = []
-        if let previous, introDone {
+        if let previous, introDone, sameFilter {
             added = Set(colorTargets.filter { $0.value != nil && (previous[$0.key] ?? nil) == nil }.keys)
         }
         let single = added.count == 1
@@ -382,6 +386,8 @@ private enum GlobeColors {
 /// spins into view with a pop and a coral pulse. `colorFor` gives each visited country its color (nil = not visited).
 struct WorldGlobe: View {
     let colorFor: (String) -> Color?
+    /// What the map is showing (e.g. the selected member): when it changes, fills just sweep in.
+    var filter: String? = nil
 
     @Environment(\.colorScheme) private var colorScheme
     @State private var motion = GlobeMotion()
@@ -541,7 +547,7 @@ struct WorldGlobe: View {
                     motion.velPitch = value.velocity.height / r
                 }
         )
-        .onAppear { motion.update(targets: targets, countries: data.countries, now: Date()) }
-        .onChange(of: targets) { _, new in motion.update(targets: new, countries: data.countries, now: Date()) }
+        .onAppear { motion.update(targets: targets, filter: filter, countries: data.countries, now: Date()) }
+        .onChange(of: targets) { _, new in motion.update(targets: new, filter: filter, countries: data.countries, now: Date()) }
     }
 }
