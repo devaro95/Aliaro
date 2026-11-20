@@ -205,8 +205,17 @@ private final class GlobeMotion {
 
     struct FillAnim {
         var from: Double, to: Double, start: Date, duration: Double, bouncy: Bool
+        /// A second step after this one, from 0 (filter change: out, then in).
+        var then: (to: Double, start: Date, duration: Double)? = nil
+
+        /// Where it ends up.
+        var final: Double { then?.to ?? to }
 
         func value(at now: Date) -> Double {
+            if let then, now >= then.start {
+                let p = min(now.timeIntervalSince(then.start) / then.duration, 1)
+                return p >= 1 ? then.to : then.to * (1 - pow(1 - p, 3))
+            }
             let p = min(max(now.timeIntervalSince(start) / duration, 0), 1)
             let eased = bouncy ? 1 - exp(-5 * p) * cos(9 * p) : 1 - pow(1 - p, 3)
             return p >= 1 ? to : from + (to - from) * eased
@@ -233,6 +242,8 @@ private final class GlobeMotion {
     var lastFilter: String?
     /// Current color of each visited country (changes are instant; only showing / hiding animates).
     var colors: [String: Color] = [:]
+    /// Colors that take over once a country has swept out (filter change).
+    var pendingColors: [String: (color: Color, at: Date)] = [:]
     var radius: CGFloat = 150
     var time = 0.0
 
@@ -243,6 +254,15 @@ private final class GlobeMotion {
     }
 
     func fill(_ code: String, at now: Date) -> Double { fills[code]?.value(at: now) ?? 0 }
+
+    /// Color of a visited country now (a pending one once its time comes).
+    func color(_ code: String, at now: Date) -> Color {
+        if let pending = pendingColors[code], now >= pending.at {
+            colors[code] = pending.color
+            pendingColors[code] = nil
+        }
+        return colors[code] ?? ALIPalette.coral
+    }
 
     func step(_ now: Date) {
         let dt = min(lastStep.map { now.timeIntervalSince($0) } ?? 0, 0.05)
@@ -289,12 +309,39 @@ private final class GlobeMotion {
     /// New fill targets: a wave on load / filter change; a pop, spin and
     /// pulse for a single newly marked country.
     func update(targets colorTargets: [String: Color?], filter: String?, countries: [GlobeData.Country], now: Date) {
-        for (code, color) in colorTargets { if let color { colors[code] = color } }
         let targets = colorTargets.mapValues { $0 == nil ? 0.0 : 1.0 }
         let previous = lastTargets
         lastTargets = colorTargets
         let sameFilter = filter == lastFilter
         lastFilter = filter
+        pendingColors = [:]
+        // Another member: first the shown countries sweep out, then the new ones sweep in (in their color).
+        if previous != nil && !sameFilter {
+            let anyShown = countries.contains { fill($0.code, at: now) > 0 }
+            let outLength = anyShown ? 0.7 : 0
+            for country in countries {
+                let lon = Double(atan2(country.center.x, country.center.z)) + yaw
+                let delay = ((lon / (2 * .pi)).truncatingRemainder(dividingBy: 1) + 1.5).truncatingRemainder(dividingBy: 1) * 0.35
+                let current = fill(country.code, at: now)
+                let color = colorTargets[country.code] ?? nil
+                var anim: FillAnim? = current > 0
+                    ? FillAnim(from: current, to: 0, start: now.addingTimeInterval(delay), duration: 0.35, bouncy: false)
+                    : nil
+                if let color {
+                    let start = now.addingTimeInterval(outLength + delay)
+                    if anim != nil {
+                        anim?.then = (to: 1, start: start, duration: 0.55)
+                        pendingColors[country.code] = (color, start)
+                    } else {
+                        colors[country.code] = color
+                        anim = FillAnim(from: 0, to: 1, start: start, duration: 0.55, bouncy: false)
+                    }
+                }
+                fills[country.code] = anim
+            }
+            return
+        }
+        for (code, color) in colorTargets { if let color { colors[code] = color } }
         var added: Set<String> = []
         if let previous, introDone, sameFilter {
             added = Set(colorTargets.filter { $0.value != nil && (previous[$0.key] ?? nil) == nil }.keys)
@@ -306,7 +353,7 @@ private final class GlobeMotion {
         for country in countries {
             let target = targets[country.code] ?? 0
             let current = fill(country.code, at: now)
-            if current == target && (fills[country.code]?.to ?? 0) == target { continue }
+            if current == target && (fills[country.code]?.final ?? 0) == target { continue }
             if single && added.contains(country.code) {
                 fills[country.code] = FillAnim(from: current, to: target, start: now.addingTimeInterval(0.65), duration: 0.9, bouncy: true)
             } else {
@@ -463,7 +510,7 @@ struct WorldGlobe: View {
                         }
                         guard !path.isEmpty else { continue }
                         let alpha = min(1, amount * 6)
-                        ctx.fill(path, with: .color((motion.colors[country.code] ?? ALIPalette.coral).opacity(alpha)), style: eo)
+                        ctx.fill(path, with: .color(motion.color(country.code, at: now).opacity(alpha)), style: eo)
                         // Overshoot of the pop shows as a brief highlight.
                         if amount > 1 {
                             ctx.fill(path, with: .color(.white.opacity(min(0.5, (amount - 1) * 2))), style: eo)
@@ -499,7 +546,7 @@ struct WorldGlobe: View {
                         base: projector.point(pin.v.x, pin.v.y),
                         head: projector.point(pin.v.x * length, pin.v.y * length),
                         scale: amount,
-                        color: motion.colors[pin.country.code] ?? ALIPalette.coral
+                        color: motion.color(pin.country.code, at: now)
                     )
                 }
 
