@@ -36,6 +36,9 @@ final class FamilySession: ObservableObject {
     /// `disabledTabs`/`startTab`. Once true, every device in the group
     /// sees premium features unlocked, not just the one that subscribed.
     @Published private(set) var isFamilyPremium: Bool
+    /// Member whose subscription gives the group Premium
+    /// (`families.premium_member_id`). `nil` if unknown or not premium.
+    @Published private(set) var premiumMemberID: UUID?
     /// Whether the one-time welcome carousel (`AppIntroView`) has already
     /// been shown on this device. Independent of family membership: stays
     /// `true` even after leaving a group, so it is only ever shown once.
@@ -57,6 +60,7 @@ final class FamilySession: ObservableObject {
         static let favoriteTabs = "aliaro.favoriteTabs"
         static let homeFeatureOrder = "aliaro.homeFeatureOrder"
         static let isFamilyPremium = "aliaro.isFamilyPremium"
+        static let premiumMemberID = "aliaro.premiumMemberID"
         static let hasSeenAppIntro = "aliaro.hasSeenAppIntro"
     }
 
@@ -84,6 +88,7 @@ final class FamilySession: ObservableObject {
         favoriteTabs = defaults.stringArray(forKey: Keys.favoriteTabs) ?? []
         homeFeatureOrder = defaults.stringArray(forKey: Keys.homeFeatureOrder) ?? []
         isFamilyPremium = defaults.bool(forKey: Keys.isFamilyPremium)
+        premiumMemberID = defaults.string(forKey: Keys.premiumMemberID).flatMap(UUID.init(uuidString:))
         hasSeenAppIntro = defaults.bool(forKey: Keys.hasSeenAppIntro)
     }
 
@@ -145,6 +150,12 @@ final class FamilySession: ObservableObject {
         defaults.set(isPremium, forKey: Keys.isFamilyPremium)
     }
 
+    /// Updates which member pays the group's Premium (see `premiumMemberID`).
+    func setPremiumMemberID(_ id: UUID?) {
+        premiumMemberID = id
+        defaults.set(id?.uuidString, forKey: Keys.premiumMemberID)
+    }
+
     /// Marks the welcome carousel as seen, so it never shows again on this device.
     func markAppIntroSeen() {
         hasSeenAppIntro = true
@@ -161,6 +172,7 @@ final class FamilySession: ObservableObject {
         favoriteTabs = []
         homeFeatureOrder = []
         isFamilyPremium = false
+        premiumMemberID = nil
         defaults.removeObject(forKey: Keys.familyID)
         defaults.removeObject(forKey: Keys.memberID)
         defaults.removeObject(forKey: Keys.familyName)
@@ -169,5 +181,6 @@ final class FamilySession: ObservableObject {
         defaults.removeObject(forKey: Keys.favoriteTabs)
         defaults.removeObject(forKey: Keys.homeFeatureOrder)
         defaults.removeObject(forKey: Keys.isFamilyPremium)
+        defaults.removeObject(forKey: Keys.premiumMemberID)
     }
 }

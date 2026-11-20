@@ -696,6 +696,8 @@ final class FamilyService: ObservableObject {
         let is_premium: Bool
         /// Optional so a row without the column (older backend) still decodes.
         let favorite_tabs: [String]?
+        /// Member paying the group's Premium; optional so a partial payload still decodes.
+        let premium_member_id: UUID?
     }
 
     /// Fetches which tabs the admin has turned off (and which one is the
@@ -706,7 +708,7 @@ final class FamilyService: ObservableObject {
         do {
             let row: RemoteFamilySettings = try await supabase
                 .from("families")
-                .select("name,disabled_tabs,start_tab,is_premium,favorite_tabs")
+                .select("name,disabled_tabs,start_tab,is_premium,favorite_tabs,premium_member_id")
                 .eq("id", value: familyID)
                 .single()
                 .execute()
@@ -716,6 +718,7 @@ final class FamilyService: ObservableObject {
             session.setStartTab(row.start_tab)
             session.setFavoriteTabs(row.favorite_tabs ?? [])
             session.setFamilyPremium(row.is_premium)
+            session.setPremiumMemberID(row.is_premium ? row.premium_member_id : nil)
         } catch {
             lastError = error.localizedDescription
         }
@@ -781,6 +784,7 @@ final class FamilyService: ObservableObject {
                     self?.session.setStartTab(row.start_tab)
                     self?.session.setFavoriteTabs(row.favorite_tabs ?? [])
                     self?.session.setFamilyPremium(row.is_premium)
+                    self?.session.setPremiumMemberID(row.is_premium ? row.premium_member_id : nil)
                 }
             }
         }
