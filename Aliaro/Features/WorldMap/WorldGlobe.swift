@@ -344,7 +344,8 @@ private final class GlobeMotion {
         for (code, color) in colorTargets { if let color { colors[code] = color } }
         var added: Set<String> = []
         if let previous, introDone, sameFilter {
-            added = Set(colorTargets.filter { $0.value != nil && (previous[$0.key] ?? nil) == nil }.keys)
+            // Only what was marked on this device: countries arriving from another member just fill in.
+            added = Set(colorTargets.filter { $0.value != nil && (previous[$0.key] ?? nil) == nil && WorldMapActions.markedHereRecently($0.key) }.keys)
         }
         let single = added.count == 1
         if single, let code = added.first, let country = countries.first(where: { $0.code == code }) {

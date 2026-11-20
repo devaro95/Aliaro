@@ -326,6 +326,15 @@ struct VisitedCountriesSheet: View {
 
 /// Mark / unmark a country for a member, shared by the map and the picker.
 enum WorldMapActions {
+    /// Last country marked on this device and when: only that one spins into view on the globe.
+    private static var lastMarked: (code: String, at: Date)?
+
+    /// Whether `code` was just marked here (not by another member, arriving in real time).
+    static func markedHereRecently(_ code: String) -> Bool {
+        guard let lastMarked else { return false }
+        return lastMarked.code == code && Date().timeIntervalSince(lastMarked.at) < 5
+    }
+
     /// Returns whether the country is now visited.
     @MainActor
     @discardableResult
@@ -341,6 +350,7 @@ enum WorldMapActions {
             Track.event("world_map_country_removed", ["source": source])
             return false
         }
+        lastMarked = (code, Date())
         let visit = VisitedCountry(memberID: memberID, countryCode: code)
         modelContext.insert(visit)
         try? modelContext.save()
