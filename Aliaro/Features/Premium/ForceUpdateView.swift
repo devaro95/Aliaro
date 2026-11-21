@@ -34,7 +34,7 @@ struct ForceUpdateView: View {
                 .foregroundStyle(ALIColors.ink)
                 .multilineTextAlignment(.center)
 
-            Text("There's a new version of Aliaro. Update it to keep using the app with your family group.")
+            Text("Aliaro has new features. Update now, your family is waiting.")
                 .font(ALITypography.bodyLarge)
                 .foregroundStyle(ALIColors.mutedInk)
                 .multilineTextAlignment(.center)
