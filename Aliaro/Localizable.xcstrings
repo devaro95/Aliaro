@@ -11481,18 +11481,18 @@
         }
       }
     },
-    "There's a new version of Aliaro. Update it to keep using the app with your family group." : {
+    "Aliaro has new features. Update now, your family is waiting." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "There's a new version of Aliaro. Update it to keep using the app with your family group."
+            "value" : "Aliaro has new features. Update now, your family is waiting."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hay una nueva versión de Aliaro. Actualízala para seguir usando la app con tu grupo familiar."
+            "value" : "Aliaro viene con novedades. Actualiza, que tu familia te espera."
           }
         }
       }
