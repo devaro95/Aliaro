@@ -9613,6 +9613,22 @@
         }
       }
     },
+    "Remove year" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove year"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quitar año"
+          }
+        }
+      }
+    },
     "Rename" : {
       "localizations" : {
         "en" : {
@@ -11129,6 +11145,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Toca el día de inicio en el calendario."
+          }
+        }
+      }
+    },
+    "Tap your countries to add the year you went." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap your countries to add the year you went."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toca tus países para poner el año en que fuiste."
           }
         }
       }
@@ -13066,6 +13098,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Cuando suena un recordatorio en el que estás"
+          }
+        }
+      }
+    },
+    "When did you go?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When did you go?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Cuándo fuiste?"
           }
         }
       }

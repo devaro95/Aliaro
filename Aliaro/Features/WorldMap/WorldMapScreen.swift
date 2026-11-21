@@ -71,7 +71,11 @@ struct WorldMapScreen: View {
                 .onAppear { updateCount(visitors.count) }
                 .onChange(of: visitors.count) { _, new in updateCount(new) }
 
-            WorldGlobe(colorFor: { code in (visitors[code]?.isEmpty ?? true) ? nil : selectedColor }, filter: selectedMemberID?.uuidString)
+            WorldGlobe(
+                colorFor: { code in (visitors[code]?.isEmpty ?? true) ? nil : selectedColor },
+                filter: selectedMemberID?.uuidString,
+                years: WorldMapVisitors.years(visits, member: selectedMemberID)
+            )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .padding(.bottom, 100)
@@ -184,6 +188,14 @@ private struct MapColorSheet: View {
 }
 
 enum WorldMapVisitors {
+    /// Code → year of the visit, for one member (none for everyone: each may have gone in a different year).
+    static func years(_ visits: [VisitedCountry], member: UUID?) -> [String: Int] {
+        guard let member else { return [:] }
+        return visits.reduce(into: [:]) { result, visit in
+            if visit.memberID == member, let year = visit.year { result[visit.countryCode] = year }
+        }
+    }
+
     /// Code → ids of the members who've been there (`member` nil = everyone).
     static func byCountry(_ visits: [VisitedCountry], member: UUID?) -> [String: Set<UUID>] {
         visits.filter { member == nil || $0.memberID == member }
@@ -245,7 +257,11 @@ struct VisitedCountriesSheet: View {
     let visits: [VisitedCountry]
     let members: [FamilyMember]
     @State private var memberID: UUID?
+    @State private var yearTarget: VisitYearTarget?
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject private var dataSync: AppDataSyncCoordinator
+    @EnvironmentObject private var familySession: FamilySession
 
     init(visits: [VisitedCountry], members: [FamilyMember], initialMemberID: UUID?) {
         self.visits = visits
@@ -270,6 +286,13 @@ struct VisitedCountriesSheet: View {
                     .foregroundStyle(ALIColors.mutedInk)
                     .padding(.horizontal, 20)
 
+                    if codes.contains(where: { myVisit($0) != nil }) {
+                        Text("Tap your countries to add the year you went.")
+                            .font(ALITypography.labelLarge)
+                            .foregroundStyle(ALIColors.mutedInk)
+                            .padding(.horizontal, 20)
+                    }
+
                     if !codes.isEmpty {
                         VStack(spacing: 0) {
                             ForEach(Array(codes.enumerated()), id: \.element) { index, code in
@@ -280,15 +303,18 @@ struct VisitedCountriesSheet: View {
                                         .foregroundStyle(ALIColors.ink)
                                         .lineLimit(1)
                                     Spacer(minLength: 8)
-                                    if memberID == nil {
-                                        Text(names(of: visitors[code] ?? []))
-                                            .font(ALITypography.labelLarge)
-                                            .foregroundStyle(ALIColors.mutedInk)
-                                            .lineLimit(1)
-                                    }
+                                    Text(verbatim: detail(of: code, visitors: visitors[code] ?? []))
+                                        .font(ALITypography.labelLarge)
+                                        .foregroundStyle(ALIColors.mutedInk)
+                                        .lineLimit(1)
                                 }
                                 .padding(.horizontal, 16)
                                 .padding(.vertical, 12)
+                                .contentShape(Rectangle())
+                                .onTapGesture {
+                                    guard myVisit(code) != nil else { return }
+                                    yearTarget = VisitYearTarget(code: code)
+                                }
                                 if index < codes.count - 1 {
                                     Divider().overlay(ALIColors.outline).padding(.leading, 52)
                                 }
@@ -315,12 +341,32 @@ struct VisitedCountriesSheet: View {
             }
         }
         .presentationDetents([.medium, .large])
+        .sheet(item: $yearTarget) { target in
+            if let visit = myVisit(target.code), let familyID = familySession.familyID {
+                VisitYearSheet(code: target.code, initialYear: visit.year) { year in
+                    WorldMapActions.setYear(year, of: visit, familyID: familyID, modelContext: modelContext, dataSync: dataSync)
+                }
+            }
+        }
         .trackScreen("world_map_list")
     }
 
-    /// "Ana, Luis" (members in group order).
-    private func names(of ids: Set<UUID>) -> String {
-        members.filter { ids.contains($0.id) }.map(\.name).joined(separator: ", ")
+    /// My own visit to a country (the only one whose year I can set).
+    private func myVisit(_ code: String) -> VisitedCountry? {
+        guard let myID = familySession.memberID else { return nil }
+        return visits.first { $0.memberID == myID && $0.countryCode == code }
+    }
+
+    private func year(of member: UUID, in code: String) -> Int? {
+        visits.first { $0.memberID == member && $0.countryCode == code }?.year
+    }
+
+    /// Everyone: "Ana (2019), Luis" (members in group order). One member: their year.
+    private func detail(of code: String, visitors ids: Set<UUID>) -> String {
+        if let memberID { return year(of: memberID, in: code).map { "\($0)" } ?? "" }
+        return members.filter { ids.contains($0.id) }
+            .map { member in year(of: member.id, in: code).map { "\(member.name) (\($0))" } ?? member.name }
+            .joined(separator: ", ")
     }
 }
 
@@ -357,5 +403,81 @@ enum WorldMapActions {
         dataSync.pushVisitedCountry(visit, familyID: familyID)
         Track.event("world_map_country_added", ["source": source, "country": code])
         return true
+    }
+
+    /// Sets (or clears, with nil) the year of a visit.
+    @MainActor
+    static func setYear(
+        _ year: Int?, of visit: VisitedCountry, familyID: UUID,
+        modelContext: ModelContext, dataSync: AppDataSyncCoordinator
+    ) {
+        guard visit.year != year else { return }
+        visit.year = year
+        try? modelContext.save()
+        dataSync.pushVisitedCountry(visit, familyID: familyID)
+        Track.event("world_map_year_set", ["has_year": year != nil])
+    }
+}
+
+/// A country whose visit year is being set.
+struct VisitYearTarget: Identifiable {
+    let code: String
+    var id: String { code }
+}
+
+/// Year wheel for a visited country (from this year back to 1940).
+/// The secondary button skips it, or removes a year already set.
+struct VisitYearSheet: View {
+    let code: String
+    let initialYear: Int?
+    let onSave: (Int?) -> Void
+    @Environment(\.dismiss) private var dismiss
+    @State private var year: Int
+
+    private static let thisYear = Calendar.current.component(.year, from: .now)
+    private static let years = Array((1940...thisYear).reversed())
+
+    init(code: String, initialYear: Int?, onSave: @escaping (Int?) -> Void) {
+        self.code = code
+        self.initialYear = initialYear
+        self.onSave = onSave
+        _year = State(initialValue: initialYear ?? Self.thisYear)
+    }
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 12) {
+                Text("When did you go?")
+                    .font(ALITypography.labelLarge)
+                    .foregroundStyle(ALIColors.mutedInk)
+
+                Picker("Year", selection: $year) {
+                    ForEach(Self.years, id: \.self) { value in
+                        Text(verbatim: "\(value)").tag(value)
+                    }
+                }
+                .pickerStyle(.wheel)
+                .frame(height: 160)
+                .padding(.horizontal, 20)
+
+                HStack(spacing: 12) {
+                    ALISecondaryButton(text: initialYear == nil ? "Skip" : "Remove year") {
+                        if initialYear != nil { onSave(nil) }
+                        dismiss()
+                    }
+                    ALIPrimaryButton(text: "Save", accent: ALIColors.worldMapAccent) {
+                        onSave(year)
+                        dismiss()
+                    }
+                }
+                .padding(.horizontal, 20)
+            }
+            .padding(.top, 8)
+            .background(ALIColors.background)
+            .navigationTitle(Text(verbatim: "\(CountryInfo.flag(code)) \(CountryInfo.name(code))"))
+            .navigationBarTitleDisplayMode(.inline)
+        }
+        .presentationDetents([.height(380)])
+        .trackScreen("world_map_year")
     }
 }

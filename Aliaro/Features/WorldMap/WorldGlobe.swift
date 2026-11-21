@@ -246,6 +246,27 @@ private final class GlobeMotion {
     var pendingColors: [String: (color: Color, at: Date)] = [:]
     var radius: CGFloat = 150
     var time = 0.0
+    /// Pinch / double-tap zoom: 1 = the whole globe, up to `maxZoom`.
+    var zoom = 1.0
+    var zoomTween: (from: Double, to: Double, start: Date)?
+    /// Zoom when the current pinch began.
+    var pinchStart: Double?
+    static let maxZoom = 4.0
+    /// Localized country names (looked up once: labels are drawn every frame).
+    private var names: [String: String] = [:]
+
+    func name(_ code: String) -> String {
+        if let name = names[code] { return name }
+        let name = CountryInfo.name(code)
+        names[code] = name
+        return name
+    }
+
+    /// Animates the zoom (double tap).
+    func animateZoom(to target: Double, now: Date) {
+        zoomTween = (zoom, min(max(target, 1), Self.maxZoom), now)
+        lastTouch = now
+    }
 
     var intro: Double {
         guard let appeared else { return 0 }
@@ -268,6 +289,11 @@ private final class GlobeMotion {
         let dt = min(lastStep.map { now.timeIntervalSince($0) } ?? 0, 0.05)
         lastStep = now
         time += dt
+        if let z = zoomTween {
+            let p = min(max(now.timeIntervalSince(z.start) / 0.45, 0), 1)
+            zoom = z.from + (z.to - z.from) * (1 - pow(1 - p, 3))
+            if p >= 1 { zoomTween = nil }
+        }
         if appeared == nil {
             appeared = now
             tween = Tween(fromYaw: yaw, toYaw: Self.startYaw, fromPitch: pitch, toPitch: Self.restPitch, start: now, duration: Self.introLength)
@@ -296,9 +322,9 @@ private final class GlobeMotion {
             return
         }
 
-        // Idle spin, easing in, and the tilt drifting back to rest.
+        // Idle spin, easing in, and the tilt drifting back to rest (not while zoomed in: you're reading labels).
         let idle = now.timeIntervalSince(lastTouch) - 2.5
-        guard idle > 0 else { return }
+        guard idle > 0, zoom < 1.05 else { return }
         let ease = min(1, idle / 1.5)
         yaw += Self.autoSpin * ease * dt
         pitch += (Self.restPitch - pitch) * min(1, dt * 0.6 * ease)
@@ -398,10 +424,13 @@ private enum GlobePin {
     /// Height of the pin, as a fraction of the globe's radius.
     static let length = 0.11
 
-    static func draw(in ctx: GraphicsContext, base: CGPoint, head: CGPoint, scale: Double, color: Color) {
+    /// Radius of the ball at full size (a bit bigger when zoomed in).
+    static func ball(zoom: Double) -> CGFloat { 3.5 * CGFloat(min(zoom.squareRoot(), 1.6)) }
+
+    static func draw(in ctx: GraphicsContext, base: CGPoint, head: CGPoint, scale: Double, color: Color, zoom: Double) {
         let alpha = min(1, scale * 6)
         let s = CGFloat(scale)
-        let ball = 3.5 * s
+        let ball = Self.ball(zoom: zoom) * s
         func circle(_ center: CGPoint, _ radius: CGFloat) -> Path {
             Path(ellipseIn: CGRect(x: center.x - radius, y: center.y - radius, width: radius * 2, height: radius * 2))
         }
@@ -436,6 +465,8 @@ struct WorldGlobe: View {
     let colorFor: (String) -> Color?
     /// What the map is showing (e.g. the selected member): when it changes, fills just sweep in.
     var filter: String? = nil
+    /// Year of each visited country, shown in the labels when zoomed in (one member selected).
+    var years: [String: Int] = [:]
 
     @Environment(\.colorScheme) private var colorScheme
     @State private var motion = GlobeMotion()
@@ -454,15 +485,17 @@ struct WorldGlobe: View {
                 motion.step(now)
                 let grow = motion.intro
                 context.opacity = grow
-                let r = min(size.width, size.height) * Self.radiusFraction * (0.82 + 0.18 * grow)
+                let zoom = motion.zoom
+                let r = min(size.width, size.height) * Self.radiusFraction * (0.82 + 0.18 * grow) * CGFloat(zoom)
                 motion.radius = r
                 let c = CGPoint(x: size.width / 2, y: size.height / 2)
                 projector.setup(yaw: motion.yaw, pitch: motion.pitch, radius: r, center: c)
 
                 let ink = GlobeColors.ink
 
-                // Soft shadow on the "floor".
+                // Soft shadow on the "floor" (gone once zoomed in).
                 context.drawLayer { ctx in
+                    ctx.opacity = max(0, 1 - (zoom - 1) * 2)
                     ctx.addFilter(.blur(radius: r * 0.05))
                     ctx.fill(Path(ellipseIn: CGRect(x: c.x - r * 0.8, y: c.y + r * 1.05, width: r * 1.6, height: r * 0.18)),
                              with: .color(GlobeColors.floor))
@@ -547,8 +580,46 @@ struct WorldGlobe: View {
                         base: projector.point(pin.v.x, pin.v.y),
                         head: projector.point(pin.v.x * length, pin.v.y * length),
                         scale: amount,
-                        color: motion.color(pin.country.code, at: now)
+                        color: motion.color(pin.country.code, at: now),
+                        zoom: zoom
                     )
+                }
+
+                // Zoomed in: each pin's country name (and year) above it, nearest to us first, skipping
+                // the ones that would overlap a label already placed or fall off the view.
+                let labelAlpha = min(max((zoom - 1.5) / 0.4, 0), 1)
+                if labelAlpha > 0 {
+                    let bounds = CGRect(origin: .zero, size: size).insetBy(dx: 4, dy: 4)
+                    var placed: [(rect: CGRect, text: GraphicsContext.ResolvedText, alpha: Double)] = []
+                    for pin in pins.reversed() where pin.v.z > 0.2 {
+                        let code = pin.country.code
+                        let amount = motion.fill(code, at: now)
+                        guard amount > 0.5 else { continue }
+                        let length = Float(1 + GlobePin.length * amount)
+                        let head = projector.point(pin.v.x * length, pin.v.y * length)
+                        let name = motion.name(code)
+                        let text = context.resolve(
+                            Text(verbatim: years[code].map { "\(name) · \($0)" } ?? name)
+                                .font(.system(size: 11, weight: .semibold, design: .rounded))
+                                .foregroundColor(GlobeColors.ink)
+                        )
+                        let textSize = text.measure(in: CGSize(width: 220, height: 40))
+                        let rect = CGRect(
+                            x: head.x - textSize.width / 2 - 7,
+                            y: head.y - GlobePin.ball(zoom: zoom) - 5 - textSize.height - 4,
+                            width: textSize.width + 14, height: textSize.height + 4
+                        )
+                        guard bounds.contains(rect), !placed.contains(where: { $0.rect.insetBy(dx: -3, dy: -2).intersects(rect) }) else { continue }
+                        placed.append((rect, text, labelAlpha * min(1, Double(pin.v.z - 0.2) / 0.2)))
+                    }
+                    for label in placed {
+                        let capsule = Path(roundedRect: label.rect, cornerRadius: label.rect.height / 2)
+                        context.fill(capsule, with: .color(.white.opacity(0.92 * label.alpha)))
+                        context.stroke(capsule, with: .color(GlobeColors.ink.opacity(0.12 * label.alpha)), lineWidth: 0.8)
+                        var ctx = context
+                        ctx.opacity = label.alpha
+                        ctx.draw(label.text, at: CGPoint(x: label.rect.midX, y: label.rect.midY))
+                    }
                 }
 
                 // Pulses on newly marked countries.
@@ -571,28 +642,48 @@ struct WorldGlobe: View {
                 }
             }
         }
+        .clipped()
         .contentShape(Rectangle())
+        .onTapGesture(count: 2) {
+            Track.event("world_map_zoom", ["gesture": "double_tap"])
+            motion.animateZoom(to: motion.zoom < 1.5 ? 2.5 : 1, now: Date())
+        }
+        // One finger spins it; two fingers pinch to zoom (and spin with their midpoint).
         .highPriorityGesture(
-            DragGesture(minimumDistance: 2)
+            DragGesture(minimumDistance: 2).simultaneously(with: MagnifyGesture())
                 .onChanged { value in
-                    let r = max(Double(motion.radius), 1)
-                    let dx = value.translation.width - lastDrag.width
-                    let dy = value.translation.height - lastDrag.height
-                    lastDrag = value.translation
-                    motion.dragging = true
                     motion.tween = nil
                     motion.velYaw = 0; motion.velPitch = 0
                     motion.lastTouch = Date()
-                    motion.yaw += dx / r
-                    motion.pitch = motion.clampPitch(motion.pitch + dy / r)
+                    if let magnify = value.second {
+                        let start = motion.pinchStart ?? motion.zoom
+                        motion.pinchStart = start
+                        motion.zoomTween = nil
+                        motion.zoom = min(max(start * magnify.magnification, 1), GlobeMotion.maxZoom)
+                    }
+                    if let drag = value.first {
+                        let r = max(Double(motion.radius), 1)
+                        let dx = drag.translation.width - lastDrag.width
+                        let dy = drag.translation.height - lastDrag.height
+                        lastDrag = drag.translation
+                        motion.dragging = true
+                        motion.yaw += dx / r
+                        motion.pitch = motion.clampPitch(motion.pitch + dy / r)
+                    }
                 }
                 .onEnded { value in
                     let r = max(Double(motion.radius), 1)
+                    let pinched = motion.pinchStart != nil
+                    if pinched { Track.event("world_map_zoom", ["gesture": "pinch"]) }
                     lastDrag = .zero
                     motion.dragging = false
+                    motion.pinchStart = nil
                     motion.lastTouch = Date()
-                    motion.velYaw = value.velocity.width / r
-                    motion.velPitch = value.velocity.height / r
+                    // No fling after a pinch: lifting two fingers shouldn't throw the globe.
+                    if let drag = value.first, !pinched {
+                        motion.velYaw = drag.velocity.width / r
+                        motion.velPitch = drag.velocity.height / r
+                    }
                 }
         )
         .onAppear { motion.update(targets: targets, filter: filter, countries: data.countries, now: Date()) }
