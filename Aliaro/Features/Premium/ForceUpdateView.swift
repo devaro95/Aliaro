@@ -30,18 +30,27 @@ struct ForceUpdateView: View {
 
             Spacer()
 
-            VStack(spacing: 10) {
-                ALIPrimaryButton(text: "Update", enabled: !isOpeningStore) {
-                    Track.event("force_update_tap")
-                    Task { await openAppStore() }
-                }
-                if let onDebugClose {
-                    ALISecondaryButton(text: "Close preview (debug)") { onDebugClose() }
-                }
+            ALIPrimaryButton(text: "Update", enabled: !isOpeningStore) {
+                Track.event("force_update_tap")
+                Task { await openAppStore() }
             }
         }
         .padding(24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .overlay(alignment: .topTrailing) {
+            if let onDebugClose {
+                Button(action: onDebugClose) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(ALIColors.ink)
+                        .frame(width: 36, height: 36)
+                        .background(ALIColors.surfaceVariant, in: Circle())
+                }
+                .accessibilityLabel("Close preview (debug)")
+                .padding(.top, 8)
+                .padding(.trailing, 16)
+            }
+        }
         .background(ALIColors.background.ignoresSafeArea())
         .interactiveDismissDisabled()
         .trackScreen("force_update")
