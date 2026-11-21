@@ -7,18 +7,30 @@ import UIKit
 struct ForceUpdateView: View {
     var onDebugClose: (() -> Void)? = nil
 
+    @Environment(\.colorScheme) private var colorScheme
     @State private var isOpeningStore = false
+
+    private static let titleSize: CGFloat = 34
+
+    /// "Update Aliaro" with the logo's "Aliaro" (salmon-dot "i"). The brand
+    /// name isn't translated, so the translated title is split around it.
+    private var title: Text {
+        let size = Self.titleSize
+        let wordmark = Text(AliaroWordmark.inlineImage(size: size, colorScheme: colorScheme))
+            .baselineOffset(AliaroWordmark.inlineBaselineOffset(size: size))
+        let parts = String(localized: "Update Aliaro").components(separatedBy: "Aliaro")
+        guard parts.count == 2 else { return Text(String(localized: "Update Aliaro")) }
+        return Text(parts[0]) + wordmark + Text(parts[1])
+    }
 
     var body: some View {
         VStack(spacing: 18) {
             Spacer()
 
-            AliaroWordmark(size: 40)
-
             ForceUpdateIllustration()
 
-            Text("Update Aliaro")
-                .font(ALITypography.headlineLarge)
+            title
+                .font(.system(size: Self.titleSize, weight: .black, design: .rounded))
                 .foregroundStyle(ALIColors.ink)
                 .multilineTextAlignment(.center)
 
