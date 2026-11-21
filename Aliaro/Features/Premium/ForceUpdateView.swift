@@ -15,12 +15,7 @@ struct ForceUpdateView: View {
 
             AliaroWordmark(size: 40)
 
-            Image(systemName: "arrow.down.circle.fill")
-                .font(.system(size: 40, weight: .semibold))
-                .foregroundStyle(ALIColors.onAccent)
-                .frame(width: 84, height: 84)
-                .background(ALIColors.primary)
-                .clipShape(Circle())
+            ForceUpdateIllustration()
 
             Text("Update Aliaro")
                 .font(ALITypography.headlineLarge)
@@ -65,6 +60,84 @@ struct ForceUpdateView: View {
         if let web = URL(string: "https://apps.apple.com/app/id\(Self.appStoreID)") {
             await UIApplication.shared.open(web)
         }
+    }
+}
+
+/// "Installing on the phone" loop: a phone whose progress bar fills up and
+/// turns into the Aliaro icon, which pops in, holds and shrinks away before
+/// starting over. 3 s cycle driven by the clock (same timings as Android's
+/// `ForceUpdateIllustration`). With Reduce Motion it just shows the icon.
+struct ForceUpdateIllustration: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private static let cycle = 3.0
+    private static let fillEnd = 1.65
+
+    var body: some View {
+        if reduceMotion {
+            phone(progress: 1, barOpacity: 0, logoScale: 1)
+        } else {
+            TimelineView(.animation) { context in
+                let t = context.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: Self.cycle)
+                phone(progress: Self.progress(t), barOpacity: Self.barOpacity(t), logoScale: Self.logoScale(t))
+            }
+        }
+    }
+
+    private func phone(progress: CGFloat, barOpacity: Double, logoScale: CGFloat) -> some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(ALIColors.surface)
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(ALIColors.ink, lineWidth: 2.5)
+
+            Capsule()
+                .fill(ALIColors.outline)
+                .frame(width: 22, height: 5)
+                .frame(maxHeight: .infinity, alignment: .top)
+                .padding(.top, 9)
+
+            ZStack(alignment: .leading) {
+                Capsule().fill(ALIColors.outline)
+                Capsule().fill(ALIColors.primary).frame(width: 52 * progress)
+            }
+            .frame(width: 52, height: 9)
+            .opacity(barOpacity)
+
+            Image("AppLogo")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 46, height: 46)
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .scaleEffect(logoScale)
+        }
+        .frame(width: 76, height: 132)
+        .accessibilityHidden(true)
+    }
+
+    // MARK: - Timeline (t in 0..<3 s)
+
+    private static func easeInOut(_ x: Double) -> Double { x < 0.5 ? 2 * x * x : 1 - pow(-2 * x + 2, 2) / 2 }
+    private static func easeOut(_ x: Double) -> Double { 1 - pow(1 - x, 2) }
+
+    private static func progress(_ t: Double) -> CGFloat {
+        CGFloat(t < fillEnd ? easeInOut(t / fillEnd) : 1)
+    }
+
+    private static func barOpacity(_ t: Double) -> Double {
+        t < fillEnd ? 1 : max(0, 1 - (t - fillEnd) / 0.2)
+    }
+
+    private static func logoScale(_ t: Double) -> CGFloat {
+        let value: Double
+        switch t {
+        case ..<fillEnd: value = 0
+        case ..<2.04: value = 1.2 * easeOut((t - fillEnd) / (2.04 - fillEnd))
+        case ..<2.28: value = 1.2 - 0.2 * easeOut((t - 2.04) / 0.24)
+        case ..<2.76: value = 1
+        default: value = 1 - easeInOut((t - 2.76) / (cycle - 2.76))
+        }
+        return CGFloat(value)
     }
 }
 
