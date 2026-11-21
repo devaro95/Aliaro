@@ -11,6 +11,8 @@ struct CountryPickerSheet: View {
     @Query private var visits: [VisitedCountry]
 
     @State private var searchText = ""
+    /// Just marked: asks for the year of the visit.
+    @State private var yearTarget: VisitYearTarget?
 
     /// (code, localized name), sorted by name.
     private let countries: [(code: String, name: String)] = WorldMapData.shared.allCodes
@@ -87,14 +89,23 @@ struct CountryPickerSheet: View {
             }
         }
         .presentationDetents([.large])
+        .sheet(item: $yearTarget) { target in
+            VisitYearSheet(code: target.code, initialYear: nil) { year in
+                guard let myID = familySession.memberID, let familyID = familySession.familyID,
+                      let visit = visits.first(where: { $0.id == VisitedCountry.id(for: myID, code: target.code) })
+                else { return }
+                WorldMapActions.setYear(year, of: visit, familyID: familyID, modelContext: modelContext, dataSync: dataSync)
+            }
+        }
         .sensoryFeedback(.selection, trigger: visits.count)
     }
 
     private func toggle(_ code: String) {
         guard let myID = familySession.memberID, let familyID = familySession.familyID else { return }
-        WorldMapActions.toggle(
+        let marked = WorldMapActions.toggle(
             code: code, memberID: myID, familyID: familyID, visits: visits,
             modelContext: modelContext, dataSync: dataSync, source: "list"
         )
+        if marked { yearTarget = VisitYearTarget(code: code) }
     }
 }

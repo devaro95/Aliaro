@@ -14,6 +14,8 @@ final class VisitedCountry {
     /// ISO 3166-1 alpha-2 code ("ES"; "XK" for Kosovo).
     var countryCode: String
     var createdAt: Date
+    /// Year of the visit (optional, the member sets it).
+    var year: Int?
 
     init(memberID: UUID, countryCode: String, createdAt: Date = .now) {
         self.id = VisitedCountry.id(for: memberID, code: countryCode)
@@ -22,11 +24,12 @@ final class VisitedCountry {
         self.createdAt = createdAt
     }
 
-    init(id: UUID, memberID: UUID, countryCode: String, createdAt: Date) {
+    init(id: UUID, memberID: UUID, countryCode: String, createdAt: Date, year: Int? = nil) {
         self.id = id
         self.memberID = memberID
         self.countryCode = countryCode
         self.createdAt = createdAt
+        self.year = year
     }
 
     /// Name-based UUID (version 3, MD5) of "<member id>:<code>" — the same

@@ -354,6 +354,18 @@ struct RemoteVisitedCountry: FamilySynced {
     var member_id: UUID
     var country_code: String
     var created_at: Date
+    var year: Int?
+
+    /// Always sends `year` (null clears it: the synthesized encoder would leave it out).
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(id, forKey: .id)
+        try c.encode(family_id, forKey: .family_id)
+        try c.encode(member_id, forKey: .member_id)
+        try c.encode(country_code, forKey: .country_code)
+        try c.encode(created_at, forKey: .created_at)
+        try c.encode(year, forKey: .year)
+    }
 }
 
 /// Coordinates syncing all of the app's data (menu, shopping, tasks,
@@ -1575,16 +1587,19 @@ final class AppDataSyncCoordinator: ObservableObject {
 
     private func applyVisitedCountry(_ remote: RemoteVisitedCountry, modelContext: ModelContext) {
         let descriptor = FetchDescriptor<VisitedCountry>(predicate: #Predicate { $0.id == remote.id })
-        guard (try? modelContext.fetch(descriptor).first) == nil else { return }
+        if let existing = try? modelContext.fetch(descriptor).first {
+            if existing.year != remote.year { existing.year = remote.year }
+            return
+        }
         modelContext.insert(VisitedCountry(
-            id: remote.id, memberID: remote.member_id, countryCode: remote.country_code, createdAt: remote.created_at
+            id: remote.id, memberID: remote.member_id, countryCode: remote.country_code, createdAt: remote.created_at, year: remote.year
         ))
     }
 
     func pushVisitedCountry(_ visit: VisitedCountry, familyID: UUID) {
         let record = RemoteVisitedCountry(
             id: visit.id, family_id: familyID, member_id: visit.memberID,
-            country_code: visit.countryCode, created_at: visit.createdAt
+            country_code: visit.countryCode, created_at: visit.createdAt, year: visit.year
         )
         Task { try? await visitedCountries.push(record) }
     }
