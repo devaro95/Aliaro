@@ -500,21 +500,17 @@ struct WeeklyMenuScreen: View {
     }
 
     private var monthCard: some View {
-        let columns = Array(repeating: GridItem(.flexible(), spacing: 4), count: 7)
+        let columns: [GridItem] = Array(repeating: GridItem(.flexible(), spacing: 4), count: 7)
+        let symbols: [String] = MenuCalendar.weekdaySymbols
+        let cells: [Date?] = monthCells
         return ALICard {
             VStack(spacing: 10) {
                 LazyVGrid(columns: columns, spacing: 4) {
-                    ForEach(Array(MenuCalendar.weekdaySymbols.enumerated()), id: \.offset) { _, symbol in
-                        Text(symbol.uppercased())
-                            .font(ALITypography.labelLarge)
-                            .foregroundStyle(ALIColors.mutedInk)
+                    ForEach(symbols.indices, id: \.self) { index in
+                        weekdayHeader(symbols[index])
                     }
-                    ForEach(Array(monthCells.enumerated()), id: \.offset) { _, date in
-                        if let date {
-                            monthCell(date)
-                        } else {
-                            Color.clear.frame(height: 52)
-                        }
+                    ForEach(cells.indices, id: \.self) { index in
+                        monthGridItem(cells[index])
                     }
                 }
 
@@ -532,14 +528,43 @@ struct WeeklyMenuScreen: View {
         .simultaneousGesture(swipe(onPrevious: { moveMonth(-1) }, onNext: { moveMonth(1) }))
     }
 
+    private func weekdayHeader(_ symbol: String) -> some View {
+        Text(symbol.uppercased())
+            .font(ALITypography.labelLarge)
+            .foregroundStyle(ALIColors.mutedInk)
+    }
+
+    /// A grid slot of the month: the day, or a blank before the 1st.
+    @ViewBuilder
+    private func monthGridItem(_ date: Date?) -> some View {
+        if let date {
+            monthCell(date)
+        } else {
+            Color.clear.frame(height: 52)
+        }
+    }
+
     private func monthCell(_ date: Date) -> some View {
-        let planned = isMonthPreview
-            ? MenuDemoData.planned(on: date)
-            : (!dishes(for: date, mealType: .lunch).isEmpty, !dishes(for: date, mealType: .dinner).isEmpty)
-        let hasLunch = planned.lunch
-        let hasDinner = planned.dinner
-        let isToday = MenuCalendar.isSameDay(date, .now)
-        let past = date < MenuCalendar.today
+        // Sample month in the premium preview; real dishes otherwise.
+        let hasLunch: Bool
+        let hasDinner: Bool
+        if isMonthPreview {
+            let sample = MenuDemoData.planned(on: date)
+            hasLunch = sample.lunch
+            hasDinner = sample.dinner
+        } else {
+            hasLunch = !dishes(for: date, mealType: .lunch).isEmpty
+            hasDinner = !dishes(for: date, mealType: .dinner).isEmpty
+        }
+        let isToday: Bool = MenuCalendar.isSameDay(date, .now)
+        let past: Bool = date < MenuCalendar.today
+        let empty: Color = ALIColors.outline.opacity(0.5)
+        let lunchColor: Color = hasLunch ? ALIColors.mealLunchAccent : empty
+        let dinnerColor: Color = hasDinner ? ALIColors.mealDinnerAccent : empty
+        let numberFont: Font = ALITypography.bodyLarge.weight(isToday ? .bold : .regular)
+        let numberColor: Color = isToday ? ALIColors.onAccent : ALIColors.ink
+        let numberBackground: Color = isToday ? ALIColors.primary : Color.clear
+        let cellOpacity: Double = past ? 0.5 : 1
 
         return Button {
             Track.event("menu_day_open", ["from": "month", "is_today": isToday, "can_edit": canEditMenu])
@@ -547,23 +572,19 @@ struct WeeklyMenuScreen: View {
         } label: {
             VStack(spacing: 5) {
                 Text(date.formatted(.dateTime.day()))
-                    .font(ALITypography.bodyLarge.weight(isToday ? .bold : .regular))
-                    .foregroundStyle(isToday ? ALIColors.onAccent : ALIColors.ink)
+                    .font(numberFont)
+                    .foregroundStyle(numberColor)
                     .frame(width: 30, height: 30)
-                    .background(isToday ? ALIColors.primary : Color.clear)
+                    .background(numberBackground)
                     .clipShape(Circle())
                 HStack(spacing: 3) {
-                    Circle()
-                        .fill(hasLunch ? ALIColors.mealLunchAccent : ALIColors.outline.opacity(0.5))
-                        .frame(width: 6, height: 6)
-                    Circle()
-                        .fill(hasDinner ? ALIColors.mealDinnerAccent : ALIColors.outline.opacity(0.5))
-                        .frame(width: 6, height: 6)
+                    Circle().fill(lunchColor).frame(width: 6, height: 6)
+                    Circle().fill(dinnerColor).frame(width: 6, height: 6)
                 }
             }
             .frame(maxWidth: .infinity, minHeight: 52)
             .contentShape(Rectangle())
-            .opacity(past ? 0.5 : 1)
+            .opacity(cellOpacity)
         }
         .buttonStyle(.plain)
     }
