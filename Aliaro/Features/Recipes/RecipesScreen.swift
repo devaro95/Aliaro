@@ -14,8 +14,8 @@ struct RecipesScreen: View {
     @State private var showAddSheet = false
     @State private var openedRecipe: Recipe?
 
-    private var canEdit: Bool {
-        members.first(where: \.isCurrentDevice)?.can(.recipesEdit) ?? true
+    private var canAdd: Bool {
+        members.first(where: \.isCurrentDevice)?.can(.recipesAdd) ?? true
     }
 
     private var filteredRecipes: [Recipe] {
@@ -39,7 +39,7 @@ struct RecipesScreen: View {
 
             VStack(spacing: 16) {
                 ALITopBar(title: "Recipes", accent: ALIColors.recipesAccent) {
-                    if canEdit {
+                    if canAdd {
                         ALIFloatingButton(accent: ALIColors.recipesAccent) {
                             Track.event("recipe_add_tap", ["recipes": recipes.count])
                             showAddSheet = true

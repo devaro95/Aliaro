@@ -166,9 +166,11 @@ struct AddExpenseSheet: View {
                 VStack(spacing: 0) {
                     ForEach(categories) { category in
                         categoryRow(category, locked: lockedCategoryIDs.contains(category.id))
-                        Divider().overlay(ALIColors.outline)
+                        if canManageCategories || category.id != categories.last?.id {
+                            Divider().overlay(ALIColors.outline)
+                        }
                     }
-                    newCategoryRow
+                    if canManageCategories { newCategoryRow }
                 }
             }
         }
@@ -203,6 +205,11 @@ struct AddExpenseSheet: View {
             .aliPremiumLockOverlay(locked)
         }
         .buttonStyle(.plain)
+    }
+
+    /// Permission `financesCategories`: create new expense categories.
+    private var canManageCategories: Bool {
+        members.first(where: \.isCurrentDevice)?.can(.financesCategories) ?? true
     }
 
     /// Beyond 3 custom categories, creating another one needs a

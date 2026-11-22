@@ -42,6 +42,7 @@ struct ShoppingListScreen: View {
         allLists.filter { !$0.isPrivate || $0.ownerMemberID == currentMember?.id }
     }
     private var canAdd: Bool { currentMember?.can(.shoppingAdd) ?? true }
+    private var canEdit: Bool { currentMember?.can(.shoppingEdit) ?? true }
     private var canDelete: Bool { currentMember?.can(.shoppingDelete) ?? true }
 
     private var pending: [ShoppingListEntry] { entries.filter { !$0.isChecked } }
@@ -106,7 +107,7 @@ struct ShoppingListScreen: View {
         // Add products: full screen over the list (and the bar), sliding in from the right.
         .overlay {
             if showAddScreen, let selectedListID {
-                AddToShoppingListScreen(listID: selectedListID) { showAddScreen = false }
+                AddToShoppingListScreen(listID: selectedListID, canEdit: canEdit, canDelete: canDelete) { showAddScreen = false }
                     .transition(.move(edge: .trailing))
                     .zIndex(1)
             }
@@ -235,7 +236,7 @@ struct ShoppingListScreen: View {
         }
         .buttonStyle(.plain)
         .contextMenu {
-            if canAdd {
+            if canEdit {
                 Button {
                     Track.event("shopping_list_menu", ["action": "rename"])
                     renameListText = list.displayName
@@ -265,7 +266,7 @@ struct ShoppingListScreen: View {
             ALICard {
                 VStack(spacing: 0) {
                     ForEach(Array(rows.enumerated()), id: \.element.id) { index, entry in
-                        ShoppingListRow(entry: entry, dimmed: dimmed, canEdit: canAdd, canDelete: canDelete) {
+                        ShoppingListRow(entry: entry, dimmed: dimmed, canEdit: canEdit, canDelete: canDelete) {
                             toggle(entry)
                         } onSetQuantity: { value in
                             setQuantity(entry, value)
