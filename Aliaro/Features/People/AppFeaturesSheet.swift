@@ -120,12 +120,8 @@ struct AppFeaturesSheet: View {
             }
             .background(ALIColors.background)
             .navigationTitle("App features")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") { dismiss() }
-                }
-            }
+            .navigationBarTitleDisplayMode(.large)
+            .presentationDragIndicator(.visible)
         }
         .presentationDetents([.medium, .large])
         .task {

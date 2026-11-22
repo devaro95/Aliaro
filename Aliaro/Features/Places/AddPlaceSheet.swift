@@ -83,12 +83,8 @@ struct AddPlaceSheet: View {
             .scrollDismissesKeyboard(.interactively)
             .background(ALIColors.background)
             .navigationTitle(placeToEdit == nil ? "New place" : "Edit place")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-            }
+            .navigationBarTitleDisplayMode(.large)
+            .presentationDragIndicator(.visible)
             .onAppear {
                 completer.near = near ?? CLLocationManager().location
                 guard let place = placeToEdit else {

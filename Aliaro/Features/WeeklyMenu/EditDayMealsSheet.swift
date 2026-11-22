@@ -41,7 +41,10 @@ struct EditDayMealsSheet: View {
         NavigationStack {
             VStack(spacing: 0) {
                 ScrollView {
-                    VStack(spacing: 20) {
+                    VStack(alignment: .leading, spacing: 20) {
+                        dayHeader
+                            .padding(.top, 12)
+
                         if !canEdit {
                             ALICard(containerColor: ALIColors.surfaceVariant) {
                                 HStack(alignment: .top, spacing: 10) {
@@ -54,8 +57,8 @@ struct EditDayMealsSheet: View {
                             }
                         }
 
-                        mealSection(label: "Lunch", mealType: .lunch, dishes: $lunchDishes)
-                        mealSection(label: "Dinner", mealType: .dinner, dishes: $dinnerDishes)
+                        mealSection(label: "Lunch", icon: "sun.max.fill", accent: ALIColors.mealLunchAccent, mealType: .lunch, dishes: $lunchDishes)
+                        mealSection(label: "Dinner", icon: "moon.fill", accent: ALIColors.mealDinnerAccent, mealType: .dinner, dishes: $dinnerDishes)
                     }
                     .padding(20)
                 }
@@ -69,16 +72,8 @@ struct EditDayMealsSheet: View {
                 }
             }
             .background(ALIColors.background)
-            .navigationTitle(date.formatted(.dateTime.weekday(.wide).day().month(.wide)).capitalized)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
-                        Track.event("menu_day_cancel")
-                        dismiss()
-                    }
-                }
-            }
+            .toolbar(.hidden, for: .navigationBar)
+            .presentationDragIndicator(.visible)
         }
         .presentationDetents([.medium, .large])
         .sheet(item: $openedRecipe) { recipe in
@@ -94,14 +89,74 @@ struct EditDayMealsSheet: View {
         }
     }
 
-    /// A meal: its dishes (each with "view recipe" and remove) and a row to
-    /// add one more ("Choose dish" while empty, "Add another dish" after).
+    /// Header: a calendar leaf (month + day number) next to the weekday and
+    /// where it falls (today / this week / next week…), so the date always fits.
+    private var dayHeader: some View {
+        HStack(spacing: 12) {
+            VStack(spacing: 0) {
+                Text(date.formatted(.dateTime.month(.abbreviated)).replacingOccurrences(of: ".", with: "").uppercased())
+                    .font(.system(size: 10, weight: .bold, design: .rounded))
+                    .foregroundStyle(ALIColors.onAccent)
+                    .lineLimit(1)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 2)
+                    .background(ALIColors.weeklyMenuAccent)
+                Text("\(MenuCalendar.calendar.component(.day, from: date))")
+                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                    .foregroundStyle(ALIColors.ink)
+                    .padding(.vertical, 3)
+            }
+            .frame(width: 48)
+            .background(ALIColors.surface)
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(ALIColors.outline, lineWidth: 1))
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(date.formatted(.dateTime.weekday(.wide)).capitalized)
+                    .font(ALITypography.titleLarge)
+                    .foregroundStyle(ALIColors.ink)
+                    .lineLimit(1)
+                Text(relativeWhen)
+                    .font(ALITypography.bodyMedium)
+                    .foregroundStyle(ALIColors.mutedInk)
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 0)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isHeader)
+    }
+
+    /// "Today", "This week", "Next week", "Last week" or, further away, month and year.
+    private var relativeWhen: String {
+        if MenuCalendar.isSameDay(date, .now) { return String(localized: "Today") }
+        let current = MenuCalendar.startOfWeek(.now)
+        let weeks = (MenuCalendar.calendar.dateComponents([.day], from: current, to: MenuCalendar.startOfWeek(date)).day ?? 0) / 7
+        switch weeks {
+        case 0: return String(localized: "This week")
+        case 1: return String(localized: "Next week")
+        case -1: return String(localized: "Last week")
+        default: return date.formatted(.dateTime.month(.wide).year()).capitalized
+        }
+    }
+
+    /// A meal: its title (sun/moon + name), its dishes (each with "view recipe"
+    /// and remove) and a row to add one more ("Choose dish" while empty, "Add another dish" after).
     @ViewBuilder
-    private func mealSection(label: LocalizedStringKey, mealType: MealType, dishes: Binding<[DishSelection]>) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(label)
-                .font(ALITypography.labelLarge)
-                .foregroundStyle(ALIColors.mutedInk)
+    private func mealSection(label: LocalizedStringKey, icon: String, accent: Color, mealType: MealType, dishes: Binding<[DishSelection]>) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 10) {
+                Image(systemName: icon)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(ALIColors.onAccent)
+                    .frame(width: 28, height: 28)
+                    .background(Circle().fill(accent.opacity(0.7)))
+                    .accessibilityHidden(true)
+                Text(label)
+                    .font(ALITypography.titleLarge.weight(.bold))
+                    .foregroundStyle(ALIColors.ink)
+            }
+            .accessibilityAddTraits(.isHeader)
 
             ForEach(Array(dishes.wrappedValue.enumerated()), id: \.offset) { index, dish in
                 HStack(spacing: 8) {

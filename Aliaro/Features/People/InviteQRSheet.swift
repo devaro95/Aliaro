@@ -99,10 +99,11 @@ struct InviteQRSheet: View {
             }
             .padding(20)
             .background(ALIColors.background)
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarTitleDisplayMode(.large)
+            .presentationDragIndicator(.visible)
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
+                ToolbarItem(placement: .topBarTrailing) {
+                    ALISheetIconButton(systemImage: "xmark", label: "Close") { dismiss() }
                 }
             }
         }

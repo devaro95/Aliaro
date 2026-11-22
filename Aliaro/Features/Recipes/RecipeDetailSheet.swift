@@ -39,6 +39,40 @@ struct RecipeDetailSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
+                    // Header: the recipe name as the big title (up to two lines)
+                    // with the "…" menu to its right. Closes by swiping down.
+                    HStack(alignment: .center, spacing: 10) {
+                        Text(recipe.name)
+                            .font(.system(size: 26, weight: .bold, design: .rounded))
+                            .foregroundStyle(ALIColors.ink)
+                            .lineLimit(2)
+                            .accessibilityAddTraits(.isHeader)
+                        Spacer(minLength: 0)
+                        if canEdit || canDelete {
+                            Menu {
+                                if canEdit {
+                                    Button {
+                                        Track.event("recipe_edit_tap")
+                                        showEdit = true
+                                    } label: {
+                                        Label("Edit", systemImage: "pencil")
+                                    }
+                                }
+                                if canDelete {
+                                    Button(role: .destructive) {
+                                        showDeleteConfirm = true
+                                    } label: {
+                                        Label("Delete", systemImage: "trash")
+                                    }
+                                }
+                            } label: {
+                                ALISheetIconLabel(systemImage: "ellipsis")
+                            }
+                            .accessibilityLabel(Text("More options"))
+                        }
+                    }
+                    .padding(.top, 12)
+
                     if let image = recipe.image {
                         Image(uiImage: image)
                             .resizable()
@@ -49,9 +83,6 @@ struct RecipeDetailSheet: View {
                     }
 
                     VStack(alignment: .leading, spacing: 10) {
-                        Text(recipe.name)
-                            .font(ALITypography.headlineLarge)
-                            .foregroundStyle(ALIColors.ink)
                         FlowChips {
                             ForEach(recipe.recipeCategories) { category in
                                 metaPill(systemImage: category.systemImage, text: Text(category.label))
@@ -140,35 +171,8 @@ struct RecipeDetailSheet: View {
                 .padding(20)
             }
             .background(ALIColors.background)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") { dismiss() }
-                }
-                if canEdit || canDelete {
-                    ToolbarItem(placement: .primaryAction) {
-                        Menu {
-                            if canEdit {
-                                Button {
-                                    Track.event("recipe_edit_tap")
-                                    showEdit = true
-                                } label: {
-                                    Label("Edit", systemImage: "pencil")
-                                }
-                            }
-                            if canDelete {
-                                Button(role: .destructive) {
-                                    showDeleteConfirm = true
-                                } label: {
-                                    Label("Delete", systemImage: "trash")
-                                }
-                            }
-                        } label: {
-                            Image(systemName: "ellipsis.circle")
-                        }
-                    }
-                }
-            }
+            .toolbar(.hidden, for: .navigationBar)
+            .presentationDragIndicator(.visible)
             .sheet(isPresented: $showEdit) {
                 AddRecipeSheet(recipeToEdit: recipe)
             }
@@ -319,12 +323,8 @@ struct AddRecipeToMenuSheet: View {
             .padding(20)
             .background(ALIColors.background)
             .navigationTitle("Add to weekly menu")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-            }
+            .navigationBarTitleDisplayMode(.large)
+            .presentationDragIndicator(.visible)
         }
         .presentationDetents([.medium])
         .trackScreen("recipe_add_to_menu")

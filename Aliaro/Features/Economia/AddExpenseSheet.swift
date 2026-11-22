@@ -82,12 +82,8 @@ struct AddExpenseSheet: View {
             }
             .background(ALIColors.background)
             .navigationTitle(isEditing ? (isIncome ? "Edit income" : "Edit expense") : (isIncome ? "New income" : "New expense"))
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-            }
+            .navigationBarTitleDisplayMode(.large)
+            .presentationDragIndicator(.visible)
             .onAppear {
                 if let expense = expenseToEdit {
                     name = expense.name
@@ -347,12 +343,8 @@ private struct AddCategorySheet: View {
             .padding(20)
             .background(ALIColors.background)
             .navigationTitle("New category")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-            }
+            .navigationBarTitleDisplayMode(.large)
+            .presentationDragIndicator(.visible)
         }
         .presentationDetents([.medium])
     }

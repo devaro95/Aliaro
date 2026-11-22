@@ -328,25 +328,20 @@ struct WeeklyMenuScreen: View {
     // MARK: Week view
 
     private var weekCard: some View {
-        ALICard(padding: EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0)) {
-            VStack(spacing: 0) {
-                ForEach(Array(weekDays.enumerated()), id: \.element) { index, date in
-                    Button {
-                        Track.event("menu_day_open", [
-                            "is_today": MenuCalendar.isSameDay(date, .now),
-                            "is_past": date < MenuCalendar.today,
-                            "can_edit": canEditMenu
-                        ])
-                        dayBeingEdited = MenuDay(date: date)
-                    } label: {
-                        dayRow(date)
-                    }
-                    .buttonStyle(.plain)
-
-                    if index < weekDays.count - 1 {
-                        Divider().overlay(ALIColors.outline).padding(.leading, 20)
-                    }
+        // One card per day: the gaps between cards separate the days, no lines needed.
+        VStack(spacing: 10) {
+            ForEach(weekDays, id: \.self) { date in
+                Button {
+                    Track.event("menu_day_open", [
+                        "is_today": MenuCalendar.isSameDay(date, .now),
+                        "is_past": date < MenuCalendar.today,
+                        "can_edit": canEditMenu
+                    ])
+                    dayBeingEdited = MenuDay(date: date)
+                } label: {
+                    dayCard(date)
                 }
+                .buttonStyle(.plain)
             }
         }
         .id(weekStart)
@@ -356,7 +351,7 @@ struct WeeklyMenuScreen: View {
     }
 
     @ViewBuilder
-    private func dayRow(_ date: Date) -> some View {
+    private func dayCard(_ date: Date) -> some View {
         let lunch = dishes(for: date, mealType: .lunch)
         let dinner = dishes(for: date, mealType: .dinner)
         let past = date < MenuCalendar.today
@@ -397,53 +392,62 @@ struct WeeklyMenuScreen: View {
                     .foregroundStyle(ALIColors.mutedInk.opacity(0.6))
             }
 
-            VStack(alignment: .leading, spacing: 6) {
-                mealLines(label: "Lunch", dishes: lunch, accent: ALIColors.mealLunchAccent)
-                mealLines(label: "Dinner", dishes: dinner, accent: ALIColors.mealDinnerAccent)
+            VStack(alignment: .leading, spacing: 14) {
+                mealLines(label: "Lunch", icon: "sun.max.fill", dishes: lunch, accent: ALIColors.mealLunchAccent)
+                mealLines(label: "Dinner", icon: "moon.fill", dishes: dinner, accent: ALIColors.mealDinnerAccent)
             }
         }
-        .padding(.horizontal, 20)
+        .padding(.horizontal, 18)
         .padding(.vertical, 14)
-        .background(isToday ? ALIColors.primary.opacity(0.14) : Color.clear)
-        .overlay(alignment: .leading) {
-            if isToday {
-                Rectangle()
-                    .fill(ALIColors.primary)
-                    .frame(width: 4)
-            }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background {
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(ALIColors.surface)
+                .overlay {
+                    if isToday {
+                        RoundedRectangle(cornerRadius: 20, style: .continuous).fill(ALIColors.primary.opacity(0.14))
+                    }
+                }
         }
+        .overlay {
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .strokeBorder(isToday ? ALIColors.primary : ALIColors.outline, lineWidth: isToday ? 1.5 : 1)
+        }
+        .contentShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         .opacity(past ? 0.55 : 1)
     }
 
-    /// A meal's dishes, one per line: the meal chip on the first line only
-    /// (the next lines keep its width so the names stay aligned).
-    @ViewBuilder
-    private func mealLines(label: LocalizedStringKey, dishes: [DishSelection], accent: Color) -> some View {
-        if dishes.isEmpty {
-            mealLine(label: label, dish: nil, accent: accent)
-        } else {
-            ForEach(Array(dishes.enumerated()), id: \.offset) { index, dish in
-                mealLine(label: label, dish: dish, accent: accent, showsLabel: index == 0)
+    private static let mealIconSize: CGFloat = 28
+    private static let mealIconGap: CGFloat = 12
+
+    /// A meal's dishes, one per line, next to the meal's icon (sun = lunch, moon = dinner).
+    private func mealLines(label: LocalizedStringKey, icon: String, dishes: [DishSelection], accent: Color) -> some View {
+        HStack(alignment: .top, spacing: Self.mealIconGap) {
+            Image(systemName: icon)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(ALIColors.onAccent.opacity(dishes.isEmpty ? 0.5 : 1))
+                .frame(width: Self.mealIconSize, height: Self.mealIconSize)
+                .background(Circle().fill(accent.opacity(dishes.isEmpty ? 0.3 : 0.7)))
+                .accessibilityLabel(Text(label))
+
+            VStack(alignment: .leading, spacing: 6) {
+                if dishes.isEmpty {
+                    mealLine(dish: nil)
+                } else {
+                    ForEach(Array(dishes.enumerated()), id: \.offset) { _, dish in
+                        mealLine(dish: dish)
+                    }
+                }
             }
+            .frame(minHeight: Self.mealIconSize)
         }
     }
 
     @ViewBuilder
-    private func mealLine(label: LocalizedStringKey, dish: DishSelection?, accent: Color, showsLabel: Bool = true) -> some View {
+    private func mealLine(dish: DishSelection?) -> some View {
         HStack(spacing: 8) {
-            Text(label)
-                .font(.system(size: 11, weight: .bold, design: .rounded))
-                .foregroundStyle(ALIColors.ink)
-                .frame(width: 50)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 3)
-                .background(accent.opacity(dish == nil ? 0.22 : 0.55))
-                .clipShape(Capsule())
-                .opacity(showsLabel ? 1 : 0)
-                .accessibilityHidden(!showsLabel)
-
             Text(dish?.name ?? String(localized: "Not planned"))
-                .font(dish == nil ? ALITypography.bodyMedium : ALITypography.bodyLarge.weight(.semibold))
+                .font(dish == nil ? ALITypography.bodyMedium : ALITypography.bodyLarge)
                 .foregroundStyle(dish == nil ? ALIColors.mutedInk.opacity(0.7) : ALIColors.ink)
                 .lineLimit(1)
                 .truncationMode(.tail)
@@ -455,13 +459,12 @@ struct WeeklyMenuScreen: View {
                     Track.event("menu_recipe_open", ["from": "menu_list"])
                     openedRecipe = recipe
                 } label: {
-                    Label("Cook", systemImage: "book.pages.fill")
-                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                    // Compact "cook" button: just the recipe icon in a small circle.
+                    Image(systemName: "book.pages.fill")
+                        .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(ALIColors.onAccent)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 5)
-                        .background(ALIColors.recipesAccent)
-                        .clipShape(Capsule())
+                        .frame(width: 28, height: 28)
+                        .background(Circle().fill(ALIColors.recipesAccent))
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(Text("View recipe"))

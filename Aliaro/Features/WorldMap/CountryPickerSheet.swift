@@ -81,12 +81,8 @@ struct CountryPickerSheet: View {
             .scrollDismissesKeyboard(.immediately)
             .background(ALIColors.background)
             .navigationTitle("Countries visited")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
-                }
-            }
+            .navigationBarTitleDisplayMode(.large)
+            .presentationDragIndicator(.visible)
         }
         .presentationDetents([.large])
         .sheet(item: $yearTarget) { target in

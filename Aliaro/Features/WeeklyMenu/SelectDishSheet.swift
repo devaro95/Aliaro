@@ -134,21 +134,16 @@ struct SelectDishSheet: View {
             }
             .background(ALIColors.background)
             .navigationTitle(navigationTitle)
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarTitleDisplayMode(.large)
+            .presentationDragIndicator(.visible)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(LocalizedStringKey(isManaging ? "Done" : "Cancel")) { dismiss() }
-                }
                 if isManaging {
-                    ToolbarItem(placement: .primaryAction) {
-                        Button {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        ALISheetIconButton(systemImage: "plus", label: "New dish") {
                             Track.event("dish_add_tap")
                             newDishName = ""
                             showNewDish = true
-                        } label: {
-                            Image(systemName: "plus")
                         }
-                        .accessibilityLabel("New dish")
                     }
                 }
             }

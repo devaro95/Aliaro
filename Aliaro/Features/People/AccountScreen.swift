@@ -69,12 +69,8 @@ struct AccountScreen: View {
             }
             .background(ALIColors.background)
             .navigationTitle("Account")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") { dismiss() }
-                }
-            }
+            .navigationBarTitleDisplayMode(.large)
+            .presentationDragIndicator(.visible)
         }
         .tint(ALIColors.ink)
     }
@@ -189,7 +185,8 @@ private struct ChangeNameView: View {
         .padding(20)
         .background(ALIColors.background)
         .navigationTitle("Name")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarTitleDisplayMode(.large)
+        .presentationDragIndicator(.visible)
         .onAppear { if name.isEmpty { name = currentName } }
         .trackScreen("change_name")
     }
@@ -254,7 +251,8 @@ private struct ChangePasswordView: View {
         .padding(20)
         .background(ALIColors.background)
         .navigationTitle("Change password")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarTitleDisplayMode(.large)
+        .presentationDragIndicator(.visible)
         .alert("Password changed", isPresented: $didSave) {
             Button("OK") { dismiss() }
         }
@@ -338,7 +336,8 @@ private struct DeleteAccountView: View {
         }
         .background(ALIColors.background)
         .navigationTitle("Delete account")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarTitleDisplayMode(.large)
+        .presentationDragIndicator(.visible)
         .confirmationDialog("Delete your account?", isPresented: $showConfirmation, titleVisibility: .visible) {
             Button("Delete account", role: .destructive, action: delete)
             Button("Cancel", role: .cancel) {}
