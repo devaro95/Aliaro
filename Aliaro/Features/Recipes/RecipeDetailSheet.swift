@@ -267,7 +267,7 @@ struct RecipeDetailSheet: View {
 }
 
 /// Picks a day and lunch/dinner to plan a recipe in the weekly menu.
-/// Replaces whatever was planned in that slot.
+/// Added next to whatever that meal already has (a meal can have several dishes).
 struct AddRecipeToMenuSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
@@ -292,10 +292,6 @@ struct AddRecipeToMenuSheet: View {
     }
     @State private var mealType: MealType = .lunch
 
-    private var currentDishName: String? {
-        entries.first { MenuCalendar.isSameDay($0.date, day) && $0.mealType == mealType.rawValue }?.dishName
-    }
-
     var body: some View {
         NavigationStack {
             VStack(alignment: .leading, spacing: 20) {
@@ -312,12 +308,6 @@ struct AddRecipeToMenuSheet: View {
                             day = date
                         }
                     }
-                }
-
-                if let currentDishName, currentDishName != recipe.name {
-                    Text("Replaces \"\(currentDishName)\"")
-                        .font(ALITypography.bodyMedium)
-                        .foregroundStyle(ALIColors.mutedInk)
                 }
 
                 Spacer()
@@ -344,7 +334,8 @@ struct AddRecipeToMenuSheet: View {
         let familyID = familySession.familyID
         RecipeDishLink.sync(recipe, modelContext: modelContext, dataSync: dataSync, familyID: familyID)
 
-        MenuWriter.set(
+        // Added next to whatever the meal already has (several dishes per meal).
+        MenuWriter.add(
             DishSelection(id: recipe.id, name: recipe.name),
             date: day,
             mealType: mealType,

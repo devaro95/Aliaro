@@ -129,6 +129,22 @@
         }
       }
     },
+    "Add another dish" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add another dish"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir otro plato"
+          }
+        }
+      }
+    },
     "Add, rename or delete dishes from the button at the top of the menu." : {
       "localizations" : {
         "en" : {

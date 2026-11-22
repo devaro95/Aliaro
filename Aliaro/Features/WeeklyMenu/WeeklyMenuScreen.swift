@@ -43,14 +43,8 @@ struct WeeklyMenuScreen: View {
         return entries.filter { $0.date >= weekStart && $0.date < end }
     }
 
-    private func dish(for date: Date, mealType: MealType) -> DishSelection? {
-        // Newest one if a slot ended up with duplicates (e.g. two devices offline).
-        guard let entry = entries
-            .filter({ MenuCalendar.isSameDay($0.date, date) && $0.mealType == mealType.rawValue })
-            .max(by: { $0.updatedAt < $1.updatedAt }) else {
-            return nil
-        }
-        return DishSelection(id: entry.dishID, name: entry.dishName)
+    private func dishes(for date: Date, mealType: MealType) -> [DishSelection] {
+        MenuWriter.dishes(on: date, mealType: mealType, in: entries)
     }
 
     var body: some View {
@@ -83,25 +77,27 @@ struct WeeklyMenuScreen: View {
                     )
                     weekCard
                 case .month:
-                    periodHeader(
-                        title: monthStart.formatted(.dateTime.month(.wide).year()).capitalized,
-                        subtitle: nil,
-                        isCurrent: MenuCalendar.isSameDay(monthStart, MenuCalendar.startOfMonth(.now)),
-                        onPrevious: { moveMonth(-1) },
-                        onNext: { moveMonth(1) },
-                        onToday: { goToToday() }
-                    )
-                    if isMonthPreview {
-                        monthCard.aliPremiumPreview(true)
-                    } else {
+                    // In the premium preview the month header is part of the
+                    // blurred, inert sample too (no moving between months).
+                    VStack(spacing: 16) {
+                        periodHeader(
+                            title: monthStart.formatted(.dateTime.month(.wide).year()).capitalized,
+                            subtitle: nil,
+                            isCurrent: MenuCalendar.isSameDay(monthStart, MenuCalendar.startOfMonth(.now)),
+                            onPrevious: { moveMonth(-1) },
+                            onNext: { moveMonth(1) },
+                            onToday: { goToToday() }
+                        )
                         monthCard
                     }
+                    .aliPremiumPreview(isMonthPreview)
                 }
             }
             .padding(.horizontal, 20)
-            // Extra room while the preview banner floats over the content.
-            .padding(.bottom, isMonthPreview ? 320 : 100)
+            .padding(.bottom, 100)
         }
+        // The premium preview is a fixed screen: no scrolling under the banner.
+        .scrollDisabled(isMonthPreview)
         .overlay(alignment: .bottom) {
             if isMonthPreview {
                 // Floats just above the bottom bar (same placement as Tasks).
@@ -118,8 +114,8 @@ struct WeeklyMenuScreen: View {
         .sheet(item: $dayBeingEdited) { day in
             EditDayMealsSheet(
                 date: day.date,
-                lunchDish: dish(for: day.date, mealType: .lunch),
-                dinnerDish: dish(for: day.date, mealType: .dinner),
+                lunchDishes: dishes(for: day.date, mealType: .lunch),
+                dinnerDishes: dishes(for: day.date, mealType: .dinner),
                 canEdit: canEditMenu
             )
         }
@@ -254,34 +250,32 @@ struct WeeklyMenuScreen: View {
         HStack(spacing: 8) {
             arrowButton("chevron.left", label: "Previous", action: onPrevious)
 
-            // "Today" goes under the label (never beside it) so long ranges don't overlap.
-            VStack(spacing: 4) {
-                Text(title)
-                    .font(ALITypography.titleLarge)
-                    .foregroundStyle(ALIColors.ink)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.85)
-                if let subtitle, subtitle != title {
-                    Text(subtitle)
-                        .font(ALITypography.labelLarge)
-                        .foregroundStyle(ALIColors.mutedInk)
+            // Like the family calendar: tapping the title goes back to the current
+            // period; "Go to today" shows under it when you're elsewhere.
+            Button { if !isCurrent { onToday() } } label: {
+                VStack(spacing: 2) {
+                    Text(title)
+                        .font(ALITypography.titleLarge)
+                        .foregroundStyle(ALIColors.ink)
                         .lineLimit(1)
-                }
-                if !isCurrent {
-                    Button(action: onToday) {
-                        Text("Today")
-                            .font(.system(size: 12, weight: .bold, design: .rounded))
-                            .foregroundStyle(ALIColors.onAccent)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 4)
-                            .background(ALIColors.primary)
-                            .clipShape(Capsule())
+                        .minimumScaleFactor(0.85)
+                    if let subtitle, subtitle != title {
+                        Text(subtitle)
+                            .font(ALITypography.labelLarge)
+                            .foregroundStyle(ALIColors.mutedInk)
+                            .lineLimit(1)
                     }
-                    .buttonStyle(.plain)
-                    .transition(.opacity)
+                    if !isCurrent {
+                        Text("Go to today")
+                            .font(ALITypography.labelLarge)
+                            .foregroundStyle(ALIColors.mutedInk)
+                            .transition(.opacity)
+                    }
                 }
+                .frame(maxWidth: .infinity)
+                .contentShape(Rectangle())
             }
-            .frame(maxWidth: .infinity)
+            .buttonStyle(.plain)
 
             arrowButton("chevron.right", label: "Next", action: onNext)
         }
@@ -290,9 +284,9 @@ struct WeeklyMenuScreen: View {
     private func arrowButton(_ systemImage: String, label: LocalizedStringKey, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: systemImage)
-                .font(.system(size: 14, weight: .bold))
+                .font(.system(size: 18, weight: .bold))
                 .foregroundStyle(ALIColors.ink)
-                .frame(width: 36, height: 36)
+                .frame(width: 40, height: 40)
                 .background(ALIColors.surfaceVariant)
                 .clipShape(Circle())
         }
@@ -363,8 +357,8 @@ struct WeeklyMenuScreen: View {
 
     @ViewBuilder
     private func dayRow(_ date: Date) -> some View {
-        let lunch = dish(for: date, mealType: .lunch)
-        let dinner = dish(for: date, mealType: .dinner)
+        let lunch = dishes(for: date, mealType: .lunch)
+        let dinner = dishes(for: date, mealType: .dinner)
         let past = date < MenuCalendar.today
         let isToday = MenuCalendar.isSameDay(date, .now)
 
@@ -390,7 +384,7 @@ struct WeeklyMenuScreen: View {
                         .clipShape(Capsule())
                 }
 
-                if past && (lunch != nil || dinner != nil) {
+                if past && (!lunch.isEmpty || !dinner.isEmpty) {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(ALIColors.success)
@@ -404,8 +398,8 @@ struct WeeklyMenuScreen: View {
             }
 
             VStack(alignment: .leading, spacing: 6) {
-                mealLine(label: "Lunch", dish: lunch, accent: ALIColors.mealLunchAccent)
-                mealLine(label: "Dinner", dish: dinner, accent: ALIColors.mealDinnerAccent)
+                mealLines(label: "Lunch", dishes: lunch, accent: ALIColors.mealLunchAccent)
+                mealLines(label: "Dinner", dishes: dinner, accent: ALIColors.mealDinnerAccent)
             }
         }
         .padding(.horizontal, 20)
@@ -421,8 +415,21 @@ struct WeeklyMenuScreen: View {
         .opacity(past ? 0.55 : 1)
     }
 
+    /// A meal's dishes, one per line: the meal chip on the first line only
+    /// (the next lines keep its width so the names stay aligned).
     @ViewBuilder
-    private func mealLine(label: LocalizedStringKey, dish: DishSelection?, accent: Color) -> some View {
+    private func mealLines(label: LocalizedStringKey, dishes: [DishSelection], accent: Color) -> some View {
+        if dishes.isEmpty {
+            mealLine(label: label, dish: nil, accent: accent)
+        } else {
+            ForEach(Array(dishes.enumerated()), id: \.offset) { index, dish in
+                mealLine(label: label, dish: dish, accent: accent, showsLabel: index == 0)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func mealLine(label: LocalizedStringKey, dish: DishSelection?, accent: Color, showsLabel: Bool = true) -> some View {
         HStack(spacing: 8) {
             Text(label)
                 .font(.system(size: 11, weight: .bold, design: .rounded))
@@ -432,6 +439,8 @@ struct WeeklyMenuScreen: View {
                 .padding(.vertical, 3)
                 .background(accent.opacity(dish == nil ? 0.22 : 0.55))
                 .clipShape(Capsule())
+                .opacity(showsLabel ? 1 : 0)
+                .accessibilityHidden(!showsLabel)
 
             Text(dish?.name ?? String(localized: "Not planned"))
                 .font(dish == nil ? ALITypography.bodyMedium : ALITypography.bodyLarge.weight(.semibold))
@@ -507,7 +516,7 @@ struct WeeklyMenuScreen: View {
     private func monthCell(_ date: Date) -> some View {
         let planned = isMonthPreview
             ? MenuDemoData.planned(on: date)
-            : (dish(for: date, mealType: .lunch) != nil, dish(for: date, mealType: .dinner) != nil)
+            : (!dishes(for: date, mealType: .lunch).isEmpty, !dishes(for: date, mealType: .dinner).isEmpty)
         let hasLunch = planned.lunch
         let hasDinner = planned.dinner
         let isToday = MenuCalendar.isSameDay(date, .now)
@@ -573,12 +582,16 @@ struct WeeklyMenuScreen: View {
         }
         let source = weekEntries
         let familyID = familySession.familyID
+        // Each planned meal of the week (all its dishes, in order) replaces
+        // the same meal in the target week.
+        let slots = Set(source.map { SlotKey(date: MenuCalendar.day($0.date), mealType: $0.mealType) })
         for weeks in weeksAhead {
-            for entry in source {
+            for slot in slots {
+                guard let mealType = MealType(rawValue: slot.mealType) else { continue }
                 MenuWriter.set(
-                    DishSelection(id: entry.dishID, name: entry.dishName),
-                    date: MenuCalendar.adding(days: 7 * weeks, to: entry.date),
-                    mealType: MealType(rawValue: entry.mealType) ?? .lunch,
+                    MenuWriter.dishes(on: slot.date, mealType: mealType, in: source),
+                    date: MenuCalendar.adding(days: 7 * weeks, to: slot.date),
+                    mealType: mealType,
                     entries: entries,
                     modelContext: modelContext,
                     dataSync: dataSync,
@@ -600,6 +613,12 @@ struct WeeklyMenuScreen: View {
             }
         }
     }
+}
+
+/// A day + meal of the menu (one or more dishes).
+private struct SlotKey: Hashable {
+    let date: Date
+    let mealType: String
 }
 
 /// Sample month for the `menuPlanning` premium preview: a believable,

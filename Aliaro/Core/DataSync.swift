@@ -62,6 +62,8 @@ struct RemoteMealPlanEntry: FamilySynced {
     var dish_id: UUID
     var dish_name: String
     var updated_at: Date
+    /// Order within the day + meal (several dishes per meal).
+    var position: Int?
 }
 
 struct RemoteGroceryItem: FamilySynced {
@@ -785,6 +787,7 @@ final class AppDataSyncCoordinator: ObservableObject {
             existing.dishID = remote.dish_id
             existing.dishName = remote.dish_name
             existing.updatedAt = remote.updated_at
+            existing.position = remote.position ?? 0
         } else {
             modelContext.insert(MealPlanEntry(
                 id: remote.id,
@@ -792,7 +795,8 @@ final class AppDataSyncCoordinator: ObservableObject {
                 mealType: remote.meal_type,
                 dishID: remote.dish_id,
                 dishName: remote.dish_name,
-                updatedAt: remote.updated_at
+                updatedAt: remote.updated_at,
+                position: remote.position ?? 0
             ))
         }
         refreshWidgetSnapshot()
@@ -801,7 +805,8 @@ final class AppDataSyncCoordinator: ObservableObject {
     func pushMealPlanEntry(_ entry: MealPlanEntry, familyID: UUID) {
         let record = RemoteMealPlanEntry(
             id: entry.id, family_id: familyID, date: MenuCalendar.key(entry.date), meal_type: entry.mealType,
-            dish_id: entry.dishID, dish_name: entry.dishName, updated_at: entry.updatedAt
+            dish_id: entry.dishID, dish_name: entry.dishName, updated_at: entry.updatedAt,
+            position: entry.position
         )
         Task {
             do {

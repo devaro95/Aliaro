@@ -35,11 +35,12 @@ enum WidgetSnapshotWriter {
         }
 
         let allMealPlanEntries = (try? modelContext.fetch(FetchDescriptor<MealPlanEntry>())) ?? []
-        let mealOrder = ["comida", "cena"]
-        let todayMenu = allMealPlanEntries
-            .filter { MenuCalendar.isSameDay($0.date, now) }
-            .sorted { (mealOrder.firstIndex(of: $0.mealType) ?? 0) < (mealOrder.firstIndex(of: $1.mealType) ?? 0) }
-            .map { WidgetMenuEntryItem(mealType: $0.mealType, dishName: $0.dishName) }
+        // One item per meal; several dishes read as "Lentils · Salad".
+        let todayMenu = MealType.allCases.compactMap { mealType -> WidgetMenuEntryItem? in
+            let dishes = MenuWriter.dishes(on: now, mealType: mealType, in: allMealPlanEntries)
+            guard !dishes.isEmpty else { return nil }
+            return WidgetMenuEntryItem(mealType: mealType.rawValue, dishName: dishes.map(\.name).joined(separator: " · "))
+        }
 
         let snapshot = WidgetSnapshot(
             familyName: FamilySession.shared.familyName,

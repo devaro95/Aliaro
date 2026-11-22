@@ -102,12 +102,27 @@ struct DishSelection: Equatable {
     let name: String
 }
 
-/// Shared write path for menu slots (one dish per day + meal type):
-/// used by the day editor, "Add to menu" from a recipe and week copies.
+/// Shared write path for menu slots (day + meal type, each with one or
+/// more dishes): used by the day editor, "Add to menu" from a recipe and
+/// week copies.
 enum MenuWriter {
+    /// The dishes of a slot, in order (`position`, then oldest first).
+    static func entries(on date: Date, mealType: MealType, in entries: [MealPlanEntry]) -> [MealPlanEntry] {
+        entries
+            .filter { MenuCalendar.isSameDay($0.date, date) && $0.mealType == mealType.rawValue }
+            .sorted { ($0.position, $0.updatedAt) < ($1.position, $1.updatedAt) }
+    }
+
+    static func dishes(on date: Date, mealType: MealType, in entries: [MealPlanEntry]) -> [DishSelection] {
+        self.entries(on: date, mealType: mealType, in: entries).map { DishSelection(id: $0.dishID, name: $0.dishName) }
+    }
+
+    /// Makes the slot contain exactly `dishes`, in that order. Existing rows
+    /// are reused by position (so the main dish keeps its row and its link
+    /// with older app versions), extra ones are added and leftovers removed.
     @MainActor
     static func set(
-        _ dish: DishSelection?,
+        _ dishes: [DishSelection],
         date: Date,
         mealType: MealType,
         entries: [MealPlanEntry],
@@ -116,26 +131,41 @@ enum MenuWriter {
         familyID: UUID?
     ) {
         let day = MenuCalendar.day(date)
-        let existing = entries.filter { MenuCalendar.isSameDay($0.date, day) && $0.mealType == mealType.rawValue }
+        let existing = self.entries(on: day, mealType: mealType, in: entries)
 
-        if let dish {
+        for (index, dish) in dishes.enumerated() {
             let entry: MealPlanEntry
-            if let first = existing.first {
-                guard first.dishID != dish.id || first.dishName != dish.name else { return }
-                first.dishID = dish.id
-                first.dishName = dish.name
-                first.updatedAt = .now
-                entry = first
+            if index < existing.count {
+                entry = existing[index]
+                guard entry.dishID != dish.id || entry.dishName != dish.name || entry.position != index else { continue }
+                entry.dishID = dish.id
+                entry.dishName = dish.name
+                entry.position = index
+                entry.updatedAt = .now
             } else {
-                entry = MealPlanEntry(date: day, mealType: mealType.rawValue, dishID: dish.id, dishName: dish.name)
+                entry = MealPlanEntry(date: day, mealType: mealType.rawValue, dishID: dish.id, dishName: dish.name, position: index)
                 modelContext.insert(entry)
             }
             if let familyID { dataSync.pushMealPlanEntry(entry, familyID: familyID) }
-            // Leftover duplicates from older versions of the slot.
-            for extra in existing.dropFirst() { remove(extra, modelContext: modelContext, dataSync: dataSync) }
-        } else {
-            for entry in existing { remove(entry, modelContext: modelContext, dataSync: dataSync) }
         }
+        for extra in existing.dropFirst(dishes.count) { remove(extra, modelContext: modelContext, dataSync: dataSync) }
+    }
+
+    /// Adds `dish` at the end of the slot (no-op if it's already there).
+    @MainActor
+    static func add(
+        _ dish: DishSelection,
+        date: Date,
+        mealType: MealType,
+        entries: [MealPlanEntry],
+        modelContext: ModelContext,
+        dataSync: AppDataSyncCoordinator,
+        familyID: UUID?
+    ) {
+        var current = dishes(on: date, mealType: mealType, in: entries)
+        guard !current.contains(where: { $0.id == dish.id }) else { return }
+        current.append(dish)
+        set(current, date: date, mealType: mealType, entries: entries, modelContext: modelContext, dataSync: dataSync, familyID: familyID)
     }
 
     @MainActor
