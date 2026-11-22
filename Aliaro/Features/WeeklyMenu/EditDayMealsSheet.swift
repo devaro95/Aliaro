@@ -1,7 +1,7 @@
 import SwiftUI
 import SwiftData
 
-/// Sheet to edit lunch and dinner for a day of the weekly menu, choosing
+/// Sheet to edit lunch and dinner for a calendar day of the menu, choosing
 /// a dish from the catalog for each slot. If saved without a dish, that
 /// day/type's entry is deleted instead of being left empty.
 struct EditDayMealsSheet: View {
@@ -10,7 +10,7 @@ struct EditDayMealsSheet: View {
     @EnvironmentObject private var dataSync: AppDataSyncCoordinator
     @EnvironmentObject private var familySession: FamilySession
 
-    let day: Weekday
+    let date: Date
     var canEdit: Bool = true
 
     @State private var lunchDish: DishSelection?
@@ -19,14 +19,15 @@ struct EditDayMealsSheet: View {
     @State private var openedRecipe: Recipe?
 
     @Query private var recipes: [Recipe]
+    @Query private var entries: [MealPlanEntry]
 
     private func recipe(for selection: DishSelection?) -> Recipe? {
         guard let selection else { return nil }
         return recipes.first { $0.id == selection.id }
     }
 
-    init(day: Weekday, lunchDish: DishSelection?, dinnerDish: DishSelection?, canEdit: Bool = true) {
-        self.day = day
+    init(date: Date, lunchDish: DishSelection?, dinnerDish: DishSelection?, canEdit: Bool = true) {
+        self.date = MenuCalendar.day(date)
         self.canEdit = canEdit
         _lunchDish = State(initialValue: lunchDish)
         _dinnerDish = State(initialValue: dinnerDish)
@@ -53,11 +54,11 @@ struct EditDayMealsSheet: View {
                 }
 
                 mealPicker(label: "Lunch", selection: $lunchDish) {
-                    Track.event("menu_meal_pick_tap", ["meal": "lunch", "weekday": String(describing: day)])
+                    Track.event("menu_meal_pick_tap", ["meal": "lunch"])
                     mealTypeBeingPicked = .lunch
                 }
                 mealPicker(label: "Dinner", selection: $dinnerDish) {
-                    Track.event("menu_meal_pick_tap", ["meal": "dinner", "weekday": String(describing: day)])
+                    Track.event("menu_meal_pick_tap", ["meal": "dinner"])
                     mealTypeBeingPicked = .dinner
                 }
 
@@ -71,12 +72,12 @@ struct EditDayMealsSheet: View {
             }
             .padding(20)
             .background(ALIColors.background)
-            .navigationTitle(day.shortLabel)
+            .navigationTitle(date.formatted(.dateTime.weekday(.wide).day().month(.wide)).capitalized)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
-                        Track.event("menu_day_cancel", ["weekday": String(describing: day)])
+                        Track.event("menu_day_cancel")
                         dismiss()
                     }
                 }
@@ -167,40 +168,25 @@ struct EditDayMealsSheet: View {
     }
 
     private func upsert(mealType: MealType, dish: DishSelection?) {
-        let weekdayValue = day.rawValue
-        let mealTypeValue = mealType.rawValue
-        let descriptor = FetchDescriptor<MealPlanEntry>(
-            predicate: #Predicate { $0.weekday == weekdayValue && $0.mealType == mealTypeValue }
-        )
-        let existing = try? modelContext.fetch(descriptor).first
-        let familyID = familySession.familyID
+        let existing = entries.first { MenuCalendar.isSameDay($0.date, date) && $0.mealType == mealType.rawValue }
         // Analytics: only real changes (saving an untouched meal logs nothing).
         let changed = (dish?.id != existing?.dishID) || (dish == nil) != (existing == nil)
         if changed {
             let eventName = dish == nil ? "menu_meal_removed" : (existing == nil ? "menu_meal_planned" : "menu_meal_changed")
             Track.event(eventName, [
-                "weekday": String(describing: day),
+                "days_ahead": MenuCalendar.calendar.dateComponents([.day], from: MenuCalendar.today, to: date).day ?? 0,
                 "meal": String(describing: mealType),
                 "dish_name": dish?.name
             ])
         }
-
-        if let dish {
-            let entry: MealPlanEntry
-            if let existing {
-                existing.dishID = dish.id
-                existing.dishName = dish.name
-                existing.updatedAt = .now
-                entry = existing
-            } else {
-                entry = MealPlanEntry(weekday: weekdayValue, mealType: mealTypeValue, dishID: dish.id, dishName: dish.name)
-                modelContext.insert(entry)
-            }
-            if let familyID { dataSync.pushMealPlanEntry(entry, familyID: familyID) }
-        } else if let existing {
-            let entryID = existing.id
-            modelContext.delete(existing)
-            dataSync.deleteMealPlanEntry(id: entryID)
-        }
+        MenuWriter.set(
+            dish,
+            date: date,
+            mealType: mealType,
+            entries: entries,
+            modelContext: modelContext,
+            dataSync: dataSync,
+            familyID: familySession.familyID
+        )
     }
 }
