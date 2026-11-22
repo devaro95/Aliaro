@@ -68,12 +68,8 @@ struct AddHouseTaskSheet: View {
             }
             .background(ALIColors.background)
             .navigationTitle(isEditing ? "Edit task" : "New task")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-            }
+            .navigationBarTitleDisplayMode(.large)
+            .presentationDragIndicator(.visible)
             .onAppear {
                 if let task = taskToEdit {
                     name = task.name

@@ -244,12 +244,8 @@ struct WifiQRSheet: View {
             .frame(maxWidth: .infinity)
             .background(ALIColors.background)
             .navigationTitle("Wi-Fi")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
-                }
-            }
+            .navigationBarTitleDisplayMode(.large)
+            .presentationDragIndicator(.visible)
         }
         .presentationDetents([.medium, .large])
         .trackScreen("wifi_qr")
@@ -331,12 +327,8 @@ struct WifiEditorSheet: View {
             }
             .background(ALIColors.background)
             .navigationTitle(networkToEdit == nil ? "Add Wi-Fi" : "Edit Wi-Fi")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-            }
+            .navigationBarTitleDisplayMode(.large)
+            .presentationDragIndicator(.visible)
             .onAppear {
                 guard let network = networkToEdit else { return }
                 label = network.label

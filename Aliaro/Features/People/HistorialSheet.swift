@@ -71,12 +71,8 @@ struct HistorialSheet: View {
             .aliPremiumPreviewBanner(isLocked, buttonTitle: "Unlock history") { showPaywall = Track.paywall("history_banner") }
             .background(ALIColors.background)
             .navigationTitle("History")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Close") { dismiss() }
-                }
-            }
+            .navigationBarTitleDisplayMode(.large)
+            .presentationDragIndicator(.visible)
         }
         .presentationDetents(isLocked ? [.large] : [.medium, .large])
         .sheet(isPresented: $showPaywall) {

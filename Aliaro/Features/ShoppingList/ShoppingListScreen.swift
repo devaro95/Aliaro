@@ -539,12 +539,8 @@ private struct NewListSheet: View {
             .padding(20)
             .background(ALIColors.background)
             .navigationTitle("New list")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-            }
+            .navigationBarTitleDisplayMode(.large)
+            .presentationDragIndicator(.visible)
         }
         .presentationDetents([.medium])
         .trackScreen("shopping_new_list")

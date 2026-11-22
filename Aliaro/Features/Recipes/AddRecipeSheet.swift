@@ -129,12 +129,8 @@ struct AddRecipeSheet: View {
             .scrollDismissesKeyboard(.interactively)
             .background(ALIColors.background)
             .navigationTitle(isEditing ? "Edit recipe" : "New recipe")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-            }
+            .navigationBarTitleDisplayMode(.large)
+            .presentationDragIndicator(.visible)
             .onAppear(perform: loadIfEditing)
             .sheet(item: $editingTime) { field in
                 DurationPickerSheet(

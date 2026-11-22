@@ -175,12 +175,8 @@ private struct MapColorSheet: View {
             }
             .background(ALIColors.background)
             .navigationTitle("Color")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
-                }
-            }
+            .navigationBarTitleDisplayMode(.large)
+            .presentationDragIndicator(.visible)
         }
         .presentationDetents([.medium])
         .onChange(of: selection) { _, new in onChange(new) }
@@ -333,12 +329,8 @@ struct VisitedCountriesSheet: View {
             }
             .background(ALIColors.background)
             .navigationTitle("Visited countries")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
-                }
-            }
+            .navigationBarTitleDisplayMode(.large)
+            .presentationDragIndicator(.visible)
         }
         .presentationDetents([.medium, .large])
         .sheet(item: $yearTarget) { target in
@@ -475,7 +467,8 @@ struct VisitYearSheet: View {
             .padding(.top, 8)
             .background(ALIColors.background)
             .navigationTitle(Text(verbatim: "\(CountryInfo.flag(code)) \(CountryInfo.name(code))"))
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarTitleDisplayMode(.large)
+            .presentationDragIndicator(.visible)
         }
         .presentationDetents([.height(380)])
         .trackScreen("world_map_year")

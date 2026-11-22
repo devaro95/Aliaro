@@ -136,15 +136,11 @@ struct ExpenseArchivesSheet: View {
             .aliPremiumPreviewBanner(isArchiveLocked, buttonTitle: "Unlock archive") { showPaywall = Track.paywall("finance_archive_banner") }
             .background(ALIColors.background)
             .navigationTitle("Archive")
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarTitleDisplayMode(.large)
+            .presentationDragIndicator(.visible)
             .navigationDestination(for: UUID.self) { id in
                 if let archive = archives.first(where: { $0.id == id }) {
                     ExpenseArchiveDetailView(archive: archive, canDelete: canArchive)
-                }
-            }
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") { dismiss() }
                 }
             }
             .alert("Archive finances", isPresented: $showNamePrompt) {
@@ -406,7 +402,8 @@ struct ExpenseArchiveDetailView: View {
         }
         .background(ALIColors.background)
         .navigationTitle(archive.name)
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarTitleDisplayMode(.large)
+        .presentationDragIndicator(.visible)
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {
                 Button {

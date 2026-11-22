@@ -52,12 +52,8 @@ struct MemberPermissionsSheet: View {
             }
             .background(ALIColors.background)
             .navigationTitle(member.name)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") { dismiss() }
-                }
-            }
+            .navigationBarTitleDisplayMode(.large)
+            .presentationDragIndicator(.visible)
         }
         .presentationDetents([.medium, .large])
         .task {

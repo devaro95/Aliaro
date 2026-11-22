@@ -67,12 +67,8 @@ struct FeedbackSheet: View {
             }
             .background(ALIColors.background)
             .navigationTitle("Suggestions and bugs")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-            }
+            .navigationBarTitleDisplayMode(.large)
+            .presentationDragIndicator(.visible)
             .onAppear { focused = true }
             .alert("Couldn't send", isPresented: .constant(sendError != nil)) {
                 Button("OK", role: .cancel) { sendError = nil }

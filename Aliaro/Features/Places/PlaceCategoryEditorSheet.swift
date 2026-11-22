@@ -97,12 +97,8 @@ struct PlaceCategoryEditorSheet: View {
             .scrollDismissesKeyboard(.interactively)
             .background(ALIColors.background)
             .navigationTitle(categoryToEdit == nil ? "New category" : "Edit category")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-            }
+            .navigationBarTitleDisplayMode(.large)
+            .presentationDragIndicator(.visible)
             .alert("Delete \"\(name)\"?", isPresented: $confirmDelete) {
                 Button("Delete", role: .destructive) { delete() }
                 Button("Cancel", role: .cancel) {}

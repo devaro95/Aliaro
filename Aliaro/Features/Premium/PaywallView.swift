@@ -116,10 +116,11 @@ struct PaywallView: View {
             // the user scrolls through everything above.
             .safeAreaInset(edge: .bottom) { stickyCTA }
             .background(ALIColors.background)
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarTitleDisplayMode(.large)
+            .presentationDragIndicator(.visible)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") { closedWithButton = true; dismiss() }
+                ToolbarItem(placement: .topBarTrailing) {
+                    ALISheetIconButton(systemImage: "xmark", label: "Close") { closedWithButton = true; dismiss() }
                 }
             }
             .task {
@@ -734,10 +735,11 @@ struct PremiumBenefitsSheet: View {
             }
             .background(ALIColors.background)
             .navigationTitle("Aliaro Premium")
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarTitleDisplayMode(.large)
+            .presentationDragIndicator(.visible)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") { dismiss() }
+                ToolbarItem(placement: .topBarTrailing) {
+                    ALISheetIconButton(systemImage: "xmark", label: "Close") { dismiss() }
                 }
             }
         }

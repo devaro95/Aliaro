@@ -39,6 +39,40 @@ struct RecipeDetailSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
+                    // Header: the recipe name as the big title (up to two lines)
+                    // with the "…" menu to its right. Closes by swiping down.
+                    HStack(alignment: .center, spacing: 10) {
+                        Text(recipe.name)
+                            .font(.system(size: 26, weight: .bold, design: .rounded))
+                            .foregroundStyle(ALIColors.ink)
+                            .lineLimit(2)
+                            .accessibilityAddTraits(.isHeader)
+                        Spacer(minLength: 0)
+                        if canEdit || canDelete {
+                            Menu {
+                                if canEdit {
+                                    Button {
+                                        Track.event("recipe_edit_tap")
+                                        showEdit = true
+                                    } label: {
+                                        Label("Edit", systemImage: "pencil")
+                                    }
+                                }
+                                if canDelete {
+                                    Button(role: .destructive) {
+                                        showDeleteConfirm = true
+                                    } label: {
+                                        Label("Delete", systemImage: "trash")
+                                    }
+                                }
+                            } label: {
+                                ALISheetIconLabel(systemImage: "ellipsis")
+                            }
+                            .accessibilityLabel(Text("More options"))
+                        }
+                    }
+                    .padding(.top, 12)
+
                     if let image = recipe.image {
                         Image(uiImage: image)
                             .resizable()
@@ -49,9 +83,6 @@ struct RecipeDetailSheet: View {
                     }
 
                     VStack(alignment: .leading, spacing: 10) {
-                        Text(recipe.name)
-                            .font(ALITypography.headlineLarge)
-                            .foregroundStyle(ALIColors.ink)
                         FlowChips {
                             ForEach(recipe.recipeCategories) { category in
                                 metaPill(systemImage: category.systemImage, text: Text(category.label))
@@ -140,35 +171,8 @@ struct RecipeDetailSheet: View {
                 .padding(20)
             }
             .background(ALIColors.background)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") { dismiss() }
-                }
-                if canEdit || canDelete {
-                    ToolbarItem(placement: .primaryAction) {
-                        Menu {
-                            if canEdit {
-                                Button {
-                                    Track.event("recipe_edit_tap")
-                                    showEdit = true
-                                } label: {
-                                    Label("Edit", systemImage: "pencil")
-                                }
-                            }
-                            if canDelete {
-                                Button(role: .destructive) {
-                                    showDeleteConfirm = true
-                                } label: {
-                                    Label("Delete", systemImage: "trash")
-                                }
-                            }
-                        } label: {
-                            Image(systemName: "ellipsis.circle")
-                        }
-                    }
-                }
-            }
+            .toolbar(.hidden, for: .navigationBar)
+            .presentationDragIndicator(.visible)
             .sheet(isPresented: $showEdit) {
                 AddRecipeSheet(recipeToEdit: recipe)
             }
@@ -267,7 +271,7 @@ struct RecipeDetailSheet: View {
 }
 
 /// Picks a day and lunch/dinner to plan a recipe in the weekly menu.
-/// Replaces whatever was planned in that slot.
+/// Added next to whatever that meal already has (a meal can have several dishes).
 struct AddRecipeToMenuSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
@@ -278,15 +282,19 @@ struct AddRecipeToMenuSheet: View {
 
     @Query private var entries: [MealPlanEntry]
 
-    @State private var day: Weekday = {
-        let systemWeekday = Calendar.current.component(.weekday, from: Date())
-        return Weekday(rawValue: (systemWeekday + 5) % 7) ?? .monday
-    }()
-    @State private var mealType: MealType = .lunch
+    @State private var day: Date = MenuCalendar.today
 
-    private var currentDishName: String? {
-        entries.first { $0.weekday == day.rawValue && $0.mealType == mealType.rawValue }?.dishName
+    /// Today and the next 13 days.
+    private var upcomingDays: [Date] {
+        (0..<14).map { MenuCalendar.adding(days: $0, to: MenuCalendar.today) }
     }
+
+    private func chipTitle(for date: Date) -> String {
+        if MenuCalendar.isSameDay(date, .now) { return String(localized: "Today") }
+        if MenuCalendar.isSameDay(date, MenuCalendar.adding(days: 1, to: MenuCalendar.today)) { return String(localized: "Tomorrow") }
+        return date.formatted(.dateTime.weekday(.abbreviated).day()).capitalized
+    }
+    @State private var mealType: MealType = .lunch
 
     var body: some View {
         NavigationStack {
@@ -299,17 +307,11 @@ struct AddRecipeToMenuSheet: View {
                 .pickerStyle(.segmented)
 
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 96), spacing: 8)], spacing: 8) {
-                    ForEach(Weekday.allCases) { weekday in
-                        RecipeChip(title: weekday.shortLabel, isSelected: day == weekday) {
-                            day = weekday
+                    ForEach(upcomingDays, id: \.self) { date in
+                        RecipeChip(title: LocalizedStringKey(chipTitle(for: date)), isSelected: MenuCalendar.isSameDay(day, date)) {
+                            day = date
                         }
                     }
-                }
-
-                if let currentDishName, currentDishName != recipe.name {
-                    Text("Replaces \"\(currentDishName)\"")
-                        .font(ALITypography.bodyMedium)
-                        .foregroundStyle(ALIColors.mutedInk)
                 }
 
                 Spacer()
@@ -321,12 +323,8 @@ struct AddRecipeToMenuSheet: View {
             .padding(20)
             .background(ALIColors.background)
             .navigationTitle("Add to weekly menu")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-            }
+            .navigationBarTitleDisplayMode(.large)
+            .presentationDragIndicator(.visible)
         }
         .presentationDetents([.medium])
         .trackScreen("recipe_add_to_menu")
@@ -336,18 +334,20 @@ struct AddRecipeToMenuSheet: View {
         let familyID = familySession.familyID
         RecipeDishLink.sync(recipe, modelContext: modelContext, dataSync: dataSync, familyID: familyID)
 
-        let entry: MealPlanEntry
-        if let existing = entries.first(where: { $0.weekday == day.rawValue && $0.mealType == mealType.rawValue }) {
-            existing.dishID = recipe.id
-            existing.dishName = recipe.name
-            existing.updatedAt = .now
-            entry = existing
-        } else {
-            entry = MealPlanEntry(weekday: day.rawValue, mealType: mealType.rawValue, dishID: recipe.id, dishName: recipe.name)
-            modelContext.insert(entry)
-        }
-        if let familyID { dataSync.pushMealPlanEntry(entry, familyID: familyID) }
-        Track.event("recipe_added_to_menu", ["weekday": String(describing: day), "meal": String(describing: mealType)])
+        // Added next to whatever the meal already has (several dishes per meal).
+        MenuWriter.add(
+            DishSelection(id: recipe.id, name: recipe.name),
+            date: day,
+            mealType: mealType,
+            entries: entries,
+            modelContext: modelContext,
+            dataSync: dataSync,
+            familyID: familyID
+        )
+        Track.event("recipe_added_to_menu", [
+            "days_ahead": MenuCalendar.calendar.dateComponents([.day], from: MenuCalendar.today, to: day).day ?? 0,
+            "meal": String(describing: mealType)
+        ])
         dismiss()
     }
 }

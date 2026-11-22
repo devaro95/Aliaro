@@ -129,12 +129,8 @@ struct NotificationsScreen: View {
             }
             .background(ALIColors.background)
             .navigationTitle("Notifications")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") { dismiss() }
-                }
-            }
+            .navigationBarTitleDisplayMode(.large)
+            .presentationDragIndicator(.visible)
         }
         .tint(ALIColors.ink)
         .task { await load() }

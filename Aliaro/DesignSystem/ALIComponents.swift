@@ -302,7 +302,7 @@ struct ALIPremiumPreviewBanner: View {
     @Environment(\.colorScheme) private var colorScheme
 
     enum Message {
-        case familyData, tasksCalendar, peopleCalendar
+        case familyData, tasksCalendar, peopleCalendar, menuMonth
     }
 
     /// Message with the "Aliaro" wordmark (salmon-dot "i") inlined.
@@ -316,6 +316,8 @@ struct ALIPremiumPreviewBanner: View {
             return Text("This is a preview with sample data. Get \(wordmark) Premium to see your tasks in a calendar.")
         case .peopleCalendar:
             return Text("This is a preview with sample data. Get \(wordmark) Premium to see your family's day by person.")
+        case .menuMonth:
+            return Text("This is a preview with sample data. Get \(wordmark) Premium to plan your menu month by month.")
         }
     }
 
@@ -826,3 +828,34 @@ enum ALIShowOnce {
     }
 }
 
+// MARK: - Sheet header buttons
+
+/// Round icon of a sheet header button ("xmark", "ellipsis", "plus"). Use it as a
+/// `Menu` label; for plain actions use `ALISheetIconButton`. Same look as Android.
+struct ALISheetIconLabel: View {
+    let systemImage: String
+
+    var body: some View {
+        Image(systemName: systemImage)
+            .font(.system(size: 14, weight: .bold))
+            .foregroundStyle(ALIColors.ink)
+            .frame(width: 32, height: 32)
+            .background(Circle().fill(ALIColors.surfaceVariant))
+    }
+}
+
+/// Round button for a sheet header. Sheets close by swiping down, so an X only
+/// goes on untitled sheets and the paywall.
+struct ALISheetIconButton: View {
+    let systemImage: String
+    let label: LocalizedStringKey
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            ALISheetIconLabel(systemImage: systemImage)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text(label))
+    }
+}

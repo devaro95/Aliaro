@@ -684,7 +684,11 @@ struct HomeScreen: View {
     private func tileDetail(for tab: AppTab) -> String? {
         switch tab {
         case .weeklyMenu:
-            let count = mealPlan.count
+            let weekStart = MenuCalendar.startOfWeek(.now)
+            let weekEnd = MenuCalendar.adding(days: 7, to: weekStart)
+            // Meals (day + lunch/dinner), not dishes: a meal can have several.
+            let count = Set(mealPlan.filter { $0.date >= weekStart && $0.date < weekEnd }
+                .map { "\(MenuCalendar.key($0.date))-\($0.mealType)" }).count
             if count == 0 { return String(localized: "Nothing planned") }
             return count == 1 ? String(localized: "1 meal planned") : String(localized: "\(count) meals planned")
         case .recipes:
@@ -800,11 +804,13 @@ struct HomeScreen: View {
     }
 
     private var menuSummary: HomeSummary? {
-        // MealPlanEntry.weekday: 0 = Monday ... 6 = Sunday (see WidgetSnapshotWriter).
-        let todayWeekday = (Calendar.current.component(.weekday, from: .now) + 5) % 7
-        let today = mealPlan.filter { $0.weekday == todayWeekday }
-        let lunch = today.first { $0.mealType == MealType.lunch.rawValue }?.dishName
-        let dinner = today.first { $0.mealType == MealType.dinner.rawValue }?.dishName
+        // Several dishes in a meal read as "Lentils · Salad".
+        func names(_ mealType: MealType) -> String? {
+            let dishes = MenuWriter.dishes(on: .now, mealType: mealType, in: mealPlan)
+            return dishes.isEmpty ? nil : dishes.map(\.name).joined(separator: " · ")
+        }
+        let lunch = names(.lunch)
+        let dinner = names(.dinner)
         switch (lunch, dinner) {
         case let (lunch?, dinner?):
             return HomeSummary(tab: .weeklyMenu, headline: lunch, detail: String(localized: "Dinner: \(dinner)"))

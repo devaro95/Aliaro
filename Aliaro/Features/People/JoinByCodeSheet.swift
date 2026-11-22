@@ -62,10 +62,11 @@ struct JoinByCodeSheet: View {
             }
             .padding(20)
             .background(ALIColors.background)
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarTitleDisplayMode(.large)
+            .presentationDragIndicator(.visible)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+                ToolbarItem(placement: .topBarTrailing) {
+                    ALISheetIconButton(systemImage: "xmark", label: "Close") { dismiss() }
                 }
             }
             .sheet(isPresented: Binding(

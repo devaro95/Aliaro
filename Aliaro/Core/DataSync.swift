@@ -49,15 +49,21 @@ struct RemoteRecipe: FamilySynced {
     var link_names: [String]?
 }
 
+/// Dated menu (table `meal_plan_days`). The legacy weekday-based
+/// `meal_plan_entries` table is only kept (and bridged server-side) for
+/// app versions released before dated menus.
 struct RemoteMealPlanEntry: FamilySynced {
-    static let tableName = "meal_plan_entries"
+    static let tableName = "meal_plan_days"
     var id: UUID
     var family_id: UUID
-    var weekday: Int
+    /// Postgres `date` ("yyyy-MM-dd"), local day.
+    var date: String
     var meal_type: String
     var dish_id: UUID
     var dish_name: String
     var updated_at: Date
+    /// Order within the day + meal (several dishes per meal).
+    var position: Int?
 }
 
 struct RemoteGroceryItem: FamilySynced {
@@ -740,15 +746,20 @@ final class AppDataSyncCoordinator: ObservableObject {
 
     private func startMealPlanEntries(familyID: UUID, modelContext: ModelContext) async {
         do {
+            // First launch of this version in the family: the server fills
+            // the current week with the weekly template the family has today
+            // (idempotent, a no-op afterwards). See `meal_plan_activate`.
+            struct ActivateParams: Encodable { let p_family: UUID }
+            // Best-effort: if it fails it simply runs again on the next launch.
+            _ = try? await supabase.rpc("meal_plan_activate", params: ActivateParams(p_family: familyID)).execute()
+
             let remote = try await mealPlanEntries.fetchAll(familyID: familyID)
             for r in remote { applyMealPlanEntry(r, modelContext: modelContext) }
-            // Prune local entries deleted remotely while this device was offline
-            // (missed realtime deletes leave stale duplicates for the same slot).
+            // Anything not on the server anymore (deleted while the app was
+            // closed, or rows from the old weekday model) goes away locally.
             let remoteIDs = Set(remote.map(\.id))
-            if let local = try? modelContext.fetch(FetchDescriptor<MealPlanEntry>()) {
-                for entry in local where !remoteIDs.contains(entry.id) {
-                    modelContext.delete(entry)
-                }
+            for entry in (try? modelContext.fetch(FetchDescriptor<MealPlanEntry>())) ?? [] where !remoteIDs.contains(entry.id) {
+                modelContext.delete(entry)
             }
             refreshWidgetSnapshot()
         } catch {
@@ -768,21 +779,24 @@ final class AppDataSyncCoordinator: ObservableObject {
     }
 
     private func applyMealPlanEntry(_ remote: RemoteMealPlanEntry, modelContext: ModelContext) {
+        guard let date = MenuCalendar.date(fromKey: remote.date) else { return }
         let descriptor = FetchDescriptor<MealPlanEntry>(predicate: #Predicate { $0.id == remote.id })
         if let existing = try? modelContext.fetch(descriptor).first {
-            existing.weekday = remote.weekday
+            existing.date = date
             existing.mealType = remote.meal_type
             existing.dishID = remote.dish_id
             existing.dishName = remote.dish_name
             existing.updatedAt = remote.updated_at
+            existing.position = remote.position ?? 0
         } else {
             modelContext.insert(MealPlanEntry(
                 id: remote.id,
-                weekday: remote.weekday,
+                date: date,
                 mealType: remote.meal_type,
                 dishID: remote.dish_id,
                 dishName: remote.dish_name,
-                updatedAt: remote.updated_at
+                updatedAt: remote.updated_at,
+                position: remote.position ?? 0
             ))
         }
         refreshWidgetSnapshot()
@@ -790,8 +804,9 @@ final class AppDataSyncCoordinator: ObservableObject {
 
     func pushMealPlanEntry(_ entry: MealPlanEntry, familyID: UUID) {
         let record = RemoteMealPlanEntry(
-            id: entry.id, family_id: familyID, weekday: entry.weekday, meal_type: entry.mealType,
-            dish_id: entry.dishID, dish_name: entry.dishName, updated_at: entry.updatedAt
+            id: entry.id, family_id: familyID, date: MenuCalendar.key(entry.date), meal_type: entry.mealType,
+            dish_id: entry.dishID, dish_name: entry.dishName, updated_at: entry.updatedAt,
+            position: entry.position
         )
         Task {
             do {
@@ -813,7 +828,7 @@ final class AppDataSyncCoordinator: ObservableObject {
                 .from(RemoteMealPlanEntry.tableName)
                 .select()
                 .eq("family_id", value: record.family_id)
-                .eq("weekday", value: record.weekday)
+                .eq("date", value: record.date)
                 .eq("meal_type", value: record.meal_type)
                 .single()
                 .execute()

@@ -83,12 +83,8 @@ struct AddBoardNoteSheet: View {
             }
             .background(ALIColors.background)
             .navigationTitle(isEditing ? "Edit note" : "New note")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-            }
+            .navigationBarTitleDisplayMode(.large)
+            .presentationDragIndicator(.visible)
             .onAppear {
                 if let note = noteToEdit {
                     text = note.text
