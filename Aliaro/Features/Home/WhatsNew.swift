@@ -98,7 +98,7 @@ struct WhatsNewSheet: View {
                 .font(.system(size: ALIWhatsNewSheet.bigTitleSize, weight: .black, design: .rounded))
                 .foregroundStyle(ALIColors.ink)
                 .multilineTextAlignment(.center)
-                .padding(.top, 20)
+                .padding(.top, 44)
                 .padding(.horizontal, 20)
 
             TabView(selection: $page) {
