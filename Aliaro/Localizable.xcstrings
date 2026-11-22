@@ -56,6 +56,22 @@
         }
       }
     },
+    "Clear the week" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear the week"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vaciar la semana"
+          }
+        }
+      }
+    },
     "Create expense categories" : {
       "localizations" : {
         "en" : {

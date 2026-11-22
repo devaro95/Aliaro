@@ -9,6 +9,7 @@ import SwiftUI
 /// Keep in sync with the `update-member-permissions` edge function whitelist.
 enum FamilyPermission: String, CaseIterable, Identifiable {
     case weeklyMenuEdit = "weekly_menu_edit"
+    case weeklyMenuClear = "weekly_menu_clear"
     case recipesAdd = "recipes_add"
     case recipesEdit = "recipes_edit"
     case recipesDelete = "recipes_delete"
@@ -45,6 +46,7 @@ enum FamilyPermission: String, CaseIterable, Identifiable {
     var label: LocalizedStringKey {
         switch self {
         case .weeklyMenuEdit: return "Edit the weekly menu"
+        case .weeklyMenuClear: return "Clear the week"
         case .recipesAdd: return "Add recipes"
         case .recipesEdit: return "Edit recipes"
         case .recipesDelete: return "Delete recipes"
@@ -80,7 +82,7 @@ enum FamilyPermission: String, CaseIterable, Identifiable {
 
     var section: Section {
         switch self {
-        case .weeklyMenuEdit: return .weeklyMenu
+        case .weeklyMenuEdit, .weeklyMenuClear: return .weeklyMenu
         case .recipesAdd, .recipesEdit, .recipesDelete: return .recipes
         case .calendarAdd, .calendarEdit, .calendarDelete: return .calendar
         case .remindersCreate, .remindersEdit, .remindersDelete: return .reminders
