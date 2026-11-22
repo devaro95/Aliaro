@@ -49,6 +49,22 @@
         }
       }
     },
+    "Plan the menu for any week, past or future, with several dishes per meal and the whole month at a glance." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plan the menu for any week, past or future, with several dishes per meal and the whole month at a glance."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Planifica el menú de cualquier semana, pasada o futura, con varios platos por comida y el mes entero de un vistazo."
+          }
+        }
+      }
+    },
     "Plan any week" : {
       "localizations" : {
         "en" : {

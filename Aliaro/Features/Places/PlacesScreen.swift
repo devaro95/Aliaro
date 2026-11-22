@@ -834,7 +834,7 @@ private struct PlaceSample: Identifiable {
 /// with sample pins. It's made at app start (`SampleMapSnapshotStore.preload`)
 /// so it's normally ready when the screen opens; otherwise the background
 /// color shows until it fades in. Kept for the rest of the session.
-private struct SampleMapBackdrop: View {
+struct SampleMapBackdrop: View {
     @ObservedObject private var store = SampleMapSnapshotStore.shared
     @Environment(\.colorScheme) private var colorScheme
 
