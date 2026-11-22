@@ -1408,7 +1408,7 @@ final class AppDataSyncCoordinator: ObservableObject {
         do {
             let remote = try await wifiNetworks.fetchAll(familyID: familyID)
             for r in remote { applyWifiNetwork(r, modelContext: modelContext) }
-            // Realtime doesn't deliver deletes filtered by family: purge on fetch.
+            // Also purged on fetch: deletes made while the app was closed.
             let remoteIDs = Set(remote.map(\.id))
             let local = (try? modelContext.fetch(FetchDescriptor<WifiNetwork>())) ?? []
             for network in local where !remoteIDs.contains(network.id) { modelContext.delete(network) }
@@ -1433,7 +1433,7 @@ final class AppDataSyncCoordinator: ObservableObject {
         do {
             let remote = try await visitedCountries.fetchAll(familyID: familyID)
             for r in remote { applyVisitedCountry(r, modelContext: modelContext) }
-            // Realtime doesn't deliver deletes filtered by family: purge on fetch.
+            // Also purged on fetch: deletes made while the app was closed.
             let remoteIDs = Set(remote.map(\.id))
             let local = (try? modelContext.fetch(FetchDescriptor<VisitedCountry>())) ?? []
             for visit in local where !remoteIDs.contains(visit.id) { modelContext.delete(visit) }
@@ -1492,7 +1492,7 @@ final class AppDataSyncCoordinator: ObservableObject {
         do {
             let remote = try await familyPlaces.fetchAll(familyID: familyID)
             for r in remote { applyFamilyPlace(r, modelContext: modelContext) }
-            // Realtime doesn't deliver deletes filtered by family: purge on fetch.
+            // Also purged on fetch: deletes made while the app was closed.
             let remoteIDs = Set(remote.map(\.id))
             let local = (try? modelContext.fetch(FetchDescriptor<FamilyPlace>())) ?? []
             for place in local where !remoteIDs.contains(place.id) { modelContext.delete(place) }
