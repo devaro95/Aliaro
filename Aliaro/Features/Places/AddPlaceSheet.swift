@@ -14,6 +14,8 @@ struct AddPlaceSheet: View {
     let placeToEdit: FamilyPlace?
     /// Where the user is, to suggest nearby places first.
     var near: CLLocation? = nil
+    /// Permission `placesCategories`: create and edit the family's own categories.
+    var canManageCategories: Bool = true
     /// Called with the new place after creating it (the screen zooms to it).
     let onCreate: (FamilyPlace) -> Void
 
@@ -277,31 +279,33 @@ struct AddPlaceSheet: View {
                         }
                         .buttonStyle(.plain)
                         .contextMenu {
-                            if let custom = option.custom {
+                            if let custom = option.custom, canManageCategories {
                                 Button { categoryToEdit = custom } label: { Label("Edit", systemImage: "pencil") }
                             }
                         }
                     }
-                    Button {
-                        Track.event("place_category_new_tap")
-                        showNewCategory = true
-                    } label: {
-                        HStack(spacing: 8) {
-                            Image(systemName: "plus")
-                                .font(.system(size: 11, weight: .bold))
-                                .foregroundStyle(ALIColors.placesAccent)
-                                .frame(width: 24, height: 24)
-                                .overlay(Circle().stroke(ALIColors.placesAccent, style: StrokeStyle(lineWidth: 1.5, dash: [3])))
-                            Text("New category")
-                                .font(ALITypography.labelLarge.weight(.semibold))
-                                .foregroundStyle(ALIColors.ink)
-                                .lineLimit(1)
-                            Spacer(minLength: 0)
+                    if canManageCategories {
+                        Button {
+                            Track.event("place_category_new_tap")
+                            showNewCategory = true
+                        } label: {
+                            HStack(spacing: 8) {
+                                Image(systemName: "plus")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundStyle(ALIColors.placesAccent)
+                                    .frame(width: 24, height: 24)
+                                    .overlay(Circle().stroke(ALIColors.placesAccent, style: StrokeStyle(lineWidth: 1.5, dash: [3])))
+                                Text("New category")
+                                    .font(ALITypography.labelLarge.weight(.semibold))
+                                    .foregroundStyle(ALIColors.ink)
+                                    .lineLimit(1)
+                                Spacer(minLength: 0)
+                            }
+                            .padding(6)
+                            .overlay(Capsule().stroke(ALIColors.outline, lineWidth: 1))
                         }
-                        .padding(6)
-                        .overlay(Capsule().stroke(ALIColors.outline, lineWidth: 1))
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
                 }
             }
         }

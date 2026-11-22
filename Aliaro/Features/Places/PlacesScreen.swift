@@ -22,6 +22,13 @@ struct PlacesScreen: View {
 
     @Query(sort: \FamilyPlace.name) private var places: [FamilyPlace]
     @Query(sort: \PlaceCustomCategory.createdAt) private var customCategories: [PlaceCustomCategory]
+    @Query private var members: [FamilyMember]
+
+    private var currentMember: FamilyMember? { members.first(where: \.isCurrentDevice) }
+    private var canAdd: Bool { currentMember?.can(.placesAdd) ?? true }
+    private var canEdit: Bool { currentMember?.can(.placesEdit) ?? true }
+    private var canDelete: Bool { currentMember?.can(.placesDelete) ?? true }
+    private var canManageCategories: Bool { currentMember?.can(.placesCategories) ?? true }
 
     /// nil = every category. A `FamilyPlace.category` value.
     @State private var selectedCategory: String?
@@ -217,12 +224,14 @@ struct PlacesScreen: View {
                         }
                         .accessibilityLabel("Back")
                     ALITopBar(title: "Places", accent: ALIColors.placesAccent) {
-                        ALIFloatingButton(accent: ALIColors.placesAccent) {
-                            Track.event("place_add_tap", ["places": places.count])
-                            showAddSheet = true
+                        if canAdd {
+                            ALIFloatingButton(accent: ALIColors.placesAccent) {
+                                Track.event("place_add_tap", ["places": places.count])
+                                showAddSheet = true
+                            }
+                            .scaleEffect(0.72)
+                            .frame(width: 44, height: 44)
                         }
-                        .scaleEffect(0.72)
-                        .frame(width: 44, height: 44)
                     }
                     }
                     .padding(.horizontal, 20)
@@ -277,14 +286,14 @@ struct PlacesScreen: View {
         .onDisappear { location.stop() }
         .animation(.easeInOut(duration: 0.2), value: selectedPlaceID)
         .sheet(isPresented: $showAddSheet) {
-            AddPlaceSheet(placeToEdit: nil, near: location.current) { created in
+            AddPlaceSheet(placeToEdit: nil, near: location.current, canManageCategories: canManageCategories) { created in
                 selectedCategory = nil
                 selectedPlaceID = created.id
                 position = .camera(MapCamera(centerCoordinate: created.coordinate, distance: 4000))
             }
         }
         .sheet(item: $placeToEdit) { place in
-            AddPlaceSheet(placeToEdit: place, near: location.current) { _ in }
+            AddPlaceSheet(placeToEdit: place, near: location.current, canManageCategories: canManageCategories) { _ in }
         }
         .sheet(item: $categoryToEdit) { category in
             PlaceCategoryEditorSheet(categoryToEdit: category)
@@ -344,8 +353,8 @@ struct PlacesScreen: View {
                                 place: place,
                                 style: style(of: place),
                                 onDirections: { directionsPlace = place },
-                                onEdit: { placeToEdit = place },
-                                onDelete: { placePendingDelete = place },
+                                onEdit: canEdit ? { placeToEdit = place } : nil,
+                                onDelete: canDelete ? { placePendingDelete = place } : nil,
                                 onClose: { selectedPlaceID = nil }
                             )
                             .transition(.move(edge: .top).combined(with: .opacity))
@@ -416,7 +425,7 @@ struct PlacesScreen: View {
                             select(category.id)
                         }
                         .contextMenu {
-                            if let custom = category.custom {
+                            if let custom = category.custom, canManageCategories {
                                 Button { categoryToEdit = custom } label: { Label("Edit", systemImage: "pencil") }
                             }
                         }
@@ -492,8 +501,12 @@ struct PlacesScreen: View {
                 .buttonStyle(.plain)
                 .contextMenu {
                     Button { directionsPlace = place } label: { Label("Directions", systemImage: "arrow.triangle.turn.up.right.diamond") }
-                    Button { placeToEdit = place } label: { Label("Edit", systemImage: "pencil") }
-                    Button(role: .destructive) { placePendingDelete = place } label: { Label("Delete", systemImage: "trash") }
+                    if canEdit {
+                        Button { placeToEdit = place } label: { Label("Edit", systemImage: "pencil") }
+                    }
+                    if canDelete {
+                        Button(role: .destructive) { placePendingDelete = place } label: { Label("Delete", systemImage: "trash") }
+                    }
                 }
             }
         }
@@ -668,8 +681,9 @@ private struct PlaceCard: View {
     let place: FamilyPlace
     let style: PlaceCategoryStyle
     let onDirections: () -> Void
-    let onEdit: () -> Void
-    let onDelete: () -> Void
+    /// nil when the member lacks the permission (button hidden).
+    let onEdit: (() -> Void)?
+    let onDelete: (() -> Void)?
     let onClose: () -> Void
 
     var body: some View {
@@ -730,8 +744,8 @@ private struct PlaceCard: View {
                         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
                 .buttonStyle(.plain)
-                iconButton("pencil", label: "Edit", action: onEdit)
-                iconButton("trash", label: "Delete", action: onDelete)
+                if let onEdit { iconButton("pencil", label: "Edit", action: onEdit) }
+                if let onDelete { iconButton("trash", label: "Delete", action: onDelete) }
             }
         }
         .padding(14)

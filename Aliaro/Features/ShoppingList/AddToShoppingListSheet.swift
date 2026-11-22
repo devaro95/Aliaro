@@ -17,6 +17,9 @@ struct AddToShoppingListScreen: View {
 
     /// Active list (tab) that the products chosen here get added to.
     let listID: UUID
+    /// Permissions `shoppingEdit` (rename products) and `shoppingDelete` (delete them).
+    var canEdit: Bool = true
+    var canDelete: Bool = true
     /// Back to the list.
     let onClose: () -> Void
 
@@ -133,14 +136,14 @@ struct AddToShoppingListScreen: View {
                                         EditableCatalogRow(
                                             item: item,
                                             isSelected: selected.contains(item.id),
-                                            onToggle: {
+                                            onToggle: canDelete ? {
                                                 if selected.contains(item.id) { selected.remove(item.id) } else { selected.insert(item.id) }
-                                            },
-                                            onRename: {
+                                            } : nil,
+                                            onRename: canEdit ? {
                                                 Track.event("grocery_item_edit_tap")
                                                 renamingItem = item
                                                 renameText = item.name
-                                            }
+                                            } : nil
                                         )
                                     } else {
                                         CatalogItemRow(
@@ -172,7 +175,7 @@ struct AddToShoppingListScreen: View {
             }
 
             // Edit mode: delete the selected products in one go.
-            if editMode {
+            if editMode && canDelete {
                 ALIPrimaryButton(
                     text: selected.isEmpty ? "Delete" : "Delete (\(selected.count))",
                     enabled: !selected.isEmpty,
@@ -227,7 +230,7 @@ struct AddToShoppingListScreen: View {
                 .lineLimit(1)
             Spacer(minLength: 0)
 
-            if !listCatalog.isEmpty || editMode {
+            if (canEdit || canDelete) && (!listCatalog.isEmpty || editMode) {
                 Button {
                     if !editMode { Track.event("grocery_edit_mode") }
                     withAnimation(.easeInOut(duration: 0.2)) {
@@ -477,22 +480,26 @@ private struct CatalogItemRow: View {
 private struct EditableCatalogRow: View {
     let item: GroceryItem
     let isSelected: Bool
-    let onToggle: () -> Void
-    let onRename: () -> Void
+    /// nil without the delete permission (no selection circle).
+    let onToggle: (() -> Void)?
+    /// nil without the edit permission (no pencil).
+    let onRename: (() -> Void)?
 
     var body: some View {
         HStack(spacing: 12) {
-            ZStack {
-                Circle()
-                    .fill(isSelected ? ALIColors.error : ALIColors.surface)
-                    .frame(width: 24, height: 24)
-                Circle()
-                    .stroke(isSelected ? ALIColors.error : ALIColors.outline, lineWidth: 1.5)
-                    .frame(width: 24, height: 24)
-                if isSelected {
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(ALIColors.onAccent)
+            if onToggle != nil {
+                ZStack {
+                    Circle()
+                        .fill(isSelected ? ALIColors.error : ALIColors.surface)
+                        .frame(width: 24, height: 24)
+                    Circle()
+                        .stroke(isSelected ? ALIColors.error : ALIColors.outline, lineWidth: 1.5)
+                        .frame(width: 24, height: 24)
+                    if isSelected {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundStyle(ALIColors.onAccent)
+                    }
                 }
             }
             Text(item.name)
@@ -500,21 +507,23 @@ private struct EditableCatalogRow: View {
                 .foregroundStyle(ALIColors.ink)
                 .lineLimit(1)
             Spacer(minLength: 0)
-            Button(action: onRename) {
-                Image(systemName: "pencil")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(ALIColors.mutedInk)
-                    .frame(width: 34, height: 34)
+            if let onRename {
+                Button(action: onRename) {
+                    Image(systemName: "pencil")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(ALIColors.mutedInk)
+                        .frame(width: 34, height: 34)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Rename item")
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Rename item")
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 14)
         .frame(minHeight: 64)
         .background(isSelected ? ALIColors.error.opacity(0.08) : Color.clear)
         .contentShape(Rectangle())
-        .onTapGesture(perform: onToggle)
+        .onTapGesture { onToggle?() }
     }
 }
 

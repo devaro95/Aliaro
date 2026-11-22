@@ -27,6 +27,8 @@ struct WorldMapScreen: View {
     @State private var showPaywall = false
 
     private var myID: UUID? { familySession.memberID }
+    /// Permission `worldMapEdit`: mark countries and set the year of a visit.
+    private var canEdit: Bool { members.first(where: \.isCurrentDevice)?.can(.worldMapEdit) ?? true }
     private var isLocked: Bool { premium.isLocked(.worldMap) }
 
     var body: some View {
@@ -96,7 +98,7 @@ struct WorldMapScreen: View {
                         }
                         .accessibilityLabel("Visited countries")
                     }
-                    if myID != nil {
+                    if myID != nil && canEdit {
                         ALIFloatingButton(accent: ALIColors.worldMapAccent) {
                             Track.event("world_map_picker_open")
                             showPicker = true
@@ -131,7 +133,7 @@ struct WorldMapScreen: View {
             CountryPickerSheet()
         }
         .sheet(isPresented: $showList) {
-            VisitedCountriesSheet(visits: visits, members: members, initialMemberID: selectedMemberID)
+            VisitedCountriesSheet(visits: visits, members: members, initialMemberID: selectedMemberID, canEdit: canEdit)
         }
         .sheet(isPresented: $showColorPicker) {
             if let me = members.first(where: { $0.id == myID }) {
@@ -298,6 +300,8 @@ struct WorldMapMemberChips: View {
 struct VisitedCountriesSheet: View {
     let visits: [VisitedCountry]
     let members: [FamilyMember]
+    /// Permission `worldMapEdit`: without it the year of a visit can't be set.
+    let canEdit: Bool
     @State private var memberID: UUID?
     @State private var yearTarget: VisitYearTarget?
     @Environment(\.dismiss) private var dismiss
@@ -305,9 +309,10 @@ struct VisitedCountriesSheet: View {
     @EnvironmentObject private var dataSync: AppDataSyncCoordinator
     @EnvironmentObject private var familySession: FamilySession
 
-    init(visits: [VisitedCountry], members: [FamilyMember], initialMemberID: UUID?) {
+    init(visits: [VisitedCountry], members: [FamilyMember], initialMemberID: UUID?, canEdit: Bool = true) {
         self.visits = visits
         self.members = members
+        self.canEdit = canEdit
         _memberID = State(initialValue: initialMemberID)
     }
 
@@ -328,7 +333,7 @@ struct VisitedCountriesSheet: View {
                     .foregroundStyle(ALIColors.mutedInk)
                     .padding(.horizontal, 20)
 
-                    if codes.contains(where: { myVisit($0) != nil }) {
+                    if canEdit && codes.contains(where: { myVisit($0) != nil }) {
                         Text("Tap your countries to add the year you went.")
                             .font(ALITypography.labelLarge)
                             .foregroundStyle(ALIColors.mutedInk)
@@ -354,7 +359,7 @@ struct VisitedCountriesSheet: View {
                                 .padding(.vertical, 12)
                                 .contentShape(Rectangle())
                                 .onTapGesture {
-                                    guard myVisit(code) != nil else { return }
+                                    guard canEdit, myVisit(code) != nil else { return }
                                     yearTarget = VisitYearTarget(code: code)
                                 }
                                 if index < codes.count - 1 {
