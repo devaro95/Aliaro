@@ -183,7 +183,7 @@ struct SelectDishSheet: View {
         switch mealType {
         case .lunch: return "Choose lunch"
         case .dinner: return "Choose dinner"
-        case nil: return "Dishes"
+        case nil: return "menu_dishes_title"
         }
     }
 

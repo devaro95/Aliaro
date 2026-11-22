@@ -7408,6 +7408,22 @@
         }
       }
     },
+    "menu_dishes_title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dishes"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Platos"
+          }
+        }
+      }
+    },
     "menu_section_dishes" : {
       "localizations" : {
         "en" : {

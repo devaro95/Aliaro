@@ -154,7 +154,7 @@ struct WeeklyMenuScreen: View {
                 .clipShape(Circle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Dishes")
+        .accessibilityLabel("menu_dishes_title")
     }
 
     private var viewModeToggleButton: some View {
