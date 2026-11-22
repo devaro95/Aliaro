@@ -8,6 +8,7 @@ enum PremiumFeature: String, CaseIterable, Identifiable {
     // Case order = paywall order: the Board goes first (headline feature).
     case board
     case places
+    case worldMap = "world_map"
     case historial
     case extraShoppingLists = "extra_shopping_lists"
     case unlimitedReminders = "unlimited_reminders"
@@ -40,6 +41,7 @@ enum PremiumFeature: String, CaseIterable, Identifiable {
         case .financeArchive: return "Archive finances and export to PDF"
         case .board: return "Family board"
         case .places: return "Family places"
+        case .worldMap: return "World map"
         }
     }
 
@@ -60,6 +62,7 @@ enum PremiumFeature: String, CaseIterable, Identifiable {
         case .financeArchive: return "Close periods and keep your accounts as a PDF."
         case .board: return "Pin messages on your family's Home screen."
         case .places: return "Save your family's favourite spots on a map and get there in a tap."
+        case .worldMap: return "Mark the countries each of you has visited on a globe."
         }
     }
 
@@ -75,6 +78,7 @@ enum PremiumFeature: String, CaseIterable, Identifiable {
         case .extraMembers: return ALIColors.peopleAccent
         case .board: return ALIColors.boardAccent
         case .places: return ALIColors.placesAccent
+        case .worldMap: return ALIColors.worldMapAccent
         }
     }
 
@@ -94,6 +98,7 @@ enum PremiumFeature: String, CaseIterable, Identifiable {
         case .financeArchive: return "archivebox.fill"
         case .board: return "pin.fill"
         case .places: return "map.fill"
+        case .worldMap: return "globe.europe.africa.fill"
         }
     }
 }

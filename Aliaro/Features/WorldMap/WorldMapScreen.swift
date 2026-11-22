@@ -6,10 +6,12 @@ import SwiftData
 /// "Everyone" shows the whole family in one color; each member's chip shows
 /// just theirs, in their own color (long press your chip to change yours).
 /// The list button opens every visited country, with its own member filter.
+/// Premium (`PremiumFeature.worldMap`): when locked, a blurred sample globe behind the banner.
 struct WorldMapScreen: View {
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var familySession: FamilySession
     @EnvironmentObject private var familyService: FamilyService
+    @EnvironmentObject private var premium: PremiumManager
 
     @Query private var visits: [VisitedCountry]
     @Query(sort: \FamilyMember.createdAt) private var members: [FamilyMember]
@@ -22,8 +24,10 @@ struct WorldMapScreen: View {
     /// Number shown in the stats: counts up the first time, then jumps straight to new values.
     @State private var shownCount: Double = 0
     @State private var countedUp = false
+    @State private var showPaywall = false
 
     private var myID: UUID? { familySession.memberID }
+    private var isLocked: Bool { premium.isLocked(.worldMap) }
 
     var body: some View {
         trackedBody.trackScreen("world_map")
@@ -31,6 +35,48 @@ struct WorldMapScreen: View {
 
     @ViewBuilder
     private var trackedBody: some View {
+        if isLocked {
+            lockedPreview
+        } else {
+            mapBody
+        }
+    }
+
+    /// Locked (premium): a sample globe and count, blurred and inert, under the banner.
+    private var lockedPreview: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            ALITopBar(title: "World map", accent: ALIColors.worldMapAccent)
+                .padding(.horizontal, 20)
+
+            VStack(alignment: .leading, spacing: 16) {
+                statsCard(count: Double(Self.sampleCountries.count))
+                    .padding(.horizontal, 20)
+                WorldGlobe(colorFor: { Self.sampleCountries.contains($0) ? MapColors.everyone : nil })
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+            .aliPremiumPreview(true)
+        }
+        .padding(.bottom, 100)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .background(ALIColors.background)
+        // Above the bottom bar, like the Board's banner.
+        .overlay(alignment: .bottom) {
+            ALIPremiumPreviewBanner(buttonTitle: "Unlock world map", accent: ALIColors.worldMapAccent) {
+                showPaywall = Track.paywall("world_map_banner")
+            }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 72)
+        }
+        .sheet(isPresented: $showPaywall) {
+            PaywallView()
+        }
+    }
+
+    /// Sample visits (not saved anywhere) for the locked premium preview.
+    private static let sampleCountries: Set<String> = ["ES", "PT", "FR", "IT", "GB", "DE", "MA", "US", "MX", "AR", "JP"]
+
+    @ViewBuilder
+    private var mapBody: some View {
         let visitors = WorldMapVisitors.byCountry(visits, member: selectedMemberID)
         let selectedColor = members.first(where: { $0.id == selectedMemberID }).map { MapColors.color(of: $0, in: members) } ?? MapColors.everyone
         VStack(alignment: .leading, spacing: 16) {
