@@ -74,11 +74,14 @@ struct RecipeDetailSheet: View {
                     .padding(.top, 12)
 
                     if let image = recipe.image {
-                        Image(uiImage: image)
-                            .resizable()
-                            .scaledToFill()
+                        Color.clear
                             .frame(maxWidth: .infinity)
-                            .frame(height: 220)
+                            .aspectRatio(RecipeFormatting.photoAspectRatio, contentMode: .fit)
+                            .overlay {
+                                Image(uiImage: image)
+                                    .resizable()
+                                    .scaledToFill()
+                            }
                             .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
                     }
 
