@@ -58,8 +58,8 @@ final class WhatsNew: ObservableObject {
             accent: ALIColors.worldMapAccent
         ),
         WhatsNewSlide(
-            id: "menu", illustration: .menu, title: "Plan any week",
-            text: "Move between past and future weeks and plan as far ahead as you want.",
+            id: "menu", illustration: .menu, title: "Weekly menu",
+            text: "Plan the menu for any week, past or future, with several dishes per meal and the whole month at a glance.",
             accent: ALIColors.weeklyMenuAccent
         ),
     ]
