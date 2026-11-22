@@ -12940,6 +12940,38 @@
         }
       }
     },
+    "Unlock world map" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unlock world map"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desbloquear el mapa del mundo"
+          }
+        }
+      }
+    },
+    "Mark the countries each of you has visited on a globe." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mark the countries each of you has visited on a globe."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marca en el globo los países que ha visitado cada uno."
+          }
+        }
+      }
+    },
     "Unlock places" : {
       "localizations" : {
         "en" : {

@@ -671,12 +671,13 @@ struct HomeScreen: View {
         Track.event("home_features_reset")
     }
 
-    /// Whole-feature locks, plus the Board and Places, which open as a
+    /// Whole-feature locks, plus the Board, Places and the World map, which open as a
     /// blurred preview when locked but still read as premium from the grid.
     private func showsCrown(_ tab: AppTab) -> Bool {
         isLocked(tab)
             || (tab == .board && premium.isLocked(.board))
             || (tab == .places && premium.isLocked(.places))
+            || (tab == .worldMap && premium.isLocked(.worldMap))
     }
 
     /// Stable stat line for each feature tile — different from the "Today"
