@@ -28,6 +28,11 @@ struct WeeklyMenuScreen: View {
     @State private var openedRecipe: Recipe?
     @State private var copyMessage: String?
 
+    /// Permission `weeklyMenuClear` (on top of editing): "Clear this week".
+    private var canClearWeek: Bool {
+        members.first(where: \.isCurrentDevice)?.can(.weeklyMenuClear) ?? true
+    }
+
     private var canEditMenu: Bool {
         members.first(where: \.isCurrentDevice)?.can(.weeklyMenuEdit) ?? true
     }
@@ -200,15 +205,17 @@ struct WeeklyMenuScreen: View {
             }
             .disabled(weekEntries.isEmpty || weeksUntilEndOfMonth.isEmpty)
 
-            Divider()
+            if canClearWeek {
+                Divider()
 
-            Button(role: .destructive) {
-                Track.event("menu_clear_tap", ["planned_meals": weekEntries.count])
-                showClearConfirm = true
-            } label: {
-                Label("Clear this week", systemImage: "trash")
+                Button(role: .destructive) {
+                    Track.event("menu_clear_tap", ["planned_meals": weekEntries.count])
+                    showClearConfirm = true
+                } label: {
+                    Label("Clear this week", systemImage: "trash")
+                }
+                .disabled(weekEntries.isEmpty)
             }
-            .disabled(weekEntries.isEmpty)
         } label: {
             Image(systemName: "ellipsis")
                 .font(.system(size: 16, weight: .semibold))
