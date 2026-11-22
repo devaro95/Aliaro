@@ -56,6 +56,22 @@
         }
       }
     },
+    "Adjust photo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adjust photo"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajustar foto"
+          }
+        }
+      }
+    },
     "Clear the week" : {
       "localizations" : {
         "en" : {
@@ -116,6 +132,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Eliminar lugares"
+          }
+        }
+      }
+    },
+    "Drag and pinch to choose which part shows." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag and pinch to choose which part shows."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Arrastra y pellizca para elegir qué parte se ve."
           }
         }
       }
@@ -196,6 +228,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Marcar países visitados"
+          }
+        }
+      }
+    },
+    "Use photo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use photo"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usar foto"
           }
         }
       }
