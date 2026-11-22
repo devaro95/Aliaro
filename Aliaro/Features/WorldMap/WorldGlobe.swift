@@ -488,7 +488,10 @@ struct WorldGlobe: View {
                 let zoom = motion.zoom
                 let r = min(size.width, size.height) * Self.radiusFraction * (0.82 + 0.18 * grow) * CGFloat(zoom)
                 motion.radius = r
-                let c = CGPoint(x: size.width / 2, y: size.height / 2)
+                // Globe + floor shadow centered together: the shadow (with its blur) reaches
+                // ~1.28 r below the center, so the globe sits 0.14 r up (else a height-limited
+                // canvas cuts the shadow off).
+                let c = CGPoint(x: size.width / 2, y: size.height / 2 - r * 0.14)
                 projector.setup(yaw: motion.yaw, pitch: motion.pitch, radius: r, center: c)
 
                 let ink = GlobeColors.ink
