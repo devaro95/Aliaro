@@ -350,48 +350,17 @@ struct WeeklyMenuScreen: View {
         .simultaneousGesture(swipe(onPrevious: { moveWeek(-1) }, onNext: { moveWeek(1) }))
     }
 
-    @ViewBuilder
+    /// A day of the week as its own card (split in small pieces so the
+    /// compiler type-checks it quickly).
     private func dayCard(_ date: Date) -> some View {
         let lunch = dishes(for: date, mealType: .lunch)
         let dinner = dishes(for: date, mealType: .dinner)
-        let past = date < MenuCalendar.today
-        let isToday = MenuCalendar.isSameDay(date, .now)
+        let past: Bool = date < MenuCalendar.today
+        let isToday: Bool = MenuCalendar.isSameDay(date, .now)
+        let planned: Bool = !lunch.isEmpty || !dinner.isEmpty
 
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 8) {
-                Text(date.formatted(.dateTime.weekday(.wide)).capitalized)
-                    .font(ALITypography.titleLarge)
-                    .foregroundStyle(ALIColors.ink)
-                    .lineLimit(1)
-
-                Text(date.formatted(.dateTime.day().month(.abbreviated)))
-                    .font(ALITypography.bodyMedium)
-                    .foregroundStyle(ALIColors.mutedInk)
-                    .lineLimit(1)
-
-                if isToday {
-                    Text("Today")
-                        .font(.system(size: 11, weight: .bold, design: .rounded))
-                        .foregroundStyle(ALIColors.onAccent)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
-                        .background(ALIColors.primary)
-                        .clipShape(Capsule())
-                }
-
-                if past && (!lunch.isEmpty || !dinner.isEmpty) {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(ALIColors.success)
-                }
-
-                Spacer()
-
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(ALIColors.mutedInk.opacity(0.6))
-            }
-
+        return VStack(alignment: .leading, spacing: 10) {
+            dayCardHeader(date, isToday: isToday, showsDone: past && planned)
             VStack(alignment: .leading, spacing: 14) {
                 mealLines(label: "Lunch", icon: "sun.max.fill", dishes: lunch, accent: ALIColors.mealLunchAccent)
                 mealLines(label: "Dinner", icon: "moon.fill", dishes: dinner, accent: ALIColors.mealDinnerAccent)
@@ -400,21 +369,63 @@ struct WeeklyMenuScreen: View {
         .padding(.horizontal, 18)
         .padding(.vertical, 14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background {
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(ALIColors.surface)
-                .overlay {
-                    if isToday {
-                        RoundedRectangle(cornerRadius: 20, style: .continuous).fill(ALIColors.primary.opacity(0.14))
-                    }
-                }
-        }
-        .overlay {
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .strokeBorder(isToday ? ALIColors.primary : ALIColors.outline, lineWidth: isToday ? 1.5 : 1)
-        }
+        .background(dayCardBackground(isToday: isToday))
+        .overlay(dayCardBorder(isToday: isToday))
         .contentShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         .opacity(past ? 0.55 : 1)
+    }
+
+    private func dayCardHeader(_ date: Date, isToday: Bool, showsDone: Bool) -> some View {
+        HStack(spacing: 8) {
+            Text(date.formatted(.dateTime.weekday(.wide)).capitalized)
+                .font(ALITypography.titleLarge)
+                .foregroundStyle(ALIColors.ink)
+                .lineLimit(1)
+
+            Text(date.formatted(.dateTime.day().month(.abbreviated)))
+                .font(ALITypography.bodyMedium)
+                .foregroundStyle(ALIColors.mutedInk)
+                .lineLimit(1)
+
+            if isToday {
+                Text("Today")
+                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                    .foregroundStyle(ALIColors.onAccent)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(ALIColors.primary)
+                    .clipShape(Capsule())
+            }
+
+            if showsDone {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(ALIColors.success)
+            }
+
+            Spacer()
+
+            Image(systemName: "chevron.right")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(ALIColors.mutedInk.opacity(0.6))
+        }
+    }
+
+    /// Card fill: surface, with a coral tint on today.
+    private func dayCardBackground(isToday: Bool) -> some View {
+        let shape = RoundedRectangle(cornerRadius: 20, style: .continuous)
+        let tint: Color = isToday ? ALIColors.primary.opacity(0.14) : Color.clear
+        return ZStack {
+            shape.fill(ALIColors.surface)
+            shape.fill(tint)
+        }
+    }
+
+    /// Card border: outline, coral and a bit thicker on today.
+    private func dayCardBorder(isToday: Bool) -> some View {
+        let color: Color = isToday ? ALIColors.primary : ALIColors.outline
+        let width: CGFloat = isToday ? 1.5 : 1
+        return RoundedRectangle(cornerRadius: 20, style: .continuous).strokeBorder(color, lineWidth: width)
     }
 
     private static let mealIconSize: CGFloat = 28
@@ -422,12 +433,15 @@ struct WeeklyMenuScreen: View {
 
     /// A meal's dishes, one per line, next to the meal's icon (sun = lunch, moon = dinner).
     private func mealLines(label: LocalizedStringKey, icon: String, dishes: [DishSelection], accent: Color) -> some View {
-        HStack(alignment: .top, spacing: Self.mealIconGap) {
+        let planned: Bool = !dishes.isEmpty
+        let iconColor: Color = ALIColors.onAccent.opacity(planned ? 1 : 0.5)
+        let circleColor: Color = accent.opacity(planned ? 0.7 : 0.3)
+        return HStack(alignment: .top, spacing: Self.mealIconGap) {
             Image(systemName: icon)
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(ALIColors.onAccent.opacity(dishes.isEmpty ? 0.5 : 1))
+                .foregroundStyle(iconColor)
                 .frame(width: Self.mealIconSize, height: Self.mealIconSize)
-                .background(Circle().fill(accent.opacity(dishes.isEmpty ? 0.3 : 0.7)))
+                .background(Circle().fill(circleColor))
                 .accessibilityLabel(Text(label))
 
             VStack(alignment: .leading, spacing: 6) {
@@ -443,12 +457,14 @@ struct WeeklyMenuScreen: View {
         }
     }
 
-    @ViewBuilder
     private func mealLine(dish: DishSelection?) -> some View {
-        HStack(spacing: 8) {
-            Text(dish?.name ?? String(localized: "Not planned"))
-                .font(dish == nil ? ALITypography.bodyMedium : ALITypography.bodyLarge)
-                .foregroundStyle(dish == nil ? ALIColors.mutedInk.opacity(0.7) : ALIColors.ink)
+        let name: String = dish?.name ?? String(localized: "Not planned")
+        let font: Font = dish == nil ? ALITypography.bodyMedium : ALITypography.bodyLarge
+        let color: Color = dish == nil ? ALIColors.mutedInk.opacity(0.7) : ALIColors.ink
+        return HStack(spacing: 8) {
+            Text(name)
+                .font(font)
+                .foregroundStyle(color)
                 .lineLimit(1)
                 .truncationMode(.tail)
 
