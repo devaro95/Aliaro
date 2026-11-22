@@ -98,7 +98,7 @@ struct WhatsNewSheet: View {
                 .font(.system(size: ALIWhatsNewSheet.bigTitleSize, weight: .black, design: .rounded))
                 .foregroundStyle(ALIColors.ink)
                 .multilineTextAlignment(.center)
-                .padding(.top, 28)
+                .padding(.top, 20)
                 .padding(.horizontal, 20)
 
             TabView(selection: $page) {
@@ -151,7 +151,7 @@ private struct WhatsNewSlideView: View {
         VStack(spacing: 18) {
             illustration
                 .frame(maxWidth: .infinity)
-                .frame(height: 320)
+                .frame(height: 310)
                 .background(ALIColors.surface)
                 .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
                 .overlay(
@@ -163,7 +163,7 @@ private struct WhatsNewSlideView: View {
 
             VStack(spacing: 8) {
                 Text(slide.title)
-                    .font(ALITypography.headlineLarge)
+                    .font(ALITypography.headlineMedium)
                     .foregroundStyle(ALIColors.ink)
                 Text(slide.text)
                     .font(ALITypography.bodyLarge)
@@ -214,7 +214,7 @@ private struct WhatsNewMenuMonth: View {
         let columns = Array(repeating: GridItem(.flexible(), spacing: 2), count: 7)
         let symbols = MenuCalendar.weekdaySymbols
         let cells = cells
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 4) {
             Text(monthStart.formatted(.dateTime.month(.wide).year()).capitalized)
                 .font(ALITypography.titleLarge)
                 .foregroundStyle(ALIColors.ink)
@@ -228,7 +228,7 @@ private struct WhatsNewMenuMonth: View {
                     if let date = cells[index] {
                         cell(date)
                     } else {
-                        Color.clear.frame(height: 36)
+                        Color.clear.frame(height: 32)
                     }
                 }
             }
@@ -238,7 +238,7 @@ private struct WhatsNewMenuMonth: View {
                 legendDot(ALIColors.mealDinnerAccent, "Dinner")
             }
         }
-        .padding(16)
+        .padding(14)
     }
 
     private func cell(_ date: Date) -> some View {
@@ -257,7 +257,7 @@ private struct WhatsNewMenuMonth: View {
                 Circle().fill(sample.dinner ? ALIColors.mealDinnerAccent : empty).frame(width: 5, height: 5)
             }
         }
-        .frame(maxWidth: .infinity, minHeight: 36)
+        .frame(maxWidth: .infinity, minHeight: 32)
     }
 
     private func legendDot(_ color: Color, _ label: LocalizedStringKey) -> some View {
