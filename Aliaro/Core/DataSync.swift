@@ -521,6 +521,10 @@ final class AppDataSyncCoordinator: ObservableObject {
         var stillMember = true
         do {
             let remote = try await familyMembers.fetchAll(familyID: familyID)
+            // Empty = RLS saw no session (a real member always sees at least
+            // their own row): we can't tell, so don't treat it as removed
+            // nor purge the local members.
+            guard !remote.isEmpty else { throw CancellationError() }
             stillMember = remote.contains { $0.id == currentMemberID }
             let remoteIDs = Set(remote.map(\.id))
             for r in remote { applyFamilyMember(r, currentMemberID: currentMemberID, modelContext: modelContext) }
