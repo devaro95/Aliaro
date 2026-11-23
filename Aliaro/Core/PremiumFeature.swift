@@ -7,9 +7,12 @@ import SwiftUI
 enum PremiumFeature: String, CaseIterable, Identifiable {
     // Case order = paywall order: the Board goes first (headline feature).
     case board
+    case places
+    case worldMap = "world_map"
     case historial
     case extraShoppingLists = "extra_shopping_lists"
     case unlimitedReminders = "unlimited_reminders"
+    case menuPlanning = "menu_planning"
     case houseTasksCalendar = "house_tasks_calendar"
     case familyCalendarPeople = "family_calendar_people"
     case houseTasksStats = "house_tasks_stats"
@@ -27,6 +30,7 @@ enum PremiumFeature: String, CaseIterable, Identifiable {
         case .historial: return "Group history"
         case .extraShoppingLists: return "Multiple lists"
         case .unlimitedReminders: return "Unlimited reminders"
+        case .menuPlanning: return "Monthly menu planning"
         case .houseTasksCalendar: return "Tasks calendar view"
         case .familyCalendarPeople: return "Calendar by person"
         case .houseTasksStats: return "Task statistics"
@@ -36,6 +40,8 @@ enum PremiumFeature: String, CaseIterable, Identifiable {
         case .extraCategories: return "Custom finance categories"
         case .financeArchive: return "Archive finances and export to PDF"
         case .board: return "Family board"
+        case .places: return "Family places"
+        case .worldMap: return "World map"
         }
     }
 
@@ -45,6 +51,7 @@ enum PremiumFeature: String, CaseIterable, Identifiable {
         case .historial: return "See who did what and when in your group."
         case .extraShoppingLists: return "Separate lists for the supermarket, the pharmacy and more."
         case .unlimitedReminders: return "Never forget anything important again."
+        case .menuPlanning: return "Plan the whole month and copy weeks in one tap."
         case .houseTasksCalendar: return "Plan the week's chores at a glance."
         case .familyCalendarPeople: return "See everyone's day side by side, hour by hour."
         case .houseTasksStats: return "Find out who pulls their weight at home."
@@ -54,6 +61,8 @@ enum PremiumFeature: String, CaseIterable, Identifiable {
         case .extraCategories: return "Organise your expenses your way."
         case .financeArchive: return "Close periods and keep your accounts as a PDF."
         case .board: return "Pin messages on your family's Home screen."
+        case .places: return "Save your family's favourite spots on a map and get there in a tap."
+        case .worldMap: return "Mark the countries each of you has visited on a globe."
         }
     }
 
@@ -63,10 +72,13 @@ enum PremiumFeature: String, CaseIterable, Identifiable {
         case .historial, .familyCalendarPeople: return ALIColors.familyAccent
         case .extraShoppingLists: return ALIColors.shoppingAccent
         case .unlimitedReminders: return ALIColors.remindersAccent
+        case .menuPlanning: return ALIColors.weeklyMenuAccent
         case .houseTasksCalendar, .houseTasksStats, .unlimitedHouseTasks: return ALIColors.houseTasksAccent
         case .economiaStats, .extraCategories, .financeArchive: return ALIColors.economiaAccent
         case .extraMembers: return ALIColors.peopleAccent
         case .board: return ALIColors.boardAccent
+        case .places: return ALIColors.placesAccent
+        case .worldMap: return ALIColors.worldMapAccent
         }
     }
 
@@ -75,6 +87,7 @@ enum PremiumFeature: String, CaseIterable, Identifiable {
         case .historial: return "clock.arrow.circlepath"
         case .extraShoppingLists: return "list.bullet.clipboard.fill"
         case .unlimitedReminders: return "bell.fill"
+        case .menuPlanning: return "calendar"
         case .houseTasksCalendar: return "calendar"
         case .familyCalendarPeople: return "person.3.fill"
         case .houseTasksStats: return "chart.bar.fill"
@@ -84,6 +97,8 @@ enum PremiumFeature: String, CaseIterable, Identifiable {
         case .extraCategories: return "tag.fill"
         case .financeArchive: return "archivebox.fill"
         case .board: return "pin.fill"
+        case .places: return "map.fill"
+        case .worldMap: return "globe.europe.africa.fill"
         }
     }
 }

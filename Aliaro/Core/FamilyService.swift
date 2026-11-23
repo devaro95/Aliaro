@@ -518,6 +518,39 @@ final class FamilyService: ObservableObject {
         Track.event("member_name_changed")
     }
 
+    /// This member's World map color ("RRGGBB"; nil = back to the default).
+    /// Goes through the `update_my_map_color` RPC (security definer, only
+    /// touches the caller's own row); other devices get it in real time.
+    func updateMyMapColor(_ hex: String?, modelContext: ModelContext) async throws {
+        guard let memberID = session.memberID else {
+            throw NSError(domain: "Aliaro", code: 0, userInfo: [NSLocalizedDescriptionKey: "You don't belong to a family group yet"])
+        }
+        let descriptor = FetchDescriptor<FamilyMember>(predicate: #Predicate { $0.id == memberID })
+        let me = try? modelContext.fetch(descriptor).first
+        let before = me?.mapColor
+        me?.mapColor = hex
+        struct Params: Encodable {
+            let p_member_id: UUID
+            let p_color: String?
+            enum CodingKeys: CodingKey { case p_member_id, p_color }
+            // Explicit null (not a missing key) so "back to default" still matches the RPC's signature.
+            func encode(to encoder: Encoder) throws {
+                var c = encoder.container(keyedBy: CodingKeys.self)
+                try c.encode(p_member_id, forKey: .p_member_id)
+                try c.encode(p_color, forKey: .p_color)
+            }
+        }
+        do {
+            try await supabase
+                .rpc("update_my_map_color", params: Params(p_member_id: memberID, p_color: hex))
+                .execute()
+            Track.event("world_map_color_changed")
+        } catch {
+            me?.mapColor = before
+            throw error
+        }
+    }
+
     /// Creator/admin only: renames the family group. Goes through the
     /// `rename_family` RPC (security definer, checks the caller is the
     /// creator or an admin); other devices get it in real time
@@ -649,7 +682,7 @@ final class FamilyService: ObservableObject {
         wipe(GroceryItem.self); wipe(ShoppingList.self); wipe(ShoppingListEntry.self)
         wipe(HouseTask.self); wipe(HouseTaskLog.self); wipe(FamilyEvent.self); wipe(EventCategory.self); wipe(Reminder.self)
         wipe(BoardNote.self); wipe(Expense.self); wipe(ExpenseCategory.self); wipe(ExpenseArchive.self)
-        wipe(ActivityLogEntry.self); wipe(WifiNetwork.self)
+        wipe(ActivityLogEntry.self); wipe(WifiNetwork.self); wipe(FamilyPlace.self); wipe(PlaceCustomCategory.self); wipe(VisitedCountry.self)
         do { try modelContext.save() } catch { print("clearAllLocalData save failed: \(error)") }
     }
 
@@ -663,6 +696,8 @@ final class FamilyService: ObservableObject {
         let is_premium: Bool
         /// Optional so a row without the column (older backend) still decodes.
         let favorite_tabs: [String]?
+        /// Member paying the group's Premium; optional so a partial payload still decodes.
+        let premium_member_id: UUID?
     }
 
     /// Fetches which tabs the admin has turned off (and which one is the
@@ -673,7 +708,7 @@ final class FamilyService: ObservableObject {
         do {
             let row: RemoteFamilySettings = try await supabase
                 .from("families")
-                .select("name,disabled_tabs,start_tab,is_premium,favorite_tabs")
+                .select("name,disabled_tabs,start_tab,is_premium,favorite_tabs,premium_member_id")
                 .eq("id", value: familyID)
                 .single()
                 .execute()
@@ -683,6 +718,7 @@ final class FamilyService: ObservableObject {
             session.setStartTab(row.start_tab)
             session.setFavoriteTabs(row.favorite_tabs ?? [])
             session.setFamilyPremium(row.is_premium)
+            session.setPremiumMemberID(row.is_premium ? row.premium_member_id : nil)
         } catch {
             lastError = error.localizedDescription
         }
@@ -748,6 +784,7 @@ final class FamilyService: ObservableObject {
                     self?.session.setStartTab(row.start_tab)
                     self?.session.setFavoriteTabs(row.favorite_tabs ?? [])
                     self?.session.setFamilyPremium(row.is_premium)
+                    self?.session.setPremiumMemberID(row.is_premium ? row.premium_member_id : nil)
                 }
             }
         }

@@ -101,12 +101,8 @@ struct EconomiaStatsScreen: View {
             .aliPremiumPreviewBanner(isLocked, buttonTitle: "Unlock statistics") { showPaywall = Track.paywall("finance_stats_banner") }
             .background(ALIColors.background)
             .navigationTitle("Statistics")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") { dismiss() }
-                }
-            }
+            .navigationBarTitleDisplayMode(.large)
+            .presentationDragIndicator(.visible)
         }
         .presentationDetents([.large])
         .sheet(isPresented: $showPaywall) {

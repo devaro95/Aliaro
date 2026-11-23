@@ -73,12 +73,8 @@ struct HomeCustomizeSheet: View {
             .scrollContentBackground(.hidden)
             .background(ALIColors.background)
             .navigationTitle("Customize Home")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
-                }
-            }
+            .navigationBarTitleDisplayMode(.large)
+            .presentationDragIndicator(.visible)
             .alert("Reset Home?", isPresented: $showReset) {
                 Button("Cancel", role: .cancel) {}
                 Button("Reset", role: .destructive) {

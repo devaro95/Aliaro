@@ -8,10 +8,15 @@ import CoreImage.CIFilterBuiltins
 struct WifiScreen: View {
     @Query(sort: [SortDescriptor(\WifiNetwork.position), SortDescriptor(\WifiNetwork.createdAt)])
     private var networks: [WifiNetwork]
+    @Query private var members: [FamilyMember]
 
     @State private var showAdd = false
     @State private var networkToEdit: WifiNetwork?
     @State private var networkForQR: WifiNetwork?
+
+    private var currentMember: FamilyMember? { members.first(where: \.isCurrentDevice) }
+    private var canEdit: Bool { currentMember?.can(.wifiEdit) ?? true }
+    private var canDelete: Bool { currentMember?.can(.wifiDelete) ?? true }
 
     var body: some View {
         trackedBody.trackScreen("wifi")
@@ -21,12 +26,14 @@ struct WifiScreen: View {
     private var trackedBody: some View {
         VStack(alignment: .leading, spacing: 12) {
             ALITopBar(title: "Wi-Fi", accent: ALIColors.wifiAccent) {
-                ALIFloatingButton(accent: ALIColors.wifiAccent) {
-                    Track.event("wifi_add_tap", ["source": "top_bar", "networks": networks.count])
-                    showAdd = true
+                if canEdit {
+                    ALIFloatingButton(accent: ALIColors.wifiAccent) {
+                        Track.event("wifi_add_tap", ["source": "top_bar", "networks": networks.count])
+                        showAdd = true
+                    }
+                    .scaleEffect(0.72)
+                    .frame(width: 44, height: 44)
                 }
-                .scaleEffect(0.72)
-                .frame(width: 44, height: 44)
             }
             .padding(.horizontal, 20)
 
@@ -39,10 +46,10 @@ struct WifiScreen: View {
                                 Track.event("wifi_qr_open")
                                 networkForQR = network
                             },
-                            onEdit: { networkToEdit = network }
+                            onEdit: canEdit || canDelete ? { networkToEdit = network } : nil
                         )
                     }
-                    if networks.isEmpty { emptyCard }
+                    if networks.isEmpty && canEdit { emptyCard }
                 }
                 .padding(.horizontal, 20)
                 .padding(.bottom, 100) // clears the floating bottom bar
@@ -53,7 +60,7 @@ struct WifiScreen: View {
             WifiEditorSheet(networkToEdit: nil)
         }
         .sheet(item: $networkToEdit) { network in
-            WifiEditorSheet(networkToEdit: network)
+            WifiEditorSheet(networkToEdit: network, canEdit: canEdit, canDelete: canDelete)
         }
         .sheet(item: $networkForQR) { network in
             WifiQRSheet(network: network)
@@ -110,7 +117,8 @@ private struct WifiIcon: View {
 private struct WifiCard: View {
     let network: WifiNetwork
     let onQR: () -> Void
-    let onEdit: () -> Void
+    /// nil when the member can neither edit nor delete networks (no pencil).
+    let onEdit: (() -> Void)?
 
     @State private var revealed = false
     @State private var copied = false
@@ -132,15 +140,17 @@ private struct WifiCard: View {
                     }
                 }
                 Spacer(minLength: 0)
-                Button(action: onEdit) {
-                    Image(systemName: "pencil")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(ALIColors.mutedInk)
-                        .frame(width: 32, height: 32)
-                        .contentShape(Rectangle())
+                if let onEdit {
+                    Button(action: onEdit) {
+                        Image(systemName: "pencil")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(ALIColors.mutedInk)
+                            .frame(width: 32, height: 32)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(Text("Edit"))
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel(Text("Edit"))
             }
 
             if network.securityType == .none {
@@ -244,12 +254,8 @@ struct WifiQRSheet: View {
             .frame(maxWidth: .infinity)
             .background(ALIColors.background)
             .navigationTitle("Wi-Fi")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
-                }
-            }
+            .navigationBarTitleDisplayMode(.large)
+            .presentationDragIndicator(.visible)
         }
         .presentationDetents([.medium, .large])
         .trackScreen("wifi_qr")
@@ -275,6 +281,9 @@ struct WifiEditorSheet: View {
     @Query private var networks: [WifiNetwork]
 
     let networkToEdit: WifiNetwork?
+    /// Permissions (`wifiEdit` / `wifiDelete`): without edit the fields are read-only and there's no Save.
+    var canEdit: Bool = true
+    var canDelete: Bool = true
 
     @State private var label = ""
     @State private var ssid = ""
@@ -290,40 +299,46 @@ struct WifiEditorSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 16) {
-                    ALITextField(placeholder: "Name (e.g. Home)", text: $label)
-                        .onChange(of: label) { _, new in if new.count > WifiNetwork.maxLabelLength { label = String(new.prefix(WifiNetwork.maxLabelLength)) } }
-                    ALITextField(placeholder: "Network name (SSID)", text: $ssid)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                        .onChange(of: ssid) { _, new in if new.count > WifiNetwork.maxSSIDLength { ssid = String(new.prefix(WifiNetwork.maxSSIDLength)) } }
-                    Label {
-                        Text("Write the network name exactly as it appears (capitals included) so the connection QR works.")
-                    } icon: {
-                        Image(systemName: "info.circle.fill")
-                            .foregroundStyle(ALIColors.wifiAccent)
-                    }
-                    .font(ALITypography.labelLarge)
-                    .foregroundStyle(ALIColors.mutedInk)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.top, -6)
-
-                    Picker("Security", selection: $security) {
-                        Text("WPA/WPA2").tag(WifiNetwork.Security.wpa)
-                        Text("WEP").tag(WifiNetwork.Security.wep)
-                        Text("No password").tag(WifiNetwork.Security.none)
-                    }
-                    .pickerStyle(.segmented)
-
-                    if security != .none {
-                        ALITextField(placeholder: "Password", text: $password)
+                    Group {
+                        ALITextField(placeholder: "Name (e.g. Home)", text: $label)
+                            .onChange(of: label) { _, new in if new.count > WifiNetwork.maxLabelLength { label = String(new.prefix(WifiNetwork.maxLabelLength)) } }
+                        ALITextField(placeholder: "Network name (SSID)", text: $ssid)
                             .textInputAutocapitalization(.never)
                             .autocorrectionDisabled()
-                            .onChange(of: password) { _, new in if new.count > WifiNetwork.maxPasswordLength { password = String(new.prefix(WifiNetwork.maxPasswordLength)) } }
+                            .onChange(of: ssid) { _, new in if new.count > WifiNetwork.maxSSIDLength { ssid = String(new.prefix(WifiNetwork.maxSSIDLength)) } }
+                        Label {
+                            Text("Write the network name exactly as it appears (capitals included) so the connection QR works.")
+                        } icon: {
+                            Image(systemName: "info.circle.fill")
+                                .foregroundStyle(ALIColors.wifiAccent)
+                        }
+                        .font(ALITypography.labelLarge)
+                        .foregroundStyle(ALIColors.mutedInk)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.top, -6)
+
+                        Picker("Security", selection: $security) {
+                            Text("WPA/WPA2").tag(WifiNetwork.Security.wpa)
+                            Text("WEP").tag(WifiNetwork.Security.wep)
+                            Text("No password").tag(WifiNetwork.Security.none)
+                        }
+                        .pickerStyle(.segmented)
+
+                        if security != .none {
+                            ALITextField(placeholder: "Password", text: $password)
+                                .textInputAutocapitalization(.never)
+                                .autocorrectionDisabled()
+                                .onChange(of: password) { _, new in if new.count > WifiNetwork.maxPasswordLength { password = String(new.prefix(WifiNetwork.maxPasswordLength)) } }
+                        }
+
+                    }
+                    .disabled(!canEdit)
+
+                    if canEdit {
+                        ALIPrimaryButton(text: "Save", enabled: canSave, accent: ALIColors.wifiAccent) { save() }
                     }
 
-                    ALIPrimaryButton(text: "Save", enabled: canSave, accent: ALIColors.wifiAccent) { save() }
-
-                    if networkToEdit != nil {
+                    if networkToEdit != nil && canDelete {
                         ALITextButton(text: "Delete network", color: ALIColors.error) { showDelete = true }
                     }
                 }
@@ -331,12 +346,8 @@ struct WifiEditorSheet: View {
             }
             .background(ALIColors.background)
             .navigationTitle(networkToEdit == nil ? "Add Wi-Fi" : "Edit Wi-Fi")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-            }
+            .navigationBarTitleDisplayMode(.large)
+            .presentationDragIndicator(.visible)
             .onAppear {
                 guard let network = networkToEdit else { return }
                 label = network.label

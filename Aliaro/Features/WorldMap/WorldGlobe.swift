@@ -1,0 +1,695 @@
+import SwiftUI
+import UIKit
+
+/// The country outlines of `world_map.json` as points on a unit sphere. The
+/// file is in the Natural Earth projection (2000 wide), so each vertex is
+/// projected back to longitude / latitude.
+final class GlobeData {
+    static let shared = GlobeData()
+
+    struct Ring {
+        /// Unit vectors, 3 floats per point.
+        let xyz: [Float]
+        /// Segment i→i+1 runs along the ±180° seam (not drawn).
+        let cut: [Bool]
+        var count: Int { xyz.count / 3 }
+    }
+
+    struct Country {
+        let code: String
+        let rings: [Ring]
+        /// Direction of the mainland's center.
+        let center: SIMD3<Float>
+    }
+
+    let countries: [Country]
+    /// Meridians and parallels every 30°.
+    let graticule: [Ring]
+    let maxPoints: Int
+
+    /// Natural Earth projection fitted to the file: x centered, equator at y = 514.
+    private static let equatorY = 514.0
+
+    private static func neY(_ p: Double) -> Double {
+        let p2 = p * p, p4 = p2 * p2
+        return p * (1.007226 + p2 * (0.015085 + p4 * (-0.044475 + 0.028874 * p2 - 0.005916 * p4)))
+    }
+
+    private static func neYPrime(_ p: Double) -> Double {
+        let p2 = p * p, p4 = p2 * p2
+        return 1.007226 + p2 * (3 * 0.015085 + p4 * (-7 * 0.044475 + 9 * 0.028874 * p2 - 11 * 0.005916 * p4))
+    }
+
+    private static func neL(_ p: Double) -> Double {
+        let p2 = p * p, p4 = p2 * p2
+        return 0.8707 - 0.131979 * p2 + p4 * (-0.013791 + p4 * (0.003971 * p2 - 0.001529 * p4))
+    }
+
+    private static func unit(lat: Double, lon: Double) -> [Float] {
+        [Float(cos(lat) * sin(lon)), Float(sin(lat)), Float(cos(lat) * cos(lon))]
+    }
+
+    private init() {
+        let map = WorldMapData.shared
+        let half = Double(map.size.width) / 2
+        let scale = half / (0.8707 * .pi)
+        let seam = Double.pi * 179.3 / 180
+
+        let drawn: [Country] = map.rawCountries.map { entry in
+            let rings: [Ring] = entry.rings.filter { $0.count >= 6 }.map { raw in
+                let n = raw.count / 2
+                var xyz = [Float](repeating: 0, count: n * 3)
+                var lons = [Double](repeating: 0, count: n)
+                for i in 0..<n {
+                    let t = (Self.equatorY - raw[i * 2 + 1]) / scale
+                    var p = min(max(t, -1.5), 1.5)
+                    for _ in 0..<8 {
+                        let d = (Self.neY(p) - t) / Self.neYPrime(p)
+                        p -= d
+                        if abs(d) < 1e-7 { break }
+                    }
+                    p = min(max(p, -.pi / 2), .pi / 2)
+                    let lam = min(max((raw[i * 2] - half) / scale / Self.neL(p), -.pi), .pi)
+                    lons[i] = lam
+                    let v = Self.unit(lat: p, lon: lam)
+                    xyz[i * 3] = v[0]; xyz[i * 3 + 1] = v[1]; xyz[i * 3 + 2] = v[2]
+                }
+                let cut = (0..<n).map { i in i < n - 1 && abs(lons[i]) > seam && abs(lons[i + 1]) > seam }
+                return Ring(xyz: xyz, cut: cut)
+            }
+            var c = SIMD3<Float>(0, 0, 0)
+            if let main = rings.max(by: { $0.count < $1.count }) {
+                for i in 0..<main.count { c += SIMD3(main.xyz[i * 3], main.xyz[i * 3 + 1], main.xyz[i * 3 + 2]) }
+            }
+            let len = (c * c).sum().squareRoot()
+            return Country(code: entry.code, rings: rings, center: len > 0 ? c / len : SIMD3(0, 0, 1))
+        }
+        let dots: [Country] = map.points.compactMap { code, latLon -> Country? in
+            // Too small to draw: no rings, a dot at its position when visited.
+            guard latLon.count >= 2 else { return nil }
+            let v = Self.unit(lat: latLon[0] * .pi / 180, lon: latLon[1] * .pi / 180)
+            return Country(code: code, rings: [], center: SIMD3(v[0], v[1], v[2]))
+        }
+        countries = drawn + dots
+
+        func ring(_ points: [(Double, Double)]) -> Ring {
+            let xyz = points.flatMap { Self.unit(lat: $0.0 * .pi / 180, lon: $0.1 * .pi / 180) }
+            return Ring(xyz: xyz, cut: Array(repeating: false, count: points.count))
+        }
+        let meridians = stride(from: -180, to: 180, by: 30).map { lon in
+            ring(stride(from: -80, through: 80, by: 4).map { (Double($0), Double(lon)) })
+        }
+        let parallels = [-60, -30, 0, 30, 60].map { lat in
+            ring(stride(from: -180, through: 180, by: 4).map { (Double(lat), Double($0)) })
+        }
+        graticule = meridians + parallels
+        maxPoints = max(countries.flatMap(\.rings).map(\.count).max() ?? 0, graticule.map(\.count).max() ?? 0)
+    }
+}
+
+/// Rotates unit vectors by the globe's yaw / pitch and maps them to the screen.
+private final class GlobeProjector {
+    var cosYaw: Float = 1, sinYaw: Float = 0, cosPitch: Float = 1, sinPitch: Float = 0
+    var radius: CGFloat = 1, center: CGPoint = .zero
+    var bx: [Float], by: [Float], bz: [Float]
+
+    init(maxPoints: Int) {
+        bx = Array(repeating: 0, count: maxPoints)
+        by = Array(repeating: 0, count: maxPoints)
+        bz = Array(repeating: 0, count: maxPoints)
+    }
+
+    func setup(yaw: Double, pitch: Double, radius: CGFloat, center: CGPoint) {
+        cosYaw = Float(cos(yaw)); sinYaw = Float(sin(yaw))
+        cosPitch = Float(cos(pitch)); sinPitch = Float(sin(pitch))
+        self.radius = radius; self.center = center
+    }
+
+    /// Rotated vector; z > 0 faces the viewer.
+    func rotate(_ v: SIMD3<Float>) -> SIMD3<Float> {
+        let x1 = v.x * cosYaw + v.z * sinYaw
+        let z1 = -v.x * sinYaw + v.z * cosYaw
+        return SIMD3(x1, v.y * cosPitch - z1 * sinPitch, v.y * sinPitch + z1 * cosPitch)
+    }
+
+    /// Rotates a ring into the buffers. Returns whether any point faces the viewer.
+    func load(_ ring: GlobeData.Ring) -> Bool {
+        var visible = false
+        ring.xyz.withUnsafeBufferPointer { p in
+            for i in 0..<ring.count {
+                let x = p[i * 3], y = p[i * 3 + 1], z = p[i * 3 + 2]
+                let x1 = x * cosYaw + z * sinYaw
+                let z1 = -x * sinYaw + z * cosYaw
+                bx[i] = x1
+                by[i] = y * cosPitch - z1 * sinPitch
+                bz[i] = y * sinPitch + z1 * cosPitch
+                if bz[i] > 0 { visible = true }
+            }
+        }
+        return visible
+    }
+
+    func point(_ x: Float, _ y: Float) -> CGPoint {
+        CGPoint(x: center.x + radius * CGFloat(x), y: center.y - radius * CGFloat(y))
+    }
+
+    private func horizon(_ i: Int, _ j: Int) -> CGPoint {
+        let t = bz[i] / (bz[i] - bz[j])
+        var x = bx[i] + (bx[j] - bx[i]) * t
+        var y = by[i] + (by[j] - by[i]) * t
+        let l = max((x * x + y * y).squareRoot(), 0.0001)
+        x /= l; y /= l
+        return point(x, y)
+    }
+
+    /// Filled outline of the loaded ring; hidden points slide onto the horizon.
+    func fill(_ path: inout Path, count n: Int) {
+        for i in 0..<n {
+            if i > 0 && (bz[i - 1] > 0) != (bz[i] > 0) { path.addLine(to: horizon(i - 1, i)) }
+            var x = bx[i], y = by[i]
+            if bz[i] <= 0 { let l = max((x * x + y * y).squareRoot(), 0.0001); x /= l; y /= l }
+            if i == 0 { path.move(to: point(x, y)) } else { path.addLine(to: point(x, y)) }
+        }
+        path.closeSubpath()
+    }
+
+    /// Visible edges of the loaded ring.
+    func stroke(_ path: inout Path, count n: Int, cut: [Bool]) {
+        var pen = false
+        guard n > 1 else { return }
+        for i in 1..<n {
+            if cut[i - 1] { pen = false; continue }
+            let a = bz[i - 1] > 0, b = bz[i] > 0
+            if a && b {
+                if !pen { path.move(to: point(bx[i - 1], by[i - 1])) }
+                path.addLine(to: point(bx[i], by[i])); pen = true
+            } else if a {
+                if !pen { path.move(to: point(bx[i - 1], by[i - 1])) }
+                path.addLine(to: horizon(i - 1, i)); pen = false
+            } else if b {
+                path.move(to: horizon(i - 1, i))
+                path.addLine(to: point(bx[i], by[i])); pen = true
+            } else {
+                pen = false
+            }
+        }
+    }
+}
+
+/// Spin, tilt and every animation of the globe, stepped once per frame.
+private final class GlobeMotion {
+    static let startYaw = -0.15     // ≈ 9°E: Europe / Africa
+    static let restPitch = 0.42
+    static let autoSpin = 0.10      // rad/s
+    static let introLength = 1.7
+
+    struct FillAnim {
+        var from: Double, to: Double, start: Date, duration: Double, bouncy: Bool
+        /// A second step after this one, from 0 (filter change: out, then in).
+        var then: (to: Double, start: Date, duration: Double)? = nil
+
+        /// Where it ends up.
+        var final: Double { then?.to ?? to }
+
+        func value(at now: Date) -> Double {
+            if let then, now >= then.start {
+                let p = min(now.timeIntervalSince(then.start) / then.duration, 1)
+                return p >= 1 ? then.to : then.to * (1 - pow(1 - p, 3))
+            }
+            let p = min(max(now.timeIntervalSince(start) / duration, 0), 1)
+            let eased = bouncy ? 1 - exp(-5 * p) * cos(9 * p) : 1 - pow(1 - p, 3)
+            return p >= 1 ? to : from + (to - from) * eased
+        }
+    }
+
+    struct Tween {
+        var fromYaw: Double, toYaw: Double, fromPitch: Double, toPitch: Double, start: Date, duration: Double
+    }
+
+    var yaw = startYaw - 1.8
+    var pitch = 0.15
+    var velYaw = 0.0, velPitch = 0.0
+    var dragging = false
+    var lastTouch = Date.distantPast
+    var lastStep: Date?
+    var appeared: Date?
+    var introDone = false
+    var tween: Tween?
+    var fills: [String: FillAnim] = [:]
+    var pulses: [String: Date] = [:]
+    var lastTargets: [String: Color?]?
+    /// Filter of the last update: changing it (another member) is never "a new country".
+    var lastFilter: String?
+    /// Current color of each visited country (changes are instant; only showing / hiding animates).
+    var colors: [String: Color] = [:]
+    /// Colors that take over once a country has swept out (filter change).
+    var pendingColors: [String: (color: Color, at: Date)] = [:]
+    var radius: CGFloat = 150
+    var time = 0.0
+    /// Pinch / double-tap zoom: 1 = the whole globe, up to `maxZoom`.
+    var zoom = 1.0
+    var zoomTween: (from: Double, to: Double, start: Date)?
+    /// Zoom when the current pinch began.
+    var pinchStart: Double?
+    static let maxZoom = 4.0
+    /// Localized country names (looked up once: labels are drawn every frame).
+    private var names: [String: String] = [:]
+
+    func name(_ code: String) -> String {
+        if let name = names[code] { return name }
+        let name = CountryInfo.name(code)
+        names[code] = name
+        return name
+    }
+
+    /// Animates the zoom (double tap).
+    func animateZoom(to target: Double, now: Date) {
+        zoomTween = (zoom, min(max(target, 1), Self.maxZoom), now)
+        lastTouch = now
+    }
+
+    var intro: Double {
+        guard let appeared else { return 0 }
+        let p = min(max(Date().timeIntervalSince(appeared) / 0.9, 0), 1)
+        return 1 - pow(1 - p, 3)
+    }
+
+    func fill(_ code: String, at now: Date) -> Double { fills[code]?.value(at: now) ?? 0 }
+
+    /// Color of a visited country now (a pending one once its time comes).
+    func color(_ code: String, at now: Date) -> Color {
+        if let pending = pendingColors[code], now >= pending.at {
+            colors[code] = pending.color
+            pendingColors[code] = nil
+        }
+        return colors[code] ?? ALIPalette.coral
+    }
+
+    func step(_ now: Date) {
+        let dt = min(lastStep.map { now.timeIntervalSince($0) } ?? 0, 0.05)
+        lastStep = now
+        time += dt
+        if let z = zoomTween {
+            let p = min(max(now.timeIntervalSince(z.start) / 0.45, 0), 1)
+            zoom = z.from + (z.to - z.from) * (1 - pow(1 - p, 3))
+            if p >= 1 { zoomTween = nil }
+        }
+        if appeared == nil {
+            appeared = now
+            tween = Tween(fromYaw: yaw, toYaw: Self.startYaw, fromPitch: pitch, toPitch: Self.restPitch, start: now, duration: Self.introLength)
+        }
+
+        if let t = tween {
+            let p = min(max(now.timeIntervalSince(t.start) / t.duration, 0), 1)
+            let e = p < 0.5 ? 4 * p * p * p : 1 - pow(-2 * p + 2, 3) / 2
+            yaw = t.fromYaw + (t.toYaw - t.fromYaw) * e
+            pitch = t.fromPitch + (t.toPitch - t.fromPitch) * e
+            if p >= 1 {
+                tween = nil
+                if !introDone { introDone = true; lastTouch = now.addingTimeInterval(-1.5) }
+            }
+            return
+        }
+        guard !dragging else { return }
+
+        // Fling inertia.
+        if abs(velYaw) > 0.001 || abs(velPitch) > 0.001 {
+            yaw += velYaw * dt
+            pitch = clampPitch(pitch + velPitch * dt)
+            let decay = exp(-2.8 * dt)
+            velYaw *= decay; velPitch *= decay
+            if abs(velYaw) < 0.05 && abs(velPitch) < 0.05 { velYaw = 0; velPitch = 0 }
+            return
+        }
+
+        // Idle spin, easing in, and the tilt drifting back to rest (not while zoomed in: you're reading labels).
+        let idle = now.timeIntervalSince(lastTouch) - 2.5
+        guard idle > 0, zoom < 1.05 else { return }
+        let ease = min(1, idle / 1.5)
+        yaw += Self.autoSpin * ease * dt
+        pitch += (Self.restPitch - pitch) * min(1, dt * 0.6 * ease)
+    }
+
+    func clampPitch(_ p: Double) -> Double { min(max(p, -1.25), 1.25) }
+
+    /// New fill targets: a wave on load / filter change; a pop, spin and
+    /// pulse for a single newly marked country.
+    func update(targets colorTargets: [String: Color?], filter: String?, countries: [GlobeData.Country], now: Date) {
+        let targets = colorTargets.mapValues { $0 == nil ? 0.0 : 1.0 }
+        let previous = lastTargets
+        lastTargets = colorTargets
+        let sameFilter = filter == lastFilter
+        lastFilter = filter
+        pendingColors = [:]
+        // Another member: first the shown countries sweep out, then the new ones sweep in (in their color).
+        if previous != nil && !sameFilter {
+            let anyShown = countries.contains { fill($0.code, at: now) > 0 }
+            let outLength = anyShown ? 0.7 : 0
+            for country in countries {
+                let lon = Double(atan2(country.center.x, country.center.z)) + yaw
+                let delay = ((lon / (2 * .pi)).truncatingRemainder(dividingBy: 1) + 1.5).truncatingRemainder(dividingBy: 1) * 0.35
+                let current = fill(country.code, at: now)
+                let color = colorTargets[country.code] ?? nil
+                var anim: FillAnim? = current > 0
+                    ? FillAnim(from: current, to: 0, start: now.addingTimeInterval(delay), duration: 0.35, bouncy: false)
+                    : nil
+                if let color {
+                    let start = now.addingTimeInterval(outLength + delay)
+                    if anim != nil {
+                        anim?.then = (to: 1, start: start, duration: 0.55)
+                        pendingColors[country.code] = (color, start)
+                    } else {
+                        colors[country.code] = color
+                        anim = FillAnim(from: 0, to: 1, start: start, duration: 0.55, bouncy: false)
+                    }
+                }
+                fills[country.code] = anim
+            }
+            return
+        }
+        for (code, color) in colorTargets { if let color { colors[code] = color } }
+        var added: Set<String> = []
+        if let previous, introDone, sameFilter {
+            // Only what was marked on this device: countries arriving from another member just fill in.
+            added = Set(colorTargets.filter { $0.value != nil && (previous[$0.key] ?? nil) == nil && WorldMapActions.markedHereRecently($0.key) }.keys)
+        }
+        let single = added.count == 1
+        if single, let code = added.first, let country = countries.first(where: { $0.code == code }) {
+            focus(on: country, now: now)
+        }
+        for country in countries {
+            let target = targets[country.code] ?? 0
+            let current = fill(country.code, at: now)
+            if current == target && (fills[country.code]?.final ?? 0) == target { continue }
+            if single && added.contains(country.code) {
+                fills[country.code] = FillAnim(from: current, to: target, start: now.addingTimeInterval(0.65), duration: 0.9, bouncy: true)
+            } else {
+                // Wave from west to east of what's facing us.
+                let lon = Double(atan2(country.center.x, country.center.z)) + yaw
+                let wrapped = ((lon / (2 * .pi)).truncatingRemainder(dividingBy: 1) + 1.5).truncatingRemainder(dividingBy: 1)
+                let delay = introDone ? wrapped * 0.35 : 0.7 + wrapped * 0.9
+                fills[country.code] = FillAnim(from: current, to: target, start: now.addingTimeInterval(delay), duration: target > current ? 0.55 : 0.35, bouncy: false)
+            }
+        }
+    }
+
+    private func focus(on country: GlobeData.Country, now: Date) {
+        let lon = Double(atan2(country.center.x, country.center.z))
+        let lat = Double(asin(min(max(country.center.y, -1), 1)))
+        var delta = (-lon - yaw).truncatingRemainder(dividingBy: 2 * .pi)
+        if delta > .pi { delta -= 2 * .pi }
+        if delta < -.pi { delta += 2 * .pi }
+        velYaw = 0; velPitch = 0
+        tween = Tween(fromYaw: yaw, toYaw: yaw + delta, fromPitch: pitch, toPitch: min(max(lat, -1), 1), start: now, duration: 1.1)
+        lastTouch = now.addingTimeInterval(1.5)
+        pulses[country.code] = now.addingTimeInterval(0.7)
+    }
+}
+
+/// Mixes two colors (resolved for the current light / dark mode).
+private func mix(_ a: Color, _ b: Color, _ t: Double, _ scheme: ColorScheme) -> Color {
+    let traits = UITraitCollection(userInterfaceStyle: scheme == .dark ? .dark : .light)
+    var r1: CGFloat = 0, g1: CGFloat = 0, b1: CGFloat = 0, a1: CGFloat = 0
+    var r2: CGFloat = 0, g2: CGFloat = 0, b2: CGFloat = 0, a2: CGFloat = 0
+    UIColor(a).resolvedColor(with: traits).getRed(&r1, green: &g1, blue: &b1, alpha: &a1)
+    UIColor(b).resolvedColor(with: traits).getRed(&r2, green: &g2, blue: &b2, alpha: &a2)
+    let t = CGFloat(min(max(t, 0), 1))
+    return Color(red: r1 + (r2 - r1) * t, green: g1 + (g2 - g1) * t, blue: b1 + (b2 - b1) * t, opacity: a1 + (a2 - a1) * t)
+}
+
+/// A pin stuck in the globe: a thin stick from `base` (on the surface) to `head`
+/// (out along the surface normal, so it leans with the globe) and a ball with a
+/// white border and a small shine. `scale` is the fill (0…1, overshoots on the pop).
+private enum GlobePin {
+    /// Height of the pin, as a fraction of the globe's radius.
+    static let length = 0.11
+
+    /// Radius of the ball at full size (a bit bigger when zoomed in).
+    static func ball(zoom: Double) -> CGFloat { 3.5 * CGFloat(min(zoom.squareRoot(), 1.6)) }
+
+    static func draw(in ctx: GraphicsContext, base: CGPoint, head: CGPoint, scale: Double, color: Color, zoom: Double) {
+        let alpha = min(1, scale * 6)
+        let s = CGFloat(scale)
+        let ball = Self.ball(zoom: zoom) * s
+        func circle(_ center: CGPoint, _ radius: CGFloat) -> Path {
+            Path(ellipseIn: CGRect(x: center.x - radius, y: center.y - radius, width: radius * 2, height: radius * 2))
+        }
+        // Where it goes in: a soft dark dot.
+        ctx.fill(circle(base, 1.6 * s), with: .color(GlobeColors.ink.opacity(0.35 * alpha)))
+        var stick = Path()
+        stick.move(to: base)
+        stick.addLine(to: head)
+        ctx.stroke(stick, with: .color(GlobeColors.ink.opacity(0.75 * alpha)), style: StrokeStyle(lineWidth: 1.4, lineCap: .round))
+        ctx.fill(circle(head, ball + 1.2 * s), with: .color(.white.opacity(alpha)))
+        ctx.fill(circle(head, ball), with: .color(color.opacity(alpha)))
+        ctx.fill(circle(CGPoint(x: head.x - ball * 0.35, y: head.y - ball * 0.35), ball * 0.32), with: .color(.white.opacity(0.7 * alpha)))
+    }
+}
+
+/// Globe colors (same in light and dark mode).
+private enum GlobeColors {
+    static let oceanLight = Color(red: 0xB8 / 255, green: 0xE6 / 255, blue: 0xFB / 255)
+    static let oceanDark = Color(red: 0x5F / 255, green: 0xA3 / 255, blue: 0xE0 / 255)
+    static let land = Color(red: 0xFF / 255, green: 0xF9 / 255, blue: 0xF2 / 255)
+    static let border = Color(red: 0x9C / 255, green: 0xCB / 255, blue: 0xEE / 255)
+    static let ink = Color(red: 0x3B / 255, green: 0x33 / 255, blue: 0x50 / 255)
+    static let floor = Color(red: 0x46 / 255, green: 0x59 / 255, blue: 0x8C / 255).opacity(0.31)
+}
+
+/// A 3D globe with each country's fill, in the app's pastels (blue sea,
+/// cream land split into countries, apricot → coral visited ones) with
+/// depth from the sphere itself: a hard shadow crescent, a soft shine and a
+/// floor shadow; the countries stay flat. Drag (and fling) to spin it; it keeps turning slowly on its own. Fills animate in, and a country that gets marked
+/// spins into view with a pop and a coral pulse. `colorFor` gives each visited country its color (nil = not visited).
+struct WorldGlobe: View {
+    let colorFor: (String) -> Color?
+    /// What the map is showing (e.g. the selected member): when it changes, fills just sweep in.
+    var filter: String? = nil
+    /// Year of each visited country, shown in the labels when zoomed in (one member selected).
+    var years: [String: Int] = [:]
+
+    @Environment(\.colorScheme) private var colorScheme
+    @State private var motion = GlobeMotion()
+    @State private var projector = GlobeProjector(maxPoints: GlobeData.shared.maxPoints)
+    @State private var lastDrag: CGSize = .zero
+
+    private static let radiusFraction: CGFloat = 0.43
+
+    var body: some View {
+        let data = GlobeData.shared
+        let targets = Dictionary(data.countries.map { ($0.code, colorFor($0.code)) }, uniquingKeysWith: { first, _ in first })
+        TimelineView(.animation) { timeline in
+            Canvas { context, size in
+                let now = timeline.date
+                let motion = self.motion
+                motion.step(now)
+                let grow = motion.intro
+                context.opacity = grow
+                let zoom = motion.zoom
+                let r = min(size.width, size.height) * Self.radiusFraction * (0.82 + 0.18 * grow) * CGFloat(zoom)
+                motion.radius = r
+                // Globe + floor shadow centered together: the shadow (with its blur) reaches
+                // ~1.28 r below the center, so the globe sits 0.14 r up (else a height-limited
+                // canvas cuts the shadow off).
+                let c = CGPoint(x: size.width / 2, y: size.height / 2 - r * 0.14)
+                projector.setup(yaw: motion.yaw, pitch: motion.pitch, radius: r, center: c)
+
+                let ink = GlobeColors.ink
+
+                // Soft shadow on the "floor" (gone once zoomed in).
+                context.drawLayer { ctx in
+                    ctx.opacity = max(0, 1 - (zoom - 1) * 2)
+                    ctx.addFilter(.blur(radius: r * 0.05))
+                    ctx.fill(Path(ellipseIn: CGRect(x: c.x - r * 0.8, y: c.y + r * 1.05, width: r * 1.6, height: r * 0.18)),
+                             with: .color(GlobeColors.floor))
+                }
+
+                // Ocean: soft clay light from the top left.
+                let sphere = Path(ellipseIn: CGRect(x: c.x - r, y: c.y - r, width: r * 2, height: r * 2))
+                context.fill(sphere, with: .radialGradient(
+                    Gradient(colors: [GlobeColors.oceanLight, GlobeColors.oceanDark]),
+                    center: CGPoint(x: c.x - r * 0.35, y: c.y - r * 0.4), startRadius: 0, endRadius: r * 1.6
+                ))
+                context.fill(sphere, with: .radialGradient(
+                    Gradient(stops: [.init(color: .white.opacity(0.20), location: 0.1), .init(color: ink.opacity(0.20), location: 1)]),
+                    center: CGPoint(x: c.x - r * 0.4, y: c.y - r * 0.45), startRadius: 0, endRadius: r * 2
+                ))
+
+                context.drawLayer { ctx in
+                    ctx.clip(to: sphere)
+
+                    // Grid.
+                    var grid = Path()
+                    for ring in data.graticule where projector.load(ring) {
+                        projector.stroke(&grid, count: ring.count, cut: ring.cut)
+                    }
+                    ctx.stroke(grid, with: .color(.white.opacity(0.31)), lineWidth: 1)
+
+                    // Flat land, countries split by sea-colored borders.
+                    var landPath = Path()
+                    var strokePath = Path()
+                    for country in data.countries {
+                        for ring in country.rings where projector.load(ring) {
+                            projector.fill(&landPath, count: ring.count)
+                            projector.stroke(&strokePath, count: ring.count, cut: ring.cut)
+                        }
+                    }
+                    let eo = FillStyle(eoFill: true)
+                    ctx.fill(landPath, with: .color(GlobeColors.land), style: eo)
+
+                    // Visited countries.
+                    for country in data.countries {
+                        let amount = motion.fill(country.code, at: now)
+                        guard amount > 0.001 else { continue }
+                        var path = Path()
+                        for ring in country.rings where projector.load(ring) {
+                            projector.fill(&path, count: ring.count)
+                        }
+                        guard !path.isEmpty else { continue }
+                        let alpha = min(1, amount * 6)
+                        ctx.fill(path, with: .color(motion.color(country.code, at: now).opacity(alpha)), style: eo)
+                        // Overshoot of the pop shows as a brief highlight.
+                        if amount > 1 {
+                            ctx.fill(path, with: .color(.white.opacity(min(0.5, (amount - 1) * 2))), style: eo)
+                        }
+                    }
+                    ctx.stroke(strokePath, with: .color(GlobeColors.border), style: StrokeStyle(lineWidth: 1.2, lineJoin: .round))
+
+                    // Depth: a hard-edged shadow crescent and a soft shine.
+                    var crescent = sphere
+                    crescent.addEllipse(in: CGRect(x: c.x - r * 0.2 - r * 1.04, y: c.y - r * 0.2 - r * 1.04, width: r * 2.08, height: r * 2.08))
+                    ctx.fill(crescent, with: .color(ink.opacity(0.13)), style: eo)
+                    ctx.drawLayer { shine in
+                        shine.addFilter(.blur(radius: r * 0.02))
+                        shine.fill(Path(ellipseIn: CGRect(x: c.x - r * 0.62, y: c.y - r * 0.66, width: r * 0.34, height: r * 0.18)),
+                                   with: .color(.white.opacity(0.47)))
+                        shine.fill(Path(ellipseIn: CGRect(x: c.x - r * 0.2, y: c.y - r * 0.76, width: r * 0.08, height: r * 0.08)),
+                                   with: .color(.white.opacity(0.63)))
+                    }
+                }
+
+                // Every visited country: a pin standing out of the globe (a thin stick along
+                // the surface normal with a ball on top), farthest first. It grows with the fill, so it pops too.
+                let pins = data.countries
+                    .filter { motion.fill($0.code, at: now) > 0.001 }
+                    .map { (country: $0, v: projector.rotate($0.center)) }
+                    .filter { $0.v.z > 0 }
+                    .sorted { $0.v.z < $1.v.z }
+                for pin in pins {
+                    let amount = motion.fill(pin.country.code, at: now)
+                    let length = Float(1 + GlobePin.length * amount)
+                    GlobePin.draw(
+                        in: context,
+                        base: projector.point(pin.v.x, pin.v.y),
+                        head: projector.point(pin.v.x * length, pin.v.y * length),
+                        scale: amount,
+                        color: motion.color(pin.country.code, at: now),
+                        zoom: zoom
+                    )
+                }
+
+                // Zoomed in: each pin's country name (and year) above it, nearest to us first, skipping
+                // the ones that would overlap a label already placed or fall off the view.
+                let labelAlpha = min(max((zoom - 1.5) / 0.4, 0), 1)
+                if labelAlpha > 0 {
+                    let bounds = CGRect(origin: .zero, size: size).insetBy(dx: 4, dy: 4)
+                    var placed: [(rect: CGRect, text: GraphicsContext.ResolvedText, alpha: Double)] = []
+                    for pin in pins.reversed() where pin.v.z > 0.2 {
+                        let code = pin.country.code
+                        let amount = motion.fill(code, at: now)
+                        guard amount > 0.5 else { continue }
+                        let length = Float(1 + GlobePin.length * amount)
+                        let head = projector.point(pin.v.x * length, pin.v.y * length)
+                        let name = motion.name(code)
+                        let text = context.resolve(
+                            Text(verbatim: years[code].map { "\(name) · \($0)" } ?? name)
+                                .font(.system(size: 11, weight: .semibold, design: .rounded))
+                                .foregroundColor(GlobeColors.ink)
+                        )
+                        let textSize = text.measure(in: CGSize(width: 220, height: 40))
+                        let rect = CGRect(
+                            x: head.x - textSize.width / 2 - 7,
+                            y: head.y - GlobePin.ball(zoom: zoom) - 5 - textSize.height - 4,
+                            width: textSize.width + 14, height: textSize.height + 4
+                        )
+                        guard bounds.contains(rect), !placed.contains(where: { $0.rect.insetBy(dx: -3, dy: -2).intersects(rect) }) else { continue }
+                        placed.append((rect, text, labelAlpha * min(1, Double(pin.v.z - 0.2) / 0.2)))
+                    }
+                    for label in placed {
+                        let capsule = Path(roundedRect: label.rect, cornerRadius: label.rect.height / 2)
+                        context.fill(capsule, with: .color(.white.opacity(0.92 * label.alpha)))
+                        context.stroke(capsule, with: .color(GlobeColors.ink.opacity(0.12 * label.alpha)), lineWidth: 0.8)
+                        var ctx = context
+                        ctx.opacity = label.alpha
+                        ctx.draw(label.text, at: CGPoint(x: label.rect.midX, y: label.rect.midY))
+                    }
+                }
+
+                // Pulses on newly marked countries.
+                for (code, start) in motion.pulses {
+                    let p = now.timeIntervalSince(start) / 1.5 * 1.25
+                    if p > 1.25 { motion.pulses[code] = nil; continue }
+                    guard p > 0, let country = data.countries.first(where: { $0.code == code }) else { continue }
+                    let v = projector.rotate(country.center)
+                    guard v.z > 0 else { continue }
+                    let at = projector.point(v.x, v.y)
+                    for (offset, color) in [(0.0, ALIPalette.coral), (0.25, ALIPalette.blush)] {
+                        let q = p - offset
+                        guard q > 0 && q < 1 else { continue }
+                        let rad = 6 + 40 * q
+                        context.stroke(
+                            Path(ellipseIn: CGRect(x: at.x - rad, y: at.y - rad, width: rad * 2, height: rad * 2)),
+                            with: .color(color.opacity((1 - q) * 0.9)), lineWidth: 2.5 * (1 - q * 0.6)
+                        )
+                    }
+                }
+            }
+        }
+        .clipped()
+        .contentShape(Rectangle())
+        .onTapGesture(count: 2) {
+            Track.event("world_map_zoom", ["gesture": "double_tap"])
+            motion.animateZoom(to: motion.zoom < 1.5 ? 2.5 : 1, now: Date())
+        }
+        // One finger spins it; two fingers pinch to zoom (and spin with their midpoint).
+        .highPriorityGesture(
+            DragGesture(minimumDistance: 2).simultaneously(with: MagnifyGesture())
+                .onChanged { value in
+                    motion.tween = nil
+                    motion.velYaw = 0; motion.velPitch = 0
+                    motion.lastTouch = Date()
+                    if let magnify = value.second {
+                        let start = motion.pinchStart ?? motion.zoom
+                        motion.pinchStart = start
+                        motion.zoomTween = nil
+                        motion.zoom = min(max(start * magnify.magnification, 1), GlobeMotion.maxZoom)
+                    }
+                    if let drag = value.first {
+                        let r = max(Double(motion.radius), 1)
+                        let dx = drag.translation.width - lastDrag.width
+                        let dy = drag.translation.height - lastDrag.height
+                        lastDrag = drag.translation
+                        motion.dragging = true
+                        motion.yaw += dx / r
+                        motion.pitch = motion.clampPitch(motion.pitch + dy / r)
+                    }
+                }
+                .onEnded { value in
+                    let r = max(Double(motion.radius), 1)
+                    let pinched = motion.pinchStart != nil
+                    if pinched { Track.event("world_map_zoom", ["gesture": "pinch"]) }
+                    lastDrag = .zero
+                    motion.dragging = false
+                    motion.pinchStart = nil
+                    motion.lastTouch = Date()
+                    // No fling after a pinch: lifting two fingers shouldn't throw the globe.
+                    if let drag = value.first, !pinched {
+                        motion.velYaw = drag.velocity.width / r
+                        motion.velPitch = drag.velocity.height / r
+                    }
+                }
+        )
+        .onAppear { motion.update(targets: targets, filter: filter, countries: data.countries, now: Date()) }
+        .onChange(of: targets) { _, new in motion.update(targets: new, filter: filter, countries: data.countries, now: Date()) }
+    }
+}

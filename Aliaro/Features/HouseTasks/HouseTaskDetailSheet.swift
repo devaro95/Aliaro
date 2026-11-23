@@ -84,13 +84,11 @@ struct HouseTaskDetailSheet: View {
             .padding(20)
             .background(ALIColors.background)
             .navigationTitle(task.name)
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarTitleDisplayMode(.large)
+            .presentationDragIndicator(.visible)
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Close") { dismiss() }
-                }
                 if canEditTask || canDeleteTask {
-                    ToolbarItem(placement: .topBarLeading) {
+                    ToolbarItem(placement: .topBarTrailing) {
                         Menu {
                             if canEditTask {
                                 Button("Edit task", systemImage: "pencil") {
@@ -105,8 +103,9 @@ struct HouseTaskDetailSheet: View {
                                 }
                             }
                         } label: {
-                            Image(systemName: "ellipsis.circle")
+                            ALISheetIconLabel(systemImage: "ellipsis")
                         }
+                        .accessibilityLabel(Text("More options"))
                     }
                 }
             }
@@ -221,12 +220,8 @@ private struct AddLogEntrySheet: View {
             }
             .background(ALIColors.background)
             .navigationTitle("New record")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-            }
+            .navigationBarTitleDisplayMode(.large)
+            .presentationDragIndicator(.visible)
         }
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)

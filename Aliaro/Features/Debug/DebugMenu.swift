@@ -48,6 +48,7 @@ extension View {
 struct DebugMenuSheet: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @ObservedObject private var premium = PremiumManager.shared
 
     @State private var isSeedingMockData = false
     @State private var hasMockData = DebugMockData.hasSeededData
@@ -102,6 +103,12 @@ struct DebugMenuSheet: View {
                             ALISecondaryButton(text: "Reset rating counters") {
                                 ReviewPrompt.shared.debugReset()
                             }
+
+                            ALISecondaryButton(
+                                text: premium.debugUnlockAll ? "Lock premium again" : "Unlock all premium (until restart)"
+                            ) {
+                                premium.setDebugUnlockAll(!premium.debugUnlockAll)
+                            }
                         }
                     }
                 }
@@ -109,12 +116,8 @@ struct DebugMenuSheet: View {
             }
             .background(ALIColors.background)
             .navigationTitle("Debug")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
-                }
-            }
+            .navigationBarTitleDisplayMode(.large)
+            .presentationDragIndicator(.visible)
         }
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)

@@ -271,3 +271,180 @@ struct FlowChips: Layout {
         return rows
     }
 }
+
+// MARK: - Photo framing
+
+extension RecipeFormatting {
+    /// Shape of a recipe photo (width / height): the photo is cropped to it
+    /// when picked, and the editor and the detail show it with this shape, so
+    /// everyone sees exactly the framing that was chosen. Thumbnails are square
+    /// (the center of that framing).
+    static let photoAspectRatio: CGFloat = 1.6
+
+    /// Picked photo, upright and at most `maxSide` px, for the framing screen.
+    static func framingImage(from data: Data, maxSide: CGFloat = 2048) -> UIImage? {
+        guard let image = UIImage(data: data) else { return nil }
+        let size = image.size
+        let scale = min(1, maxSide / max(size.width, size.height))
+        let target = CGSize(width: (size.width * scale).rounded(), height: (size.height * scale).rounded())
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        return UIGraphicsImageRenderer(size: target, format: format).image { _ in
+            image.draw(in: CGRect(origin: .zero, size: target))
+        }
+    }
+
+    /// Crops `rect` (in `image` points) and JPEG-encodes it for upload (max `maxWidth` px wide).
+    static func croppedJPEG(_ image: UIImage, rect: CGRect, maxWidth: CGFloat = 1280) -> Data? {
+        guard rect.width > 0, rect.height > 0 else { return nil }
+        let k = min(1, maxWidth / rect.width)
+        let target = CGSize(width: (rect.width * k).rounded(), height: (rect.height * k).rounded())
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        let cropped = UIGraphicsImageRenderer(size: target, format: format).image { _ in
+            image.draw(in: CGRect(x: -rect.minX * k, y: -rect.minY * k, width: image.size.width * k, height: image.size.height * k))
+        }
+        return cropped.jpegData(compressionQuality: 0.75)
+    }
+}
+
+/// Picked photo waiting to be framed.
+struct RecipePhotoToFrame: Identifiable {
+    let id = UUID()
+    let image: UIImage
+}
+
+/// Full screen shown after picking a recipe photo: drag and pinch to choose
+/// which part shows. Returns the cropped JPEG (`RecipeFormatting.photoAspectRatio`).
+/// Same as `RecipePhotoFramingScreen` on Android.
+struct RecipePhotoFramingView: View {
+    let image: UIImage
+    let onCancel: () -> Void
+    let onDone: (Data) -> Void
+
+    @State private var zoom: CGFloat = 1
+    @State private var offset: CGSize = .zero
+    @GestureState private var pinch: CGFloat = 1
+    @GestureState private var drag: CGSize = .zero
+
+    private static let maxZoom: CGFloat = 5
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Button("Cancel", action: onCancel)
+                Spacer()
+                Text("Adjust photo")
+                    .font(ALITypography.titleLarge)
+                Spacer()
+                Button("Use photo") { finish() }
+                    .fontWeight(.semibold)
+            }
+            .foregroundStyle(.white)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 14)
+
+            GeometryReader { geo in
+                let crop = cropSize(in: geo.size)
+                let liveZoom = clampedZoom(zoom * pinch)
+                let liveOffset = clampedOffset(CGSize(width: offset.width + drag.width, height: offset.height + drag.height), zoom: liveZoom, crop: crop)
+                let shown = displaySize(zoom: liveZoom, crop: crop)
+                let cropRect = CGRect(
+                    x: (geo.size.width - crop.width) / 2, y: (geo.size.height - crop.height) / 2,
+                    width: crop.width, height: crop.height
+                )
+                ZStack {
+                    Image(uiImage: image)
+                        .resizable()
+                        .frame(width: shown.width, height: shown.height)
+                        .offset(liveOffset)
+                        .frame(width: geo.size.width, height: geo.size.height)
+                    // Dim everything outside the frame.
+                    Path { path in
+                        path.addRect(CGRect(origin: .zero, size: geo.size))
+                        path.addRoundedRect(in: cropRect, cornerSize: CGSize(width: 24, height: 24), style: .continuous)
+                    }
+                    .fill(Color.black.opacity(0.6), style: FillStyle(eoFill: true))
+                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                        .stroke(Color.white.opacity(0.9), lineWidth: 1.5)
+                        .frame(width: crop.width, height: crop.height)
+                }
+                .clipped()
+                .contentShape(Rectangle())
+                .gesture(
+                    DragGesture()
+                        .updating($drag) { value, state, _ in state = value.translation }
+                        .onEnded { value in
+                            offset = clampedOffset(
+                                CGSize(width: offset.width + value.translation.width, height: offset.height + value.translation.height),
+                                zoom: zoom, crop: crop
+                            )
+                        }
+                        .simultaneously(with:
+                            MagnifyGesture()
+                                .updating($pinch) { value, state, _ in state = value.magnification }
+                                .onEnded { value in
+                                    zoom = clampedZoom(zoom * value.magnification)
+                                    offset = clampedOffset(offset, zoom: zoom, crop: crop)
+                                }
+                        )
+                )
+                .onAppear { lastCrop = crop }
+                .onChange(of: geo.size) { _, size in lastCrop = cropSize(in: size) }
+            }
+
+            Text("Drag and pinch to choose which part shows.")
+                .font(ALITypography.bodyMedium)
+                .foregroundStyle(.white.opacity(0.75))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 24)
+                .padding(.vertical, 20)
+        }
+        .background(Color.black.ignoresSafeArea())
+        .trackScreen("recipe_photo_framing")
+    }
+
+    /// Frame size on screen, kept for `finish()`.
+    @State private var lastCrop: CGSize = .zero
+
+    private func cropSize(in size: CGSize) -> CGSize {
+        let width = min(size.width - 32, (size.height - 32) * RecipeFormatting.photoAspectRatio)
+        return CGSize(width: max(width, 1), height: max(width, 1) / RecipeFormatting.photoAspectRatio)
+    }
+
+    /// Points on screen per image point.
+    private func displayScale(zoom: CGFloat, crop: CGSize) -> CGFloat {
+        max(crop.width / image.size.width, crop.height / image.size.height) * zoom
+    }
+
+    private func displaySize(zoom: CGFloat, crop: CGSize) -> CGSize {
+        let scale = displayScale(zoom: zoom, crop: crop)
+        return CGSize(width: image.size.width * scale, height: image.size.height * scale)
+    }
+
+    private func clampedZoom(_ value: CGFloat) -> CGFloat { min(max(value, 1), Self.maxZoom) }
+
+    /// Keeps the frame always covered by the photo.
+    private func clampedOffset(_ value: CGSize, zoom: CGFloat, crop: CGSize) -> CGSize {
+        let shown = displaySize(zoom: zoom, crop: crop)
+        let maxX = max(0, (shown.width - crop.width) / 2)
+        let maxY = max(0, (shown.height - crop.height) / 2)
+        return CGSize(width: min(max(value.width, -maxX), maxX), height: min(max(value.height, -maxY), maxY))
+    }
+
+    private func finish() {
+        let crop = lastCrop
+        guard crop.width > 1 else { return }
+        let scale = displayScale(zoom: zoom, crop: crop)
+        let shown = displaySize(zoom: zoom, crop: crop)
+        let rect = CGRect(
+            x: ((shown.width - crop.width) / 2 - offset.width) / scale,
+            y: ((shown.height - crop.height) / 2 - offset.height) / scale,
+            width: crop.width / scale,
+            height: crop.height / scale
+        )
+        guard let data = RecipeFormatting.croppedJPEG(image, rect: rect) else { return }
+        Track.event("recipe_photo_framed", ["zoomed": zoom > 1.01, "moved": offset != .zero])
+        onDone(data)
+    }
+}

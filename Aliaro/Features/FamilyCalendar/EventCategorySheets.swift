@@ -173,14 +173,11 @@ struct EventCategoriesSheet: View {
             .scrollContentBackground(.hidden)
             .background(ALIColors.background)
             .navigationTitle("Categories")
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarTitleDisplayMode(.large)
+            .presentationDragIndicator(.visible)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button { showNew = true } label: { Image(systemName: "plus") }
-                        .accessibilityLabel(Text("New category"))
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
+                ToolbarItem(placement: .topBarTrailing) {
+                    ALISheetIconButton(systemImage: "plus", label: "New category") { showNew = true }
                 }
             }
             .sheet(item: $editing) { category in
@@ -235,12 +232,8 @@ struct EventCategoryEditorSheet: View {
             }
             .background(ALIColors.background)
             .navigationTitle(category == nil ? "New category" : "Edit category")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-            }
+            .navigationBarTitleDisplayMode(.large)
+            .presentationDragIndicator(.visible)
             .onAppear {
                 if let category {
                     name = category.displayName

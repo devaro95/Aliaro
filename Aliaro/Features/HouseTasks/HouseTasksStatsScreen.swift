@@ -133,12 +133,8 @@ struct HouseTasksStatsScreen: View {
             .aliPremiumPreviewBanner(isLocked, buttonTitle: "Unlock statistics") { showPaywall = Track.paywall("task_stats_banner") }
             .background(ALIColors.background)
             .navigationTitle("Task statistics")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") { dismiss() }
-                }
-            }
+            .navigationBarTitleDisplayMode(.large)
+            .presentationDragIndicator(.visible)
         }
         .presentationDetents([.large])
         .sheet(isPresented: $showPaywall) {

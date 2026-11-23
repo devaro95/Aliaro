@@ -106,12 +106,8 @@ struct AddReminderSheet: View {
             }
             .background(ALIColors.background)
             .navigationTitle(isEditing ? "Edit reminder" : "New reminder")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-            }
+            .navigationBarTitleDisplayMode(.large)
+            .presentationDragIndicator(.visible)
             .onAppear(perform: loadIfEditing)
         }
         .presentationDetents([.large])

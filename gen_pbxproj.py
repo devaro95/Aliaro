@@ -100,6 +100,8 @@ def collect(dirpath):
             files.append(e)
         elif e.endswith('.plist'):
             files.append(e)
+        elif e.endswith('.json'):
+            files.append(e)
     return files, dirs
 
 file_refs = []       # (uid, name, path, lastKnownFileType, sourceTree)
@@ -140,6 +142,12 @@ def walk(dirpath, targets):
         elif f.endswith('.xcprivacy'):
             # Privacy manifest: must be copied into the bundle as a resource.
             file_refs.append((fref, rel_name, q(rel_name), "text.xml", "<group>"))
+            for t in targets:
+                bf = uid(f"res:{t}:" + full)
+                resource_build_files[t].append((bf, fref, rel_name))
+        elif f.endswith('.json'):
+            # Bundled data read at runtime (e.g. Features/WorldMap/world_map.json).
+            file_refs.append((fref, rel_name, q(rel_name), "text.json", "<group>"))
             for t in targets:
                 bf = uid(f"res:{t}:" + full)
                 resource_build_files[t].append((bf, fref, rel_name))
@@ -614,6 +622,7 @@ pbxproj = f"""// !$*UTF8*$!
 \t\t\t\t\t}},
 \t\t\t\t);
 \t\t\t\tINFOPLIST_KEY_NSCameraUsageDescription = "Aliaro necesita la cámara para escanear el código QR de invitación al grupo familiar y para hacer fotos de tus recetas.";
+\t\t\t\tINFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Aliaro usa tu ubicación para mostrarte en el mapa de lugares y ordenar los sitios de la familia por cercanía.";
 \t\t\t\tINFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 \t\t\t\tINFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 \t\t\t\tINFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -663,6 +672,7 @@ pbxproj = f"""// !$*UTF8*$!
 \t\t\t\t\t}},
 \t\t\t\t);
 \t\t\t\tINFOPLIST_KEY_NSCameraUsageDescription = "Aliaro necesita la cámara para escanear el código QR de invitación al grupo familiar y para hacer fotos de tus recetas.";
+\t\t\t\tINFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Aliaro usa tu ubicación para mostrarte en el mapa de lugares y ordenar los sitios de la familia por cercanía.";
 \t\t\t\tINFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 \t\t\t\tINFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 \t\t\t\tINFOPLIST_KEY_UILaunchScreen_Generation = YES;

@@ -47,38 +47,6 @@ struct PaywallView: View {
         PremiumFeature.allCases.filter { premium.config.isPremium($0) }
     }
 
-    private struct FeatureRow: Identifiable {
-        let id: String
-        let title: LocalizedStringKey
-        let subtitle: LocalizedStringKey
-        let systemImage: String
-        let accent: Color
-    }
-
-    /// Pairs of related features shown as a single paywall row when both
-    /// are premium, to keep the list short: the row takes the first
-    /// feature's place and icon.
-    private static let mergedRows: [(first: PremiumFeature, second: PremiumFeature, title: LocalizedStringKey, subtitle: LocalizedStringKey)] = [
-        (.houseTasksStats, .economiaStats, "Task and finance statistics",
-         "See who does the most at home and where your money goes."),
-        (.unlimitedReminders, .unlimitedHouseTasks, "Unlimited reminders and house tasks",
-         "Add everything your family needs, with no limits.")
-    ]
-
-    /// `lockedFeatures` as paywall rows, with `mergedRows` applied.
-    private var featureRows: [FeatureRow] {
-        let features = lockedFeatures
-        let merges = Self.mergedRows.filter { features.contains($0.first) && features.contains($0.second) }
-        return features.compactMap { feature in
-            if merges.contains(where: { $0.second == feature }) { return nil }
-            if let merge = merges.first(where: { $0.first == feature }) {
-                return FeatureRow(id: feature.rawValue, title: merge.title, subtitle: merge.subtitle,
-                                  systemImage: feature.systemImage, accent: feature.accent)
-            }
-            return FeatureRow(id: feature.rawValue, title: feature.title, subtitle: feature.subtitle,
-                              systemImage: feature.systemImage, accent: feature.accent)
-        }
-    }
 
     /// e.g. "3 months", localized, read straight from the product's
     /// introductory offer so it always matches whatever's configured in
@@ -148,10 +116,11 @@ struct PaywallView: View {
             // the user scrolls through everything above.
             .safeAreaInset(edge: .bottom) { stickyCTA }
             .background(ALIColors.background)
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarTitleDisplayMode(.large)
+            .presentationDragIndicator(.visible)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") { closedWithButton = true; dismiss() }
+                ToolbarItem(placement: .topBarTrailing) {
+                    ALISheetIconButton(systemImage: "xmark", label: "Close") { closedWithButton = true; dismiss() }
                 }
             }
             .task {
@@ -233,31 +202,7 @@ struct PaywallView: View {
                     .font(ALITypography.titleLarge)
                     .foregroundStyle(ALIColors.ink)
                     .padding(.bottom, 18)
-                VStack(alignment: .leading, spacing: 18) {
-                    ForEach(featureRows) { feature in
-                        HStack(alignment: .center, spacing: 14) {
-                            Image(systemName: feature.systemImage)
-                                .font(.system(size: 18, weight: .semibold))
-                                .foregroundStyle(ALIColors.onAccent)
-                                .frame(width: 44, height: 44)
-                                .background(feature.accent)
-                                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                            VStack(alignment: .leading, spacing: 3) {
-                                Text(feature.title)
-                                    .font(ALITypography.bodyLarge.weight(.semibold))
-                                    .foregroundStyle(ALIColors.ink)
-                                Text(feature.subtitle)
-                                    .font(ALITypography.bodyMedium)
-                                    .foregroundStyle(ALIColors.mutedInk)
-                            }
-                            .fixedSize(horizontal: false, vertical: true)
-                            Spacer(minLength: 8)
-                            Image(systemName: "checkmark.circle.fill")
-                                .font(.system(size: 20))
-                                .foregroundStyle(ALIColors.success)
-                        }
-                    }
-                }
+                PremiumFeatureRows(features: lockedFeatures)
             }
         }
     }
@@ -681,5 +626,124 @@ struct PaywallView: View {
                 errorMessage = error.localizedDescription
             }
         }
+    }
+}
+
+/// What Premium includes, one row per feature currently marked premium in
+/// `PremiumConfig` (related features merged into one row to keep the list
+/// short). Shared by `PaywallView` and `PremiumBenefitsSheet`.
+struct PremiumFeatureRows: View {
+    let features: [PremiumFeature]
+
+    private struct FeatureRow: Identifiable {
+        let id: String
+        let title: LocalizedStringKey
+        let subtitle: LocalizedStringKey
+        let systemImage: String
+        let accent: Color
+    }
+
+    /// Pairs of related features shown as a single row when both are
+    /// premium: the row takes the first feature's place and icon.
+    private static let mergedRows: [(first: PremiumFeature, second: PremiumFeature, title: LocalizedStringKey, subtitle: LocalizedStringKey)] = [
+        (.houseTasksStats, .economiaStats, "Task and finance statistics",
+         "See who does the most at home and where your money goes."),
+        (.unlimitedReminders, .unlimitedHouseTasks, "Unlimited reminders and house tasks",
+         "Add everything your family needs, with no limits.")
+    ]
+
+    private var rows: [FeatureRow] {
+        let merges = Self.mergedRows.filter { features.contains($0.first) && features.contains($0.second) }
+        return features.compactMap { feature in
+            if merges.contains(where: { $0.second == feature }) { return nil }
+            if let merge = merges.first(where: { $0.first == feature }) {
+                return FeatureRow(id: feature.rawValue, title: merge.title, subtitle: merge.subtitle,
+                                  systemImage: feature.systemImage, accent: feature.accent)
+            }
+            return FeatureRow(id: feature.rawValue, title: feature.title, subtitle: feature.subtitle,
+                              systemImage: feature.systemImage, accent: feature.accent)
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            ForEach(rows) { feature in
+                HStack(alignment: .center, spacing: 14) {
+                    Image(systemName: feature.systemImage)
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(ALIColors.onAccent)
+                        .frame(width: 44, height: 44)
+                        .background(feature.accent)
+                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(feature.title)
+                            .font(ALITypography.bodyLarge.weight(.semibold))
+                            .foregroundStyle(ALIColors.ink)
+                        Text(feature.subtitle)
+                            .font(ALITypography.bodyMedium)
+                            .foregroundStyle(ALIColors.mutedInk)
+                    }
+                    .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 8)
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 20))
+                        .foregroundStyle(ALIColors.success)
+                }
+            }
+        }
+    }
+}
+
+/// Opened from People's family Premium card (someone else in the group
+/// pays): who gives the group Premium and everything it includes.
+struct PremiumBenefitsSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var premium: PremiumManager
+
+    /// Name of the member who pays, if known.
+    let payerName: String?
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    HStack(spacing: 12) {
+                        Image(systemName: "crown.fill")
+                            .font(.system(size: 22, weight: .semibold))
+                            .foregroundStyle(ALIColors.sun)
+                        Group {
+                            if let payerName {
+                                Text("Your family has Premium thanks to \(payerName)")
+                            } else {
+                                Text("Your family has Premium")
+                            }
+                        }
+                        .font(ALITypography.bodyLarge)
+                        .foregroundStyle(ALIColors.ink)
+                    }
+                    ALICard {
+                        VStack(alignment: .leading, spacing: 0) {
+                            Text("Everything included in Premium")
+                                .font(ALITypography.titleLarge)
+                                .foregroundStyle(ALIColors.ink)
+                                .padding(.bottom, 18)
+                            PremiumFeatureRows(features: PremiumFeature.allCases.filter { premium.config.isPremium($0) })
+                        }
+                    }
+                }
+                .padding(20)
+            }
+            .background(ALIColors.background)
+            .navigationTitle("Aliaro Premium")
+            .navigationBarTitleDisplayMode(.large)
+            .presentationDragIndicator(.visible)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    ALISheetIconButton(systemImage: "xmark", label: "Close") { dismiss() }
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+        .trackScreen("premium_benefits")
     }
 }

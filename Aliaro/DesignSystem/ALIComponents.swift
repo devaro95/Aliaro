@@ -295,12 +295,14 @@ struct ALIPremiumPreviewBanner: View {
     /// Which explanation to show; see `messageText`.
     var message: Message = .familyData
     let buttonTitle: LocalizedStringKey
+    /// Border and button color (the feature's accent).
+    var accent: Color = ALIColors.primary
     let action: () -> Void
 
     @Environment(\.colorScheme) private var colorScheme
 
     enum Message {
-        case familyData, tasksCalendar, peopleCalendar
+        case familyData, tasksCalendar, peopleCalendar, menuMonth
     }
 
     /// Message with the "Aliaro" wordmark (salmon-dot "i") inlined.
@@ -314,6 +316,8 @@ struct ALIPremiumPreviewBanner: View {
             return Text("This is a preview with sample data. Get \(wordmark) Premium to see your tasks in a calendar.")
         case .peopleCalendar:
             return Text("This is a preview with sample data. Get \(wordmark) Premium to see your family's day by person.")
+        case .menuMonth:
+            return Text("This is a preview with sample data. Get \(wordmark) Premium to plan your menu month by month.")
         }
     }
 
@@ -337,14 +341,15 @@ struct ALIPremiumPreviewBanner: View {
                 }
                 Spacer(minLength: 0)
             }
-            ALIPrimaryButton(text: buttonTitle, action: action)
+            ALIPrimaryButton(text: buttonTitle, accent: accent, action: action)
         }
         .padding(18)
         .background(ALIColors.surface)
         .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        // Accent border so it stands out over the blurred preview.
         .overlay(
             RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .stroke(ALIColors.outline, lineWidth: 1)
+                .stroke(accent, lineWidth: 2)
         )
         .shadow(color: .black.opacity(0.12), radius: 16, y: 4)
     }
@@ -369,10 +374,10 @@ extension View {
     /// Premium preview for a full screen: `aliPremiumPreview` on the
     /// content plus the banner pinned to the bottom.
     @ViewBuilder
-    func aliPremiumPreviewBanner(_ locked: Bool, buttonTitle: LocalizedStringKey, action: @escaping () -> Void) -> some View {
+    func aliPremiumPreviewBanner(_ locked: Bool, buttonTitle: LocalizedStringKey, accent: Color = ALIColors.primary, action: @escaping () -> Void) -> some View {
         safeAreaInset(edge: .bottom) {
             if locked {
-                ALIPremiumPreviewBanner(buttonTitle: buttonTitle, action: action)
+                ALIPremiumPreviewBanner(buttonTitle: buttonTitle, accent: accent, action: action)
                     .padding(.horizontal, 16)
                     .padding(.bottom, 8)
             }
@@ -493,6 +498,8 @@ struct ALIFeatureIcon: View {
     let title: LocalizedStringKey
     let systemImage: String
     let accent: Color
+    /// Premium crown on the icon's corner (not the cell's, which is wider).
+    var premium: Bool = false
 
     var body: some View {
         VStack(spacing: 6) {
@@ -502,6 +509,7 @@ struct ALIFeatureIcon: View {
                 .frame(width: 60, height: 60)
                 .background(accent)
                 .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .aliPremiumLockOverlay(premium)
             Text(title)
                 .font(ALITypography.labelLarge)
                 .foregroundStyle(ALIColors.ink)
@@ -820,3 +828,34 @@ enum ALIShowOnce {
     }
 }
 
+// MARK: - Sheet header buttons
+
+/// Round icon of a sheet header button ("xmark", "ellipsis", "plus"). Use it as a
+/// `Menu` label; for plain actions use `ALISheetIconButton`. Same look as Android.
+struct ALISheetIconLabel: View {
+    let systemImage: String
+
+    var body: some View {
+        Image(systemName: systemImage)
+            .font(.system(size: 14, weight: .bold))
+            .foregroundStyle(ALIColors.ink)
+            .frame(width: 32, height: 32)
+            .background(Circle().fill(ALIColors.surfaceVariant))
+    }
+}
+
+/// Round button for a sheet header. Sheets close by swiping down, so an X only
+/// goes on untitled sheets and the paywall.
+struct ALISheetIconButton: View {
+    let systemImage: String
+    let label: LocalizedStringKey
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            ALISheetIconLabel(systemImage: systemImage)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text(label))
+    }
+}

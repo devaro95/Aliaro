@@ -45,6 +45,8 @@ struct HomeScreen: View {
     @Query(sort: \ShoppingListEntry.addedAt) private var shoppingEntries: [ShoppingListEntry]
     @Query(sort: \Reminder.fireDate) private var reminders: [Reminder]
     @Query private var recipes: [Recipe]
+    @Query private var places: [FamilyPlace]
+    @Query private var visitedCountries: [VisitedCountry]
     /// Same order as the Board (manual `position`, then newest first).
     @Query(sort: [SortDescriptor(\BoardNote.position), SortDescriptor(\BoardNote.createdAt, order: .reverse)])
     private var boardNotes: [BoardNote]
@@ -541,7 +543,7 @@ struct HomeScreen: View {
             }
         } label: {
             if layout.featureStyle == .icons {
-                ALIFeatureIcon(title: tab.label, systemImage: tab.systemImage, accent: tab.accent)
+                ALIFeatureIcon(title: tab.label, systemImage: tab.systemImage, accent: tab.accent, premium: showsCrown(tab) && !isReordering)
             } else {
                 ALIFeatureTile(
                     title: tab.label,
@@ -554,7 +556,8 @@ struct HomeScreen: View {
         .buttonStyle(.plain)
         // The Board opens as a blurred preview when locked, but still
         // gets the crown so it reads as premium from the grid.
-        .aliPremiumLockOverlay(showsCrown(tab) && !isReordering)
+        // (Icons carry the crown on the icon itself.)
+        .aliPremiumLockOverlay(showsCrown(tab) && !isReordering && layout.featureStyle != .icons)
         .overlay(alignment: .topTrailing) {
             if isReordering && layout.featureStyle == .icons {
                 // Icons are small: a round grip badge on the corner.
@@ -668,10 +671,13 @@ struct HomeScreen: View {
         Track.event("home_features_reset")
     }
 
-    /// Whole-feature locks, plus the Board, which opens as a blurred
-    /// preview when locked but still reads as premium from the grid.
+    /// Whole-feature locks, plus the Board, Places and the World map, which open as a
+    /// blurred preview when locked but still read as premium from the grid.
     private func showsCrown(_ tab: AppTab) -> Bool {
-        isLocked(tab) || (tab == .board && premium.isLocked(.board))
+        isLocked(tab)
+            || (tab == .board && premium.isLocked(.board))
+            || (tab == .places && premium.isLocked(.places))
+            || (tab == .worldMap && premium.isLocked(.worldMap))
     }
 
     /// Stable stat line for each feature tile — different from the "Today"
@@ -679,7 +685,11 @@ struct HomeScreen: View {
     private func tileDetail(for tab: AppTab) -> String? {
         switch tab {
         case .weeklyMenu:
-            let count = mealPlan.count
+            let weekStart = MenuCalendar.startOfWeek(.now)
+            let weekEnd = MenuCalendar.adding(days: 7, to: weekStart)
+            // Meals (day + lunch/dinner), not dishes: a meal can have several.
+            let count = Set(mealPlan.filter { $0.date >= weekStart && $0.date < weekEnd }
+                .map { "\(MenuCalendar.key($0.date))-\($0.mealType)" }).count
             if count == 0 { return String(localized: "Nothing planned") }
             return count == 1 ? String(localized: "1 meal planned") : String(localized: "\(count) meals planned")
         case .recipes:
@@ -718,6 +728,14 @@ struct HomeScreen: View {
             let count = wifiNetworks.count
             if count == 0 { return String(localized: "Add your Wi-Fi") }
             return count == 1 ? String(localized: "1 network") : String(localized: "\(count) networks")
+        case .places:
+            let count = places.count
+            if count == 0 { return String(localized: "No places yet") }
+            return count == 1 ? String(localized: "1 place") : String(localized: "\(count) places")
+        case .worldMap:
+            let count = Set(visitedCountries.map(\.countryCode)).count
+            if count == 0 { return String(localized: "No countries yet") }
+            return count == 1 ? String(localized: "1 country") : String(localized: "\(count) countries")
         case .home, .people:
             return nil
         }
@@ -742,7 +760,7 @@ struct HomeScreen: View {
         case .shoppingList: return shoppingSummary
         case .reminders: return remindersSummary
         case .economia: return financesSummary
-        case .recipes, .board, .wifi, .home, .people: return nil
+        case .recipes, .board, .wifi, .places, .worldMap, .home, .people: return nil
         }
     }
 
@@ -787,11 +805,13 @@ struct HomeScreen: View {
     }
 
     private var menuSummary: HomeSummary? {
-        // MealPlanEntry.weekday: 0 = Monday ... 6 = Sunday (see WidgetSnapshotWriter).
-        let todayWeekday = (Calendar.current.component(.weekday, from: .now) + 5) % 7
-        let today = mealPlan.filter { $0.weekday == todayWeekday }
-        let lunch = today.first { $0.mealType == MealType.lunch.rawValue }?.dishName
-        let dinner = today.first { $0.mealType == MealType.dinner.rawValue }?.dishName
+        // Several dishes in a meal read as "Lentils · Salad".
+        func names(_ mealType: MealType) -> String? {
+            let dishes = MenuWriter.dishes(on: .now, mealType: mealType, in: mealPlan)
+            return dishes.isEmpty ? nil : dishes.map(\.name).joined(separator: " · ")
+        }
+        let lunch = names(.lunch)
+        let dinner = names(.dinner)
         switch (lunch, dinner) {
         case let (lunch?, dinner?):
             return HomeSummary(tab: .weeklyMenu, headline: lunch, detail: String(localized: "Dinner: \(dinner)"))

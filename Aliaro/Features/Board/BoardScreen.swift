@@ -411,9 +411,10 @@ private struct BoardPremiumBanner: View {
         )
         .background(ALIColors.surface)
         .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        // Accent border so it stands out over the blurred preview.
         .overlay(
             RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .stroke(ALIColors.outline, lineWidth: 1)
+                .stroke(ALIColors.boardAccent, lineWidth: 2)
         )
         .shadow(color: .black.opacity(0.12), radius: 16, y: 4)
     }

@@ -36,6 +36,10 @@ struct AddRecipeSheet: View {
     @State private var showPhotoSource = false
     @State private var showLibrary = false
     @State private var showCamera = false
+    /// Picked photo waiting to be framed (`RecipePhotoFramingView`).
+    @State private var photoToFrame: RecipePhotoToFrame?
+    /// Taken with the camera: framed once the camera is gone.
+    @State private var cameraPhoto: RecipePhotoToFrame?
     /// Compressed JPEG picked in this session (nil = unchanged).
     @State private var newPhotoData: Data?
     @State private var removePhoto = false
@@ -129,12 +133,8 @@ struct AddRecipeSheet: View {
             .scrollDismissesKeyboard(.interactively)
             .background(ALIColors.background)
             .navigationTitle(isEditing ? "Edit recipe" : "New recipe")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-            }
+            .navigationBarTitleDisplayMode(.large)
+            .presentationDragIndicator(.visible)
             .onAppear(perform: loadIfEditing)
             .sheet(item: $editingTime) { field in
                 DurationPickerSheet(
@@ -146,7 +146,7 @@ struct AddRecipeSheet: View {
                 guard let item else { return }
                 Task {
                     if let data = try? await item.loadTransferable(type: Data.self) {
-                        setPhoto(data)
+                        startFraming(data)
                     }
                     photoItem = nil
                 }
@@ -168,9 +168,11 @@ struct AddRecipeSheet: View {
         } label: {
             ZStack {
                 if let previewImage {
-                    Image(uiImage: previewImage)
-                        .resizable()
-                        .scaledToFill()
+                    Color.clear.overlay {
+                        Image(uiImage: previewImage)
+                            .resizable()
+                            .scaledToFill()
+                    }
                 } else {
                     ALIColors.recipesAccent.opacity(0.25)
                     VStack(spacing: 8) {
@@ -183,7 +185,7 @@ struct AddRecipeSheet: View {
                 }
             }
             .frame(maxWidth: .infinity)
-            .frame(height: 180)
+            .aspectRatio(RecipeFormatting.photoAspectRatio, contentMode: .fit)
             .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
             .contentShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
         }
@@ -215,19 +217,37 @@ struct AddRecipeSheet: View {
             Button("Cancel", role: .cancel) {}
         }
         .photosPicker(isPresented: $showLibrary, selection: $photoItem, matching: .images)
-        .fullScreenCover(isPresented: $showCamera) {
+        .fullScreenCover(isPresented: $showCamera, onDismiss: {
+            // A second full screen can only open once the camera is gone.
+            if let cameraPhoto {
+                photoToFrame = cameraPhoto
+                self.cameraPhoto = nil
+            }
+        }) {
             CameraPicker { data in
-                setPhoto(data)
+                if let image = RecipeFormatting.framingImage(from: data) {
+                    cameraPhoto = RecipePhotoToFrame(image: image)
+                }
             }
             .ignoresSafeArea()
         }
+        .fullScreenCover(item: $photoToFrame) { photo in
+            RecipePhotoFramingView(image: photo.image) {
+                Track.event("recipe_photo_framing_cancel")
+                photoToFrame = nil
+            } onDone: { jpeg in
+                newPhotoData = jpeg
+                removePhoto = false
+                Track.event("recipe_photo_picked")
+                photoToFrame = nil
+            }
+        }
     }
 
-    private func setPhoto(_ data: Data) {
-        guard let jpeg = RecipeFormatting.compressedJPEG(from: data) else { return }
-        newPhotoData = jpeg
-        removePhoto = false
-        Track.event("recipe_photo_picked")
+    /// Opens the framing screen with the picked photo.
+    private func startFraming(_ data: Data) {
+        guard let image = RecipeFormatting.framingImage(from: data) else { return }
+        photoToFrame = RecipePhotoToFrame(image: image)
     }
 
     private var categoryCard: some View {

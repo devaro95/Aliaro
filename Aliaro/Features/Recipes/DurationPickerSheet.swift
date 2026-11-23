@@ -62,7 +62,8 @@ struct DurationPickerSheet: View {
             .padding(.top, 8)
             .background(ALIColors.background)
             .navigationTitle(title)
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarTitleDisplayMode(.large)
+            .presentationDragIndicator(.visible)
         }
         .presentationDetents([.height(380)])
         .onAppear {

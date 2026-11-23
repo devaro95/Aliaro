@@ -96,7 +96,10 @@ final class RemoteSync<Remote: FamilySynced> {
 
         let inserts = newChannel.postgresChange(InsertAction.self, schema: "public", table: Remote.tableName, filter: filter)
         let updates = newChannel.postgresChange(UpdateAction.self, schema: "public", table: Remote.tableName, filter: filter)
-        let deletes = newChannel.postgresChange(DeleteAction.self, schema: "public", table: Remote.tableName, filter: filter)
+        // Realtime can't filter deletes: with RLS the old record only carries the id, so a
+        // family_id filter never matches and other members' deletes never arrived. Deletes
+        // are heard unfiltered instead (just ids; one that isn't ours is a no-op locally).
+        let deletes = newChannel.postgresChange(DeleteAction.self, schema: "public", table: Remote.tableName)
 
         await newChannel.subscribe()
         channel = newChannel

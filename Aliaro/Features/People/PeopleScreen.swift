@@ -23,6 +23,7 @@ struct PeopleScreen: View {
     @State private var showHistorialSheet = false
     @State private var showPaywall = false
     @State private var showManageSubscription = false
+    @State private var showPremiumBenefits = false
     @State private var showLeaveConfirmation = false
     @State private var isLeaving = false
     @State private var leaveError: String?
@@ -51,13 +52,15 @@ struct PeopleScreen: View {
 
                 membersSection
 
+                if premium.subscriptions.isSubscribed {
+                    subscriptionCard
+                } else if familySession.isFamilyPremium {
+                    familyPremiumCard
+                }
+
                 appFeaturesCard
 
                 historialCard
-
-                if premium.subscriptions.isSubscribed {
-                    subscriptionCard
-                }
 
                 notificationsCard
 
@@ -415,6 +418,50 @@ struct PeopleScreen: View {
         }
         .buttonStyle(.plain)
         .manageSubscriptionsSheet(isPresented: $showManageSubscription)
+    }
+
+    private var premiumPayer: FamilyMember? {
+        members.first(where: { $0.id == familySession.premiumMemberID })
+    }
+
+    /// Shown to members who get Premium through the group (someone else
+    /// pays): tells them who to thank and opens what Premium includes.
+    /// Only the payer can manage the subscription.
+    private var familyPremiumCard: some View {
+        Button {
+            Track.event("premium_benefits_open")
+            showPremiumBenefits = true
+        } label: {
+            ALICard {
+                HStack(spacing: 12) {
+                    Image(systemName: "crown.fill")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(ALIColors.sun)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Aliaro Premium")
+                            .font(ALITypography.bodyLarge)
+                            .foregroundStyle(ALIColors.ink)
+                        Group {
+                            if let payer = premiumPayer {
+                                Text("Your family has Premium thanks to \(payer.name)")
+                            } else {
+                                Text("Your family has Premium")
+                            }
+                        }
+                        .font(ALITypography.labelLarge)
+                        .foregroundStyle(ALIColors.mutedInk)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(ALIColors.mutedInk)
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .sheet(isPresented: $showPremiumBenefits) {
+            PremiumBenefitsSheet(payerName: premiumPayer?.name)
+        }
     }
 
     private var appFeaturesCard: some View {

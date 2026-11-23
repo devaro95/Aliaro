@@ -17,6 +17,16 @@ final class PremiumManager: ObservableObject {
 
     private var cancellables: Set<AnyCancellable> = []
 
+    /// Debug menu (shake): unlocks every premium feature until the app restarts.
+    /// Only in debug builds, never synced to the family.
+    @Published private(set) var debugUnlockAll = false
+
+    func setDebugUnlockAll(_ enabled: Bool) {
+        #if DEBUG
+        debugUnlockAll = enabled
+        #endif
+    }
+
     private init() {
         // Re-publish so a view observing only `PremiumManager` still
         // updates when the remote config, the subscription status, or the
@@ -50,6 +60,7 @@ final class PremiumManager: ObservableObject {
     /// group it belongs to has an active subscription.
     func isLocked(_ feature: PremiumFeature) -> Bool {
         guard config.isPremium(feature) else { return false }
+        if debugUnlockAll { return false }
         if subscriptions.isSubscribed { return false }
         if FamilySession.shared.isFamilyPremium { return false }
         return true

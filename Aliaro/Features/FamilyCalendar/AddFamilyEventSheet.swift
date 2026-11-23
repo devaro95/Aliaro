@@ -85,12 +85,8 @@ struct AddFamilyEventSheet: View {
             }
             .background(ALIColors.background)
             .navigationTitle(isEditing ? "Edit event" : "New event")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-            }
+            .navigationBarTitleDisplayMode(.large)
+            .presentationDragIndicator(.visible)
             .onAppear(perform: loadInitialValues)
         }
         .presentationDetents([.large])
