@@ -1,25 +1,31 @@
 import Foundation
 import Supabase
 
-/// Aliaro's own compatibility number, the same on iOS and Android and
-/// independent of store version numbers. Bump it ONLY in a release everyone
-/// must have (then, once it's live in both stores, set `app_compat.min_compat`
-/// to the new value). Releases without mandatory changes leave it alone.
-let ALIARO_COMPAT = 2
+/// Legacy compatibility number (apps <= 1.3.1 only check this). Since 1.4.0
+/// the force update goes by build number; this stays at 3 for good, so
+/// `min_compat = 3` (dashboard: «bloquear versiones antiguas») blocks every
+/// install up to 1.3.1 without touching 1.4.0+.
+let ALIARO_COMPAT = 3
+
+/// This install's build number (CFBundleVersion), compared with `app_compat.min_build_ios`.
+private let APP_BUILD = Int(Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "") ?? 0
 
 /// The single row of the `app_compat` Supabase table.
 private struct RemoteAppCompat: Decodable {
     let minCompat: Int?
+    let minBuild: Int?
 
     enum CodingKeys: String, CodingKey {
         case minCompat = "min_compat"
+        case minBuild = "min_build_ios"
     }
 }
 
-/// Force update: `app_compat.min_compat` (Supabase, single row, public read)
-/// is the minimum `ALIARO_COMPAT` allowed. While it's null nothing happens;
-/// once Varo sets it (SQL), every install below it is blocked by
-/// `ForceUpdateView` until it updates from the App Store.
+/// Force update: `app_compat` (Supabase, single row, public read) holds the
+/// minimum allowed. Since 1.4.0 Varo sets `min_build_ios` (minimum
+/// CFBundleVersion) from the dashboard (/versiones); `min_compat` is kept for
+/// older installs. While both are null nothing happens; an install below either
+/// minimum is blocked by `ForceUpdateView` until it updates from the App Store.
 ///
 /// Checked at launch, every time the app becomes active and live via
 /// Realtime. The last known minimum is cached, so a device that was told to
@@ -36,6 +42,7 @@ final class ForceUpdate: ObservableObject {
 
     private enum Keys {
         static let cachedMin = "aliaro.forceUpdate.minCompat"
+        static let cachedMinBuild = "aliaro.forceUpdate.minBuildIos"
     }
     private let defaults = UserDefaults.standard
     private var channel: RealtimeChannelV2?
@@ -43,7 +50,8 @@ final class ForceUpdate: ObservableObject {
 
     private init() {
         let cached = UserDefaults.standard.object(forKey: Keys.cachedMin) as? Int
-        required = ForceUpdate.isBelow(cached)
+        let cachedBuild = UserDefaults.standard.object(forKey: Keys.cachedMinBuild) as? Int
+        required = ForceUpdate.isBelow(cached, minBuild: cachedBuild)
     }
 
     func start() async {
@@ -57,14 +65,16 @@ final class ForceUpdate: ObservableObject {
         do {
             let rows: [RemoteAppCompat] = try await supabase
                 .from("app_compat")
-                .select("min_compat")
+                .select("min_compat,min_build_ios")
                 .execute()
                 .value
             let min = rows.first?.minCompat
+            let minBuild = rows.first?.minBuild
             if let min { defaults.set(min, forKey: Keys.cachedMin) } else { defaults.removeObject(forKey: Keys.cachedMin) }
-            let isRequired = ForceUpdate.isBelow(min)
+            if let minBuild { defaults.set(minBuild, forKey: Keys.cachedMinBuild) } else { defaults.removeObject(forKey: Keys.cachedMinBuild) }
+            let isRequired = ForceUpdate.isBelow(min, minBuild: minBuild)
             if isRequired && !required {
-                Track.event("force_update_shown", ["min_compat": min, "compat": ALIARO_COMPAT])
+                Track.event("force_update_shown", ["min_compat": min, "compat": ALIARO_COMPAT, "min_build": minBuild, "build": APP_BUILD])
             }
             required = isRequired
         } catch {
@@ -73,25 +83,26 @@ final class ForceUpdate: ObservableObject {
     }
 
     /// Tells the server which version this member is running (RPC
-    /// `report_app_version` → `family_members.app_version/app_platform/app_seen_at`),
-    /// so Varo can see who is still on an old version before raising `min_compat`.
+    /// `report_app_version` → `family_members.app_version/app_build/app_platform/app_seen_at`),
+    /// so Varo can see in the dashboard who is still on an old build before raising the minimum.
     /// Only with a session; failures are ignored.
     private func reportVersion() async {
         guard supabase.auth.currentSession != nil else { return }
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
-        struct Params: Encodable { let p_version: String; let p_platform: String }
+        struct Params: Encodable { let p_version: String; let p_platform: String; let p_build: Int }
         do {
             try await supabase
-                .rpc("report_app_version", params: Params(p_version: version, p_platform: "ios"))
+                .rpc("report_app_version", params: Params(p_version: version, p_platform: "ios", p_build: APP_BUILD))
                 .execute()
         } catch {
             print("⚠️ Could not report app version (\(error))")
         }
     }
 
-    private static func isBelow(_ min: Int?) -> Bool {
-        guard let min else { return false }
-        return ALIARO_COMPAT < min
+    private static func isBelow(_ min: Int?, minBuild: Int?) -> Bool {
+        if let min, ALIARO_COMPAT < min { return true }
+        if let minBuild, APP_BUILD < minBuild { return true }
+        return false
     }
 
     private func listenForChanges() async {
