@@ -5,7 +5,7 @@ import Supabase
 /// independent of store version numbers. Bump it ONLY in a release everyone
 /// must have (then, once it's live in both stores, set `app_compat.min_compat`
 /// to the new value). Releases without mandatory changes leave it alone.
-let ALIARO_COMPAT = 1
+let ALIARO_COMPAT = 2
 
 /// The single row of the `app_compat` Supabase table.
 private struct RemoteAppCompat: Decodable {
