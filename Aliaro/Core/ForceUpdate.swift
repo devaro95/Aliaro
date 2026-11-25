@@ -1,10 +1,10 @@
 import Foundation
 import Supabase
 
-/// Legacy compatibility number (apps <= 1.3.1 only check this). Since 1.4.0
+/// Legacy compatibility number (apps <= 1.3.1 only check this). Since 1.3.2
 /// the force update goes by build number; this stays at 3 for good, so
 /// `min_compat = 3` (dashboard: «bloquear versiones antiguas») blocks every
-/// install up to 1.3.1 without touching 1.4.0+.
+/// install up to 1.3.1 without touching 1.3.2+.
 let ALIARO_COMPAT = 3
 
 /// This install's build number (CFBundleVersion), compared with `app_compat.min_build_ios`.
@@ -22,7 +22,7 @@ private struct RemoteAppCompat: Decodable {
 }
 
 /// Force update: `app_compat` (Supabase, single row, public read) holds the
-/// minimum allowed. Since 1.4.0 Varo sets `min_build_ios` (minimum
+/// minimum allowed. Since 1.3.2 Varo sets `min_build_ios` (minimum
 /// CFBundleVersion) from the dashboard (/versiones); `min_compat` is kept for
 /// older installs. While both are null nothing happens; an install below either
 /// minimum is blocked by `ForceUpdateView` until it updates from the App Store.
