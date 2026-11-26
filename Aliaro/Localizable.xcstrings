@@ -24,18 +24,18 @@
         }
       }
     },
-    "%@ pays %@ %@. It will show up as a reimbursement and their balance will be settled." : {
+    "%@ pays %@. It will show up as a reimbursement and their balance will be settled." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$@ pays %2$@ %3$@. It will show up as a reimbursement and their balance will be settled."
+            "value" : "%1$@ pays %2$@. It will show up as a reimbursement and their balance will be settled."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$@ paga %3$@ a %2$@. Aparecerá como reembolso y su balance quedará saldado."
+            "value" : "%1$@ paga a %2$@. Aparecerá como reembolso y su balance quedará saldado."
           }
         }
       }

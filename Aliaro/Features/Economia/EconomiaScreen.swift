@@ -180,15 +180,14 @@ struct EconomiaScreen: View {
             // Already answered (e.g. from another device): drop the question.
             if newValue != nil { showBalancePrompt = false }
         }
-        .alert(
-            "Mark as paid?",
-            isPresented: Binding(get: { pendingPayment != nil }, set: { if !$0 { pendingPayment = nil } }),
-            presenting: pendingPayment
-        ) { payment in
-            Button("Cancel", role: .cancel) {}
-            Button("Mark as paid") { registerPayment(payment) }
-        } message: { payment in
-            Text("\(payment.fromName) pays \(payment.toName) \(payment.amount.formattedEuros). It will show up as a reimbursement and their balance will be settled.")
+        // Own dialog (not the system alert): a clear full-screen cover so it
+        // also dims the bottom bar; the dialog fades/scales itself in and out.
+        .fullScreenCover(item: $pendingPayment) { payment in
+            PaymentConfirmDialog(payment: payment) { confirmed in
+                if confirmed { registerPayment(payment) }
+                setPendingPayment(nil)
+            }
+            .presentationBackground(.clear)
         }
         .aliDeleteConfirmDialog(
             isPresented: Binding(get: { reimbursementPendingDelete != nil }, set: { if !$0 { reimbursementPendingDelete = nil } }),
@@ -471,6 +470,14 @@ struct EconomiaScreen: View {
         showBalancePrompt = true
     }
 
+    /// Shows/hides the payment dialog without the full-screen cover's slide-up
+    /// animation (the dialog animates itself).
+    private func setPendingPayment(_ payment: PendingPayment?) {
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) { pendingPayment = payment }
+    }
+
     /// Records "X pays Y" for the whole debt: a reimbursement that leaves
     /// their balance at zero and shows up in the list.
     private func registerPayment(_ payment: PendingPayment) {
@@ -588,11 +595,11 @@ struct EconomiaScreen: View {
                                 if canAdd {
                                     Button {
                                         Track.event("finances_mark_paid_tap")
-                                        pendingPayment = PendingPayment(
+                                        setPendingPayment(PendingPayment(
                                             fromID: settlement.from.id, fromName: settlement.from.name,
                                             toID: settlement.to.id, toName: settlement.to.name,
                                             amount: settlement.amount
-                                        )
+                                        ))
                                     } label: {
                                         Text("Paid")
                                             .font(ALITypography.labelLarge)
@@ -679,6 +686,97 @@ struct ReimbursementCard: View {
                 .stroke(ALIColors.economiaAccent, lineWidth: 1)
         )
         .contentShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+    }
+}
+
+/// Confirmation before registering a reimbursement, in the app's style
+/// (not the system alert): who pays whom with their initials, the amount
+/// in big green, and pistachio / plain buttons. Fades and scales in over a
+/// dimmed background; tapping outside cancels.
+private struct PaymentConfirmDialog: View {
+    let payment: EconomiaScreen.PendingPayment
+    /// `true` = mark as paid, `false` = cancel. Called once the dialog has animated out.
+    let onFinish: (Bool) -> Void
+
+    @State private var visible = false
+
+    var body: some View {
+        ZStack {
+            Color.black.opacity(visible ? 0.35 : 0)
+                .ignoresSafeArea()
+                .onTapGesture { close(false) }
+
+            if visible {
+                card
+                    .padding(.horizontal, 28)
+                    .transition(.scale(scale: 0.92).combined(with: .opacity))
+            }
+        }
+        .trackScreen("finances_mark_paid_dialog")
+        .onAppear {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) { visible = true }
+        }
+    }
+
+    private var card: some View {
+        VStack(spacing: 18) {
+            HStack(spacing: 10) {
+                avatar(payment.fromName, color: ALIColors.error)
+                Image(systemName: "arrow.right")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundStyle(ALIColors.mutedInk)
+                avatar(payment.toName, color: ALIColors.economiaAccent)
+            }
+            .padding(.top, 4)
+
+            VStack(spacing: 6) {
+                Text("Mark as paid?")
+                    .font(ALITypography.titleLarge)
+                    .foregroundStyle(ALIColors.ink)
+                Text(payment.amount.formattedEuros)
+                    .font(.system(size: 34, weight: .bold, design: .rounded))
+                    .foregroundStyle(ALIColors.economiaStrong)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                Text("\(payment.fromName) pays \(payment.toName). It will show up as a reimbursement and their balance will be settled.")
+                    .font(ALITypography.bodyMedium)
+                    .foregroundStyle(ALIColors.mutedInk)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            VStack(spacing: 8) {
+                ALIPrimaryButton(text: "Mark as paid", accent: ALIColors.economiaAccent) { close(true) }
+                ALISecondaryButton(text: "Cancel") { close(false) }
+            }
+        }
+        .padding(22)
+        .frame(maxWidth: 380)
+        .background(ALIColors.surface)
+        .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 28, style: .continuous).stroke(ALIColors.outline, lineWidth: 1))
+        .shadow(color: .black.opacity(0.12), radius: 24, y: 10)
+    }
+
+    private func avatar(_ name: String, color: Color) -> some View {
+        VStack(spacing: 4) {
+            Text(String(name.prefix(1)).uppercased())
+                .font(ALITypography.titleLarge)
+                .foregroundStyle(ALIColors.onAccent)
+                .frame(width: 48, height: 48)
+                .background(color.opacity(0.7))
+                .clipShape(Circle())
+            Text(name)
+                .font(ALITypography.labelLarge)
+                .foregroundStyle(ALIColors.mutedInk)
+                .lineLimit(1)
+                .frame(maxWidth: 90)
+        }
+    }
+
+    private func close(_ confirmed: Bool) {
+        withAnimation(.easeOut(duration: 0.18)) { visible = false }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) { onFinish(confirmed) }
     }
 }
 
