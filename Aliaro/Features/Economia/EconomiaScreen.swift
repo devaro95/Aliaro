@@ -27,8 +27,31 @@ struct EconomiaScreen: View {
     }
     @Query(sort: \FamilyMember.createdAt) private var members: [FamilyMember]
     @Query(sort: \ExpenseCategory.createdAt) private var categories: [ExpenseCategory]
+    @Query(sort: \ExpenseSettlement.occurredAt, order: .reverse) private var allReimbursements: [ExpenseSettlement]
+    /// Fresh fetch, for the same reason as `expenses` (archiving deletes them all at once).
+    private var reimbursements: [ExpenseSettlement] {
+        _ = allReimbursements.count
+        let descriptor = FetchDescriptor<ExpenseSettlement>(sortBy: [SortDescriptor(\.occurredAt, order: .reverse)])
+        return (try? modelContext.fetch(descriptor)) ?? []
+    }
+    @EnvironmentObject private var familyService: FamilyService
 
     @State private var showAddSheet = false
+    /// One-time question to the admin: keep or hide the balance for everyone.
+    @State private var showBalancePrompt = false
+    @State private var balancePromptHandled = false
+    /// Debt the user tapped "Paid" on, waiting for confirmation.
+    @State private var pendingPayment: PendingPayment?
+    @State private var reimbursementPendingDelete: ReimbursementRowData?
+
+    struct PendingPayment: Identifiable {
+        let id = UUID()
+        let fromID: UUID
+        let fromName: String
+        let toID: UUID
+        let toName: String
+        let amount: Double
+    }
     @State private var showStats = false
     @State private var showArchives = false
     @State private var expensePendingDelete: Expense?
@@ -40,6 +63,10 @@ struct EconomiaScreen: View {
     enum SummaryMode: String { case totals, balance }
 
     private var currentMember: FamilyMember? { members.first(where: \.isCurrentDevice) }
+    /// Group admin (creator): the only one who can show/hide the balance.
+    private var isAdmin: Bool { currentMember?.isCreator ?? false }
+    /// The admin can hide the balance for the whole group (`nil` = not chosen yet, shown).
+    private var isBalanceEnabled: Bool { familySession.showBalance != false }
     private var canAdd: Bool { currentMember?.can(.financesAdd) ?? true }
     private var canEdit: Bool { currentMember?.can(.financesEdit) ?? true }
     private var canDelete: Bool { currentMember?.can(.financesDelete) ?? true }
@@ -102,24 +129,24 @@ struct EconomiaScreen: View {
                     balancesCard
                 }
 
-                if !expenses.isEmpty {
+                if !expenses.isEmpty || !reimbursements.isEmpty {
                     searchAndFilterBar
                 }
 
-                if expenses.isEmpty {
+                if expenses.isEmpty && reimbursements.isEmpty {
                     ALIEmptyState(
                         icon: ALIIcon.euro,
                         title: "No transactions",
                         subtitle: "Add the group's first expense or income."
                     )
-                } else if filteredExpenses.isEmpty {
+                } else if filteredExpenses.isEmpty && filteredReimbursements.isEmpty {
                     ALIEmptyState(
                         icon: ALIIcon.search,
                         title: "No results",
                         subtitle: "Try another name, amount, or date."
                     )
                 } else {
-                    expenseList(rowData(for: filteredExpenses))
+                    transactionList(listSections(expenses: rowData(for: filteredExpenses), reimbursements: filteredReimbursements))
                 }
             }
             .padding(.horizontal, 20)
@@ -140,6 +167,37 @@ struct EconomiaScreen: View {
         }
         .sheet(isPresented: $showPaywall) {
             PaywallView()
+        }
+        .sheet(isPresented: $showBalancePrompt) {
+            BalancePromptSheet { show in
+                Track.event("finances_balance_prompt_answer", ["show": show])
+                showBalancePrompt = false
+                Task { try? await familyService.updateShowBalance(show) }
+            }
+        }
+        .task(id: members.count) { askAboutBalanceIfNeeded() }
+        .onChange(of: familySession.showBalance) { _, newValue in
+            // Already answered (e.g. from another device): drop the question.
+            if newValue != nil { showBalancePrompt = false }
+        }
+        .alert(
+            "Mark as paid?",
+            isPresented: Binding(get: { pendingPayment != nil }, set: { if !$0 { pendingPayment = nil } }),
+            presenting: pendingPayment
+        ) { payment in
+            Button("Cancel", role: .cancel) {}
+            Button("Mark as paid") { registerPayment(payment) }
+        } message: { payment in
+            Text("\(payment.fromName) pays \(payment.toName) \(payment.amount.formattedEuros). It will show up as a reimbursement and their balance will be settled.")
+        }
+        .aliDeleteConfirmDialog(
+            isPresented: Binding(get: { reimbursementPendingDelete != nil }, set: { if !$0 { reimbursementPendingDelete = nil } }),
+            itemName: reimbursementPendingDelete.map { String(localized: "\($0.fromName) pays \($0.toName)") } ?? ""
+        ) {
+            if let row = reimbursementPendingDelete {
+                deleteReimbursement(row)
+            }
+            reimbursementPendingDelete = nil
         }
         .sheet(isPresented: $showDateFilterSheet) {
             EconomiaDateFilterSheet(startDate: filterStartDate, endDate: filterEndDate) { start, end in
@@ -195,6 +253,80 @@ struct EconomiaScreen: View {
                 emoji: cats.first?.emoji ?? (expense.isIncome ? ALIIcon.coins : ALIIcon.receipt),
                 categoryNames: cats.map(\.displayName)
             )
+        }
+    }
+
+    /// Plain-value copies of the reimbursements that match the search and date filter.
+    private var filteredReimbursements: [ReimbursementRowData] {
+        reimbursements.compactMap { r in
+            let trimmedQuery = searchText.trimmed
+            if !trimmedQuery.isEmpty {
+                let query = trimmedQuery.lowercased()
+                let nameMatches = r.fromName.lowercased().contains(query) || r.toName.lowercased().contains(query)
+                guard nameMatches || r.amount.matchesAmountQuery(query) else { return nil }
+            }
+            if let start = filterStartDate {
+                let calendar = Calendar.current
+                let dayStart = calendar.startOfDay(for: start)
+                let endDay = filterEndDate ?? start
+                let dayEnd = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: endDay)) ?? dayStart
+                guard r.occurredAt >= dayStart && r.occurredAt < dayEnd else { return nil }
+            }
+            return ReimbursementRowData(id: r.id, fromName: r.fromName, toName: r.toName, amount: r.amount, occurredAt: r.occurredAt)
+        }
+    }
+
+    private enum ListSection: Identifiable {
+        case expenses([ExpenseRowData])
+        case reimbursement(ReimbursementRowData)
+
+        var id: UUID {
+            switch self {
+            case .expenses(let rows): return rows[0].id
+            case .reimbursement(let row): return row.id
+            }
+        }
+    }
+
+    /// Merges expenses and reimbursements by date (newest first): runs of
+    /// consecutive expenses share one card, each reimbursement gets its own.
+    private func listSections(expenses: [ExpenseRowData], reimbursements: [ReimbursementRowData]) -> [ListSection] {
+        var sections: [ListSection] = []
+        var run: [ExpenseRowData] = []
+        var i = 0, j = 0
+        while i < expenses.count || j < reimbursements.count {
+            let takeExpense = j >= reimbursements.count || (i < expenses.count && expenses[i].occurredAt >= reimbursements[j].occurredAt)
+            if takeExpense {
+                run.append(expenses[i]); i += 1
+            } else {
+                if !run.isEmpty { sections.append(.expenses(run)); run = [] }
+                sections.append(.reimbursement(reimbursements[j])); j += 1
+            }
+        }
+        if !run.isEmpty { sections.append(.expenses(run)) }
+        return sections
+    }
+
+    private func transactionList(_ sections: [ListSection]) -> some View {
+        VStack(spacing: 12) {
+            ForEach(sections) { section in
+                switch section {
+                case .expenses(let rows):
+                    expenseList(rows)
+                case .reimbursement(let row):
+                    ReimbursementCard(from: row.fromName, to: row.toName, amount: row.amount, date: row.occurredAt)
+                        .contextMenu {
+                            if canDelete {
+                                Button(role: .destructive) {
+                                    Track.event("finances_reimbursement_delete_tap")
+                                    reimbursementPendingDelete = row
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                            }
+                        }
+                }
+            }
         }
     }
 
@@ -327,7 +459,55 @@ struct EconomiaScreen: View {
     // MARK: Balances
 
     private var settlements: [(from: FamilyMember, to: FamilyMember, amount: Double)] {
-        FinanceBalances.settlements(expenses: expenses, members: members)
+        FinanceBalances.settlements(expenses: expenses, reimbursements: reimbursements, members: members)
+    }
+
+    /// The first time the admin opens Finances in a shared group, asks
+    /// whether to keep the balance or hide it for everyone.
+    private func askAboutBalanceIfNeeded() {
+        guard !balancePromptHandled, isAdmin, members.count > 1, familySession.showBalance == nil else { return }
+        balancePromptHandled = true
+        Track.event("finances_balance_prompt_shown")
+        showBalancePrompt = true
+    }
+
+    /// Records "X pays Y" for the whole debt: a reimbursement that leaves
+    /// their balance at zero and shows up in the list.
+    private func registerPayment(_ payment: PendingPayment) {
+        guard let familyID = familySession.familyID else { return }
+        let amount = (payment.amount * 100).rounded() / 100
+        let reimbursement = ExpenseSettlement(
+            fromMemberID: payment.fromID, fromName: payment.fromName,
+            toMemberID: payment.toID, toName: payment.toName,
+            amount: amount
+        )
+        modelContext.insert(reimbursement)
+        try? modelContext.save()
+        dataSync.pushExpenseSettlement(reimbursement, familyID: familyID)
+        Track.event("finances_reimbursement_created", ["members": members.count])
+        dataSync.logActivity(
+            entityType: "expense", entityName: String(localized: "\(payment.fromName) pays \(payment.toName)"), action: "created",
+            actorID: familySession.memberID,
+            actorName: familySession.memberID.flatMap { modelContext.familyMemberName(id: $0) },
+            familyID: familyID, modelContext: modelContext
+        )
+    }
+
+    private func deleteReimbursement(_ row: ReimbursementRowData) {
+        let id = row.id
+        if let live = try? modelContext.fetch(FetchDescriptor<ExpenseSettlement>(predicate: #Predicate { $0.id == id })).first {
+            modelContext.delete(live)
+            try? modelContext.save()
+        }
+        dataSync.deleteExpenseSettlement(id: id)
+        if let familyID = familySession.familyID {
+            dataSync.logActivity(
+                entityType: "expense", entityName: String(localized: "\(row.fromName) pays \(row.toName)"), action: "deleted",
+                actorID: familySession.memberID,
+                actorName: familySession.memberID.flatMap { modelContext.familyMemberName(id: $0) },
+                familyID: familyID, modelContext: modelContext
+            )
+        }
     }
 
     /// Expenses (not income) paid by you / by the whole family.
@@ -370,8 +550,9 @@ struct EconomiaScreen: View {
     }
 
     private var balancesCard: some View {
-        // Alone in the family there's no balance: just the total.
-        let shared = members.count > 1
+        // Alone in the family there's no balance, and the admin can hide it
+        // for everyone: just the totals.
+        let shared = members.count > 1 && isBalanceEnabled
         let totals = !shared || summaryMode == .totals
         return ALICard {
             VStack(alignment: .leading, spacing: 10) {
@@ -388,7 +569,7 @@ struct EconomiaScreen: View {
                 }
 
                 if totals {
-                    if shared { totalRow("Your expenses", myExpensesTotal) }
+                    if members.count > 1 { totalRow("Your expenses", myExpensesTotal) }
                     totalRow("Total expenses", totalExpenses)
                 } else if settlements.isEmpty {
                     Text(expenses.isEmpty ? "There's nothing to split yet." : "You're all even, no one owes anything.")
@@ -404,6 +585,25 @@ struct EconomiaScreen: View {
                                 Spacer()
                                 Text(settlement.amount.formattedEuros)
                                     .foregroundStyle(ALIColors.error)
+                                if canAdd {
+                                    Button {
+                                        Track.event("finances_mark_paid_tap")
+                                        pendingPayment = PendingPayment(
+                                            fromID: settlement.from.id, fromName: settlement.from.name,
+                                            toID: settlement.to.id, toName: settlement.to.name,
+                                            amount: settlement.amount
+                                        )
+                                    } label: {
+                                        Text("Paid")
+                                            .font(ALITypography.labelLarge)
+                                            .foregroundStyle(ALIColors.onAccent)
+                                            .padding(.horizontal, 10)
+                                            .padding(.vertical, 6)
+                                            .background(ALIColors.economiaAccent)
+                                            .clipShape(Capsule())
+                                    }
+                                    .buttonStyle(.plain)
+                                }
                             }
                             .font(ALITypography.bodyMedium)
                             .foregroundStyle(ALIColors.ink)
@@ -425,6 +625,141 @@ private struct ExpenseRowData: Identifiable {
     let occurredAt: Date
     let emoji: String
     let categoryNames: [String]
+}
+
+/// Plain-value copy of an `ExpenseSettlement` for its card.
+struct ReimbursementRowData: Identifiable {
+    let id: UUID
+    let fromName: String
+    let toName: String
+    let amount: Double
+    let occurredAt: Date
+}
+
+/// Card for a reimbursement ("Lucía pays Varo · Reimbursement · date"):
+/// pistachio tint with the amount in green and no +/− sign, since it only
+/// moves money between members.
+struct ReimbursementCard: View {
+    let from: String
+    let to: String
+    let amount: Double
+    let date: Date
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "arrow.left.arrow.right")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(ALIColors.onAccent)
+                .frame(width: 40, height: 40)
+                .background(ALIColors.economiaAccent)
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            VStack(alignment: .leading, spacing: 3) {
+                Text("\(from) pays \(to)")
+                    .font(ALITypography.bodyLarge.weight(.semibold))
+                    .foregroundStyle(ALIColors.ink)
+                    .lineLimit(2)
+                Text("Reimbursement · \(date.formatted(date: .abbreviated, time: .omitted))")
+                    .font(ALITypography.labelLarge)
+                    .foregroundStyle(ALIColors.mutedInk)
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 8)
+            Text(amount.formattedEuros)
+                .font(ALITypography.bodyLarge.weight(.semibold))
+                .fixedSize()
+                .foregroundStyle(ALIColors.economiaStrong)
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(ALIColors.economiaAccent.opacity(0.18))
+        .background(ALIColors.surface)
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(ALIColors.economiaAccent, lineWidth: 1)
+        )
+        .contentShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+    }
+}
+
+/// One-time question to the group admin (first visit to Finances in a
+/// shared group): keep the "Balance between you" or hide it for everyone.
+/// Shows a sample of the card so it's clear what it is. Must be answered
+/// (can't be swiped away); it can be changed later in App features.
+private struct BalancePromptSheet: View {
+    let onAnswer: (Bool) -> Void
+
+    var body: some View {
+        trackedBody.trackScreen("finances_balance_prompt")
+    }
+
+    private var trackedBody: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            sampleCard
+                .padding(.horizontal, 22)
+                .padding(.vertical, 20)
+                .frame(maxWidth: .infinity)
+                .background(ALIColors.economiaAccent.opacity(0.3))
+                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Show the balance between you?")
+                    .font(ALITypography.titleLarge)
+                    .foregroundStyle(ALIColors.ink)
+                Text("It splits expenses equally and works out who owes whom. If your family doesn't use it, you can hide it for everyone. You can change this in App features.")
+                    .font(ALITypography.bodyMedium)
+                    .foregroundStyle(ALIColors.mutedInk)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            VStack(spacing: 8) {
+                ALIPrimaryButton(text: "Keep balance", accent: ALIColors.economiaAccent) { onAnswer(true) }
+                ALISecondaryButton(text: "Hide balance") { onAnswer(false) }
+            }
+        }
+        .padding(20)
+        .padding(.top, 8)
+        .background(ALIColors.background)
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+        .interactiveDismissDisabled()
+    }
+
+    /// Example of the balance card (sample names, not the group's data).
+    private var sampleCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Balance between you")
+                .font(ALITypography.labelLarge)
+                .foregroundStyle(ALIColors.mutedInk)
+            sampleRow(initial: "L", color: ALIColors.error, from: "Lucía", to: "Varo", amount: 42.5)
+            sampleRow(initial: "P", color: ALIColors.familyAccent, from: "Pablo", to: "Varo", amount: 12)
+        }
+        .padding(14)
+        .background(ALIColors.surface)
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(ALIColors.outline, lineWidth: 1))
+        .shadow(color: ALIColors.economiaStrong.opacity(0.15), radius: 10, y: 6)
+        .rotationEffect(.degrees(-1.5))
+    }
+
+    private func sampleRow(initial: String, color: Color, from: String, to: String, amount: Double) -> some View {
+        HStack(spacing: 10) {
+            Text(initial)
+                .font(ALITypography.labelLarge.weight(.semibold))
+                .foregroundStyle(ALIColors.onAccent)
+                .frame(width: 28, height: 28)
+                .background(color.opacity(0.6))
+                .clipShape(Circle())
+            Text("\(from) owes \(to)")
+                .font(ALITypography.bodyMedium)
+                .foregroundStyle(ALIColors.ink)
+                .lineLimit(1)
+            Spacer(minLength: 4)
+            Text(amount.formattedEuros)
+                .font(ALITypography.bodyMedium.weight(.semibold))
+                .foregroundStyle(ALIColors.error)
+        }
+    }
 }
 
 /// Row for a transaction: name, categories, who carried it out and when,

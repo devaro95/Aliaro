@@ -4,7 +4,9 @@ import Foundation
 enum FinanceBalances {
     /// Net balance for each member, splitting every expense/income
     /// equally among everyone: positive = owed to them, negative = owes the group.
-    static func balances(expenses: [Expense], members: [FamilyMember]) -> [UUID: Double] {
+    /// Reimbursements ("X pays Y") move money straight from one member to
+    /// the other: the payer's balance goes up and the receiver's goes down.
+    static func balances(expenses: [Expense], reimbursements: [ExpenseSettlement] = [], members: [FamilyMember]) -> [UUID: Double] {
         guard members.count > 1 else { return [:] }
         let n = Double(members.count)
         var result: [UUID: Double] = [:]
@@ -20,13 +22,17 @@ enum FinanceBalances {
                 }
             }
         }
+        for reimbursement in reimbursements {
+            if result[reimbursement.fromMemberID] != nil { result[reimbursement.fromMemberID]! += reimbursement.amount }
+            if result[reimbursement.toMemberID] != nil { result[reimbursement.toMemberID]! -= reimbursement.amount }
+        }
         return result
     }
 
     /// Pairs debtors with creditors to settle all balances with the
     /// fewest possible transfers.
-    static func settlements(expenses: [Expense], members: [FamilyMember]) -> [(from: FamilyMember, to: FamilyMember, amount: Double)] {
-        let balances = balances(expenses: expenses, members: members)
+    static func settlements(expenses: [Expense], reimbursements: [ExpenseSettlement] = [], members: [FamilyMember]) -> [(from: FamilyMember, to: FamilyMember, amount: Double)] {
+        let balances = balances(expenses: expenses, reimbursements: reimbursements, members: members)
         var creditors: [(FamilyMember, Double)] = []
         var debtors: [(FamilyMember, Double)] = []
         for member in members {

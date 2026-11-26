@@ -29,6 +29,7 @@ struct AliaroApp: App {
             FamilyEvent.self,
             EventCategory.self,
             Expense.self,
+            ExpenseSettlement.self,
             ExpenseCategory.self,
             ActivityLogEntry.self,
             ExpenseArchive.self,

@@ -76,23 +76,38 @@ struct ExpenseArchiveSnapshot: Codable, Equatable {
         var amount: Double
     }
 
+    /// A reimbursement between members ("X pays Y") made in this period.
+    struct Reimbursement: Codable, Equatable, Identifiable {
+        var id: UUID
+        var from: String
+        var to: String
+        var amount: Double
+        var occurredAt: Double
+
+        var date: Date { Date(timeIntervalSince1970: occurredAt) }
+    }
+
     /// Newest first, same order as the Finances list.
     var items: [Item]
-    /// Who owed whom at the moment of archiving.
+    /// Who owed whom at the moment of archiving (reimbursements already applied).
     var settlements: [Settlement]
+    /// Newest first. `nil` in archives made before reimbursements existed
+    /// (and in those made from older app versions).
+    var reimbursements: [Reimbursement]?
 
     var totalExpenses: Double { items.filter { !$0.isIncome }.reduce(0) { $0 + $1.amount } }
     var totalIncome: Double { items.filter(\.isIncome).reduce(0) { $0 + $1.amount } }
     /// Expenses minus income.
     var net: Double { totalExpenses - totalIncome }
 
-    init(items: [Item], settlements: [Settlement]) {
+    init(items: [Item], settlements: [Settlement], reimbursements: [Reimbursement]? = nil) {
         self.items = items
         self.settlements = settlements
+        self.reimbursements = reimbursements
     }
 
-    /// Freezes the given transactions (and the balance between `members`).
-    init(expenses: [Expense], categories: [ExpenseCategory], members: [FamilyMember]) {
+    /// Freezes the given transactions and reimbursements (and the balance between `members`).
+    init(expenses: [Expense], reimbursements: [ExpenseSettlement] = [], categories: [ExpenseCategory], members: [FamilyMember]) {
         let byID = Dictionary(categories.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
         items = expenses
             .sorted { $0.occurredAt > $1.occurredAt }
@@ -109,8 +124,11 @@ struct ExpenseArchiveSnapshot: Codable, Equatable {
                     occurredAt: expense.occurredAt.timeIntervalSince1970
                 )
             }
-        settlements = FinanceBalances.settlements(expenses: expenses, members: members).map {
+        settlements = FinanceBalances.settlements(expenses: expenses, reimbursements: reimbursements, members: members).map {
             Settlement(from: $0.from.name, to: $0.to.name, amount: $0.amount)
         }
+        self.reimbursements = reimbursements
+            .sorted { $0.occurredAt > $1.occurredAt }
+            .map { Reimbursement(id: $0.id, from: $0.fromName, to: $0.toName, amount: $0.amount, occurredAt: $0.occurredAt.timeIntervalSince1970) }
     }
 }

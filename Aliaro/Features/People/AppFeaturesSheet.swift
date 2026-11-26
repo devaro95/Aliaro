@@ -17,6 +17,7 @@ struct AppFeaturesSheet: View {
     @State private var disabledTabsDraft: Set<String> = []
     @State private var startTabDraft: String?
     @State private var favoriteTabsDraft: [String] = []
+    @State private var showBalanceDraft = true
     @State private var isSaving = false
     @State private var errorMessage: String?
 
@@ -89,6 +90,24 @@ struct AppFeaturesSheet: View {
 
                     ALICard {
                         VStack(alignment: .leading, spacing: 14) {
+                            Text("Choose whether Finances shows who owes whom.")
+                                .font(ALITypography.bodyMedium)
+                                .foregroundStyle(ALIColors.mutedInk)
+                            Toggle(isOn: Binding(
+                                get: { showBalanceDraft },
+                                set: { setShowBalance($0) }
+                            )) {
+                                Label("Balance between you", systemImage: "scalemass")
+                                    .font(ALITypography.bodyLarge)
+                                    .foregroundStyle(isAdmin ? ALIColors.ink : ALIColors.mutedInk)
+                            }
+                            .tint(ALIColors.economiaAccent)
+                            .disabled(!isAdmin || isSaving)
+                        }
+                    }
+
+                    ALICard {
+                        VStack(alignment: .leading, spacing: 14) {
                             Text("Choose which screen opens first for everyone in the group.")
                                 .font(ALITypography.bodyMedium)
                                 .foregroundStyle(ALIColors.mutedInk)
@@ -128,6 +147,10 @@ struct AppFeaturesSheet: View {
             disabledTabsDraft = familySession.disabledTabs
             startTabDraft = familySession.startTab
             favoriteTabsDraft = familySession.favoriteTabs
+            showBalanceDraft = familySession.showBalance != false
+        }
+        .onChange(of: familySession.showBalance) { _, newValue in
+            showBalanceDraft = newValue != false
         }
         .onChange(of: familySession.disabledTabs) { _, newValue in
             disabledTabsDraft = newValue
@@ -234,6 +257,20 @@ struct AppFeaturesSheet: View {
             } catch {
                 errorMessage = error.localizedDescription
                 disabledTabsDraft = familySession.disabledTabs // revert on failure
+            }
+        }
+    }
+
+    private func setShowBalance(_ show: Bool) {
+        showBalanceDraft = show
+        Task {
+            isSaving = true
+            defer { isSaving = false }
+            do {
+                try await familyService.updateShowBalance(show)
+            } catch {
+                errorMessage = error.localizedDescription
+                showBalanceDraft = familySession.showBalance != false // revert on failure
             }
         }
     }

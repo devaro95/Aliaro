@@ -38,8 +38,8 @@ enum ExpenseArchivePDF {
 
     /// PDF of the live (not archived) finances, so they can be kept or
     /// sent without starting again from zero.
-    static func makeCurrent(expenses: [Expense], categories: [ExpenseCategory], members: [FamilyMember]) throws -> URL {
-        let snapshot = ExpenseArchiveSnapshot(expenses: expenses, categories: categories, members: members)
+    static func makeCurrent(expenses: [Expense], reimbursements: [ExpenseSettlement] = [], categories: [ExpenseCategory], members: [FamilyMember]) throws -> URL {
+        let snapshot = ExpenseArchiveSnapshot(expenses: expenses, reimbursements: reimbursements, categories: categories, members: members)
         let dates = expenses.map(\.occurredAt)
         let start = dates.min() ?? .now
         let end = dates.max() ?? .now

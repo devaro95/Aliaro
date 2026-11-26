@@ -64,6 +64,8 @@ enum ALIColors {
     static let remindersAccent = ALIPalette.mint
     static let peopleAccent = ALIPalette.rose
     static let economiaAccent = ALIPalette.pistachio
+    /// Stronger green for text on a light pistachio tint (reimbursements).
+    static let economiaStrong = Color.dynamic(light: Color(hex: 0x5E8A43), dark: ALIPalette.pistachio)
     static let recipesAccent = ALIPalette.apricot
     static let boardAccent = ALIPalette.periwinkle
     static let wifiAccent = ALIPalette.turquoise

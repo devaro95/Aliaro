@@ -48,3 +48,44 @@ final class Expense {
     }
 }
 
+/// A reimbursement between two members ("X pays Y"): settles all or part of
+/// what one owes the other in the balance. It isn't an expense or income
+/// of the family, so it doesn't count in totals or statistics — only in
+/// the balance (`FinanceBalances`). Kept in its own table
+/// (`expense_settlements`) so older app versions don't read it as an expense.
+/// Archiving the finances clears them (a database trigger) after copying
+/// them into the archive's snapshot.
+@Model
+final class ExpenseSettlement {
+    var id: UUID
+    /// Who pays (the member who owed money).
+    var fromMemberID: UUID
+    var fromName: String
+    /// Who gets paid.
+    var toMemberID: UUID
+    var toName: String
+    var amount: Double
+    var occurredAt: Date
+    var createdAt: Date
+
+    init(
+        id: UUID = UUID(),
+        fromMemberID: UUID,
+        fromName: String,
+        toMemberID: UUID,
+        toName: String,
+        amount: Double,
+        occurredAt: Date = .now,
+        createdAt: Date = .now
+    ) {
+        self.id = id
+        self.fromMemberID = fromMemberID
+        self.fromName = fromName
+        self.toMemberID = toMemberID
+        self.toName = toName
+        self.amount = amount
+        self.occurredAt = occurredAt
+        self.createdAt = createdAt
+    }
+}
+

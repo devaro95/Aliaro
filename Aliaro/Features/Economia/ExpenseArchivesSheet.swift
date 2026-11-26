@@ -28,6 +28,13 @@ struct ExpenseArchivesSheet: View {
     }
     @Query(sort: \FamilyMember.createdAt) private var members: [FamilyMember]
     @Query(sort: \ExpenseCategory.createdAt) private var categories: [ExpenseCategory]
+    @Query(sort: \ExpenseSettlement.occurredAt, order: .reverse) private var allReimbursements: [ExpenseSettlement]
+    /// Fresh fetch for the same reason as `expenses` (archiving deletes them all).
+    private var reimbursements: [ExpenseSettlement] {
+        _ = allReimbursements.count
+        let descriptor = FetchDescriptor<ExpenseSettlement>(sortBy: [SortDescriptor(\.occurredAt, order: .reverse)])
+        return (try? modelContext.fetch(descriptor)) ?? []
+    }
     @Query(sort: \ExpenseArchive.createdAt, order: .reverse) private var allArchives: [ExpenseArchive]
     /// Fresh fetch for the same reason as `expenses`.
     private var archives: [ExpenseArchive] {
@@ -205,7 +212,7 @@ struct ExpenseArchivesSheet: View {
                         ALISecondaryButton(text: "View PDF without archiving") {
                             Track.event("finance_pdf_view", ["source": "current", "transactions": shownExpenses.count])
                             previewURL = try? ExpenseArchivePDF.makeCurrent(
-                                expenses: expenses, categories: categories, members: members
+                                expenses: expenses, reimbursements: reimbursements, categories: categories, members: members
                             )
                         }
                     }
@@ -232,6 +239,8 @@ struct ExpenseArchivesSheet: View {
         guard !name.isEmpty, !expenses.isEmpty else { return }
 
         let current = expenses
+        let currentReimbursements = reimbursements
+        let reimbursementIDs = currentReimbursements.map(\.id)
         let ids = current.map(\.id)
         let dates = current.map(\.occurredAt)
         let actorName = familySession.memberID.flatMap { modelContext.familyMemberName(id: $0) }
@@ -240,7 +249,7 @@ struct ExpenseArchivesSheet: View {
             startDate: dates.min() ?? .now,
             endDate: dates.max() ?? .now,
             archivedByName: actorName,
-            snapshot: ExpenseArchiveSnapshot(expenses: current, categories: categories, members: members)
+            snapshot: ExpenseArchiveSnapshot(expenses: current, reimbursements: currentReimbursements, categories: categories, members: members)
         )
 
         isArchiving = true
@@ -261,6 +270,13 @@ struct ExpenseArchivesSheet: View {
         for id in ids {
             if let expense = try? modelContext.fetch(FetchDescriptor<Expense>(predicate: #Predicate { $0.id == id })).first {
                 modelContext.delete(expense)
+            }
+        }
+        // The server clears the reimbursements itself when the archive is
+        // inserted (trigger); drop the local copies right away too.
+        for id in reimbursementIDs {
+            if let reimbursement = try? modelContext.fetch(FetchDescriptor<ExpenseSettlement>(predicate: #Predicate { $0.id == id })).first {
+                modelContext.delete(reimbursement)
             }
         }
         try? modelContext.save()
@@ -385,6 +401,12 @@ struct ExpenseArchiveDetailView: View {
                             }
                         }
                     }
+                }
+
+                ForEach(snapshot.reimbursements ?? []) { r in
+                    ReimbursementCard(
+                        from: r.from, to: r.to, amount: r.amount, date: r.date
+                    )
                 }
 
                 ALICard {

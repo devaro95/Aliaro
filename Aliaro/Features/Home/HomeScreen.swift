@@ -52,6 +52,8 @@ struct HomeScreen: View {
     private var boardNotes: [BoardNote]
     /// Only a re-render trigger — see `expenses`.
     @Query private var allExpenses: [Expense]
+    /// Only a re-render trigger — see `reimbursements`.
+    @Query private var allReimbursements: [ExpenseSettlement]
 
     @State private var showPaywall = false
     @State private var showCustomize = false
@@ -95,6 +97,11 @@ struct HomeScreen: View {
     private var expenses: [Expense] {
         _ = allExpenses.count
         return (try? modelContext.fetch(FetchDescriptor<Expense>())) ?? []
+    }
+
+    private var reimbursements: [ExpenseSettlement] {
+        _ = allReimbursements.count
+        return (try? modelContext.fetch(FetchDescriptor<ExpenseSettlement>())) ?? []
     }
 
     private var currentMember: FamilyMember? { members.first(where: \.isCurrentDevice) }
@@ -840,7 +847,9 @@ struct HomeScreen: View {
     }
 
     private var financesSummary: HomeSummary? {
-        let settlements = FinanceBalances.settlements(expenses: expenses, members: members)
+        // The admin can hide the balance for the whole group.
+        guard familySession.showBalance != false else { return nil }
+        let settlements = FinanceBalances.settlements(expenses: expenses, reimbursements: reimbursements, members: members)
         guard let first = settlements.first else { return nil }
         var detail = first.amount.formattedEuros
         if settlements.count > 1 {

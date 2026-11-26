@@ -681,7 +681,7 @@ final class FamilyService: ObservableObject {
         wipe(FamilyMember.self); wipe(Dish.self); wipe(Recipe.self); wipe(MealPlanEntry.self)
         wipe(GroceryItem.self); wipe(ShoppingList.self); wipe(ShoppingListEntry.self)
         wipe(HouseTask.self); wipe(HouseTaskLog.self); wipe(FamilyEvent.self); wipe(EventCategory.self); wipe(Reminder.self)
-        wipe(BoardNote.self); wipe(Expense.self); wipe(ExpenseCategory.self); wipe(ExpenseArchive.self)
+        wipe(BoardNote.self); wipe(Expense.self); wipe(ExpenseSettlement.self); wipe(ExpenseCategory.self); wipe(ExpenseArchive.self)
         wipe(ActivityLogEntry.self); wipe(WifiNetwork.self); wipe(FamilyPlace.self); wipe(PlaceCustomCategory.self); wipe(VisitedCountry.self)
         do { try modelContext.save() } catch { print("clearAllLocalData save failed: \(error)") }
     }
@@ -698,6 +698,8 @@ final class FamilyService: ObservableObject {
         let favorite_tabs: [String]?
         /// Member paying the group's Premium; optional so a partial payload still decodes.
         let premium_member_id: UUID?
+        /// Whether Finances shows the balance (`nil` = the admin hasn't chosen yet).
+        let show_balance: Bool?
     }
 
     /// Fetches which tabs the admin has turned off (and which one is the
@@ -708,7 +710,7 @@ final class FamilyService: ObservableObject {
         do {
             let row: RemoteFamilySettings = try await supabase
                 .from("families")
-                .select("name,disabled_tabs,start_tab,is_premium,favorite_tabs,premium_member_id")
+                .select("name,disabled_tabs,start_tab,is_premium,favorite_tabs,premium_member_id,show_balance")
                 .eq("id", value: familyID)
                 .single()
                 .execute()
@@ -719,6 +721,7 @@ final class FamilyService: ObservableObject {
             session.setFavoriteTabs(row.favorite_tabs ?? [])
             session.setFamilyPremium(row.is_premium)
             session.setPremiumMemberID(row.is_premium ? row.premium_member_id : nil)
+            session.setShowBalance(row.show_balance)
         } catch {
             lastError = error.localizedDescription
         }
@@ -747,19 +750,29 @@ final class FamilyService: ObservableObject {
         try await updateFamilySettings(disabledTabs: session.disabledTabs, startTab: session.startTab, favoriteTabs: tabs)
     }
 
-    private func updateFamilySettings(disabledTabs: Set<String>, startTab: String?, favoriteTabs: [String]) async throws {
+    /// Admin-only: shows or hides the "Balance between you" in Finances for
+    /// the whole group (also answers the one-time question in Finances).
+    func updateShowBalance(_ show: Bool) async throws {
+        Track.event("family_show_balance_changed", ["show": show])
+        try await updateFamilySettings(disabledTabs: session.disabledTabs, startTab: session.startTab, favoriteTabs: session.favoriteTabs, showBalance: show)
+    }
+
+    private func updateFamilySettings(disabledTabs: Set<String>, startTab: String?, favoriteTabs: [String], showBalance: Bool? = nil) async throws {
         guard let familyID = session.familyID, let memberID = session.memberID else {
             throw NSError(domain: "Aliaro", code: 0, userInfo: [NSLocalizedDescriptionKey: "You don't belong to a family group yet"])
         }
-        struct Body: Encodable { let familyId: UUID; let requesterMemberId: UUID; let disabledTabs: [String]; let startTab: String?; let favoriteTabs: [String] }
-        struct SettingsResponse: Decodable { let ok: Bool; let disabledTabs: [String]; let startTab: String?; let favoriteTabs: [String]? }
+        // `showBalance` only goes in the JSON when changing it (a nil optional
+        // is left out), so the function keeps the current value otherwise.
+        struct Body: Encodable { let familyId: UUID; let requesterMemberId: UUID; let disabledTabs: [String]; let startTab: String?; let favoriteTabs: [String]; let showBalance: Bool? }
+        struct SettingsResponse: Decodable { let ok: Bool; let disabledTabs: [String]; let startTab: String?; let favoriteTabs: [String]?; let showBalance: Bool? }
         let response: SettingsResponse = try await invokeEdgeFunction(
             "update-family-settings",
-            options: FunctionInvokeOptions(body: Body(familyId: familyID, requesterMemberId: memberID, disabledTabs: Array(disabledTabs), startTab: startTab, favoriteTabs: favoriteTabs))
+            options: FunctionInvokeOptions(body: Body(familyId: familyID, requesterMemberId: memberID, disabledTabs: Array(disabledTabs), startTab: startTab, favoriteTabs: favoriteTabs, showBalance: showBalance))
         )
         session.setDisabledTabs(Set(response.disabledTabs))
         session.setStartTab(response.startTab)
         if let favorites = response.favoriteTabs { session.setFavoriteTabs(favorites) }
+        session.setShowBalance(response.showBalance)
         Track.refreshUserProperties()
     }
 
@@ -785,6 +798,7 @@ final class FamilyService: ObservableObject {
                     self?.session.setFavoriteTabs(row.favorite_tabs ?? [])
                     self?.session.setFamilyPremium(row.is_premium)
                     self?.session.setPremiumMemberID(row.is_premium ? row.premium_member_id : nil)
+                    self?.session.setShowBalance(row.show_balance)
                 }
             }
         }

@@ -39,6 +39,10 @@ final class FamilySession: ObservableObject {
     /// Member whose subscription gives the group Premium
     /// (`families.premium_member_id`). `nil` if unknown or not premium.
     @Published private(set) var premiumMemberID: UUID?
+    /// Whether Finances shows the "Balance between you" (who owes whom),
+    /// chosen by the admin for the whole group (`families.show_balance`).
+    /// `nil` = not chosen yet: it is shown, and the admin is asked once.
+    @Published private(set) var showBalance: Bool?
     /// Whether the one-time welcome carousel (`AppIntroView`) has already
     /// been shown on this device. Independent of family membership: stays
     /// `true` even after leaving a group, so it is only ever shown once.
@@ -61,6 +65,7 @@ final class FamilySession: ObservableObject {
         static let homeFeatureOrder = "aliaro.homeFeatureOrder"
         static let isFamilyPremium = "aliaro.isFamilyPremium"
         static let premiumMemberID = "aliaro.premiumMemberID"
+        static let showBalance = "aliaro.showBalance"
         static let hasSeenAppIntro = "aliaro.hasSeenAppIntro"
     }
 
@@ -90,6 +95,7 @@ final class FamilySession: ObservableObject {
         isFamilyPremium = defaults.bool(forKey: Keys.isFamilyPremium)
         premiumMemberID = defaults.string(forKey: Keys.premiumMemberID).flatMap(UUID.init(uuidString:))
         hasSeenAppIntro = defaults.bool(forKey: Keys.hasSeenAppIntro)
+        showBalance = defaults.object(forKey: Keys.showBalance) as? Bool
     }
 
     func setMembership(familyID: UUID, memberID: UUID, familyName: String) {
@@ -156,6 +162,16 @@ final class FamilySession: ObservableObject {
         defaults.set(id?.uuidString, forKey: Keys.premiumMemberID)
     }
 
+    /// Updates whether the group shows the balance between members (see `showBalance`).
+    func setShowBalance(_ value: Bool?) {
+        showBalance = value
+        if let value {
+            defaults.set(value, forKey: Keys.showBalance)
+        } else {
+            defaults.removeObject(forKey: Keys.showBalance)
+        }
+    }
+
     /// Marks the welcome carousel as seen, so it never shows again on this device.
     func markAppIntroSeen() {
         hasSeenAppIntro = true
@@ -173,6 +189,8 @@ final class FamilySession: ObservableObject {
         homeFeatureOrder = []
         isFamilyPremium = false
         premiumMemberID = nil
+        showBalance = nil
+        defaults.removeObject(forKey: Keys.showBalance)
         defaults.removeObject(forKey: Keys.familyID)
         defaults.removeObject(forKey: Keys.memberID)
         defaults.removeObject(forKey: Keys.familyName)

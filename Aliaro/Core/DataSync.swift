@@ -285,6 +285,19 @@ struct RemoteExpense: FamilySynced {
     var created_at: Date
 }
 
+struct RemoteExpenseSettlement: FamilySynced {
+    static let tableName = "expense_settlements"
+    var id: UUID
+    var family_id: UUID
+    var from_member_id: UUID
+    var from_name: String
+    var to_member_id: UUID
+    var to_name: String
+    var amount: Double
+    var occurred_at: Date
+    var created_at: Date
+}
+
 struct RemoteActivityLogEntry: FamilySynced {
     static let tableName = "activity_log_entries"
     var id: UUID
@@ -404,6 +417,7 @@ final class AppDataSyncCoordinator: ObservableObject {
     private let boardNotes = RemoteSync<RemoteBoardNote>()
     private let categories = RemoteSync<RemoteCategory>()
     private let expenses = RemoteSync<RemoteExpense>()
+    private let expenseSettlements = RemoteSync<RemoteExpenseSettlement>()
     private let activityLogEntries = RemoteSync<RemoteActivityLogEntry>()
     private let expenseArchives = RemoteSync<RemoteExpenseArchive>()
     private let wifiNetworks = RemoteSync<RemoteWifiNetwork>()
@@ -449,6 +463,7 @@ final class AppDataSyncCoordinator: ObservableObject {
         await startBoardNotes(familyID: familyID, modelContext: modelContext)
         await startCategories(familyID: familyID, modelContext: modelContext)
         await startExpenses(familyID: familyID, modelContext: modelContext)
+        await startExpenseSettlements(familyID: familyID, modelContext: modelContext)
         await startActivityLogEntries(familyID: familyID, modelContext: modelContext)
         await startExpenseArchives(familyID: familyID, modelContext: modelContext)
         await startWifiNetworks(familyID: familyID, modelContext: modelContext)
@@ -501,6 +516,7 @@ final class AppDataSyncCoordinator: ObservableObject {
         await boardNotes.stop()
         await categories.stop()
         await expenses.stop()
+        await expenseSettlements.stop()
         await activityLogEntries.stop()
         await expenseArchives.stop()
         await wifiNetworks.stop()
@@ -1730,6 +1746,61 @@ final class AppDataSyncCoordinator: ObservableObject {
 
     func deleteExpense(id: UUID) {
         Task { try? await expenses.remove(id: id) }
+    }
+
+    // MARK: ExpenseSettlements (reimbursements between members)
+
+    private func startExpenseSettlements(familyID: UUID, modelContext: ModelContext) async {
+        do {
+            let remote = try await expenseSettlements.fetchAll(familyID: familyID)
+            for r in remote { applyExpenseSettlement(r, modelContext: modelContext) }
+            pruneLocal(ExpenseSettlement.self, id: \.id, keeping: remote.map(\.id), modelContext: modelContext)
+        } catch {
+            lastError = error.localizedDescription
+        }
+        await expenseSettlements.start(
+            familyID: familyID,
+            onUpsert: { [weak self] r in self?.applyExpenseSettlement(r, modelContext: modelContext) },
+            onDelete: { id in
+                let descriptor = FetchDescriptor<ExpenseSettlement>(predicate: #Predicate { $0.id == id })
+                if let existing = try? modelContext.fetch(descriptor).first {
+                    modelContext.delete(existing)
+                    try? modelContext.save()
+                }
+            }
+        )
+    }
+
+    private func applyExpenseSettlement(_ remote: RemoteExpenseSettlement, modelContext: ModelContext) {
+        let descriptor = FetchDescriptor<ExpenseSettlement>(predicate: #Predicate { $0.id == remote.id })
+        if let existing = try? modelContext.fetch(descriptor).first {
+            existing.fromMemberID = remote.from_member_id
+            existing.fromName = remote.from_name
+            existing.toMemberID = remote.to_member_id
+            existing.toName = remote.to_name
+            existing.amount = remote.amount
+            existing.occurredAt = remote.occurred_at
+        } else {
+            modelContext.insert(ExpenseSettlement(
+                id: remote.id, fromMemberID: remote.from_member_id, fromName: remote.from_name,
+                toMemberID: remote.to_member_id, toName: remote.to_name, amount: remote.amount,
+                occurredAt: remote.occurred_at, createdAt: remote.created_at
+            ))
+        }
+    }
+
+    func pushExpenseSettlement(_ settlement: ExpenseSettlement, familyID: UUID) {
+        let record = RemoteExpenseSettlement(
+            id: settlement.id, family_id: familyID,
+            from_member_id: settlement.fromMemberID, from_name: settlement.fromName,
+            to_member_id: settlement.toMemberID, to_name: settlement.toName,
+            amount: settlement.amount, occurred_at: settlement.occurredAt, created_at: settlement.createdAt
+        )
+        Task { try? await expenseSettlements.push(record) }
+    }
+
+    func deleteExpenseSettlement(id: UUID) {
+        Task { try? await expenseSettlements.remove(id: id) }
     }
 
     // MARK: ExpenseArchives (archived finances)
