@@ -63,8 +63,8 @@ struct EconomiaScreen: View {
     enum SummaryMode: String { case totals, balance }
 
     private var currentMember: FamilyMember? { members.first(where: \.isCurrentDevice) }
-    /// Group admin (creator): the only one who can show/hide the balance.
-    private var isAdmin: Bool { currentMember?.isCreator ?? false }
+    /// Creator or admin: the ones who can show/hide the balance.
+    private var isAdmin: Bool { currentMember.map { $0.isCreator || $0.isAdmin } ?? false }
     /// The admin can hide the balance for the whole group (`nil` = not chosen yet, shown).
     private var isBalanceEnabled: Bool { familySession.showBalance != false }
     private var canAdd: Bool { currentMember?.can(.financesAdd) ?? true }

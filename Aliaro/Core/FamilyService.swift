@@ -750,11 +750,22 @@ final class FamilyService: ObservableObject {
         try await updateFamilySettings(disabledTabs: session.disabledTabs, startTab: session.startTab, favoriteTabs: tabs)
     }
 
-    /// Admin-only: shows or hides the "Balance between you" in Finances for
-    /// the whole group (also answers the one-time question in Finances).
+    /// Creator or any admin: shows or hides the "Balance between you" in
+    /// Finances for the whole group (also answers the one-time question in
+    /// Finances). Sends only `showBalance` (no tabs), the function's
+    /// balance-only mode, which admins — not just the creator — may use.
     func updateShowBalance(_ show: Bool) async throws {
         Track.event("family_show_balance_changed", ["show": show])
-        try await updateFamilySettings(disabledTabs: session.disabledTabs, startTab: session.startTab, favoriteTabs: session.favoriteTabs, showBalance: show)
+        guard let familyID = session.familyID, let memberID = session.memberID else {
+            throw NSError(domain: "Aliaro", code: 0, userInfo: [NSLocalizedDescriptionKey: "You don't belong to a family group yet"])
+        }
+        struct Body: Encodable { let familyId: UUID; let requesterMemberId: UUID; let showBalance: Bool }
+        struct Response: Decodable { let ok: Bool; let showBalance: Bool? }
+        let response: Response = try await invokeEdgeFunction(
+            "update-family-settings",
+            options: FunctionInvokeOptions(body: Body(familyId: familyID, requesterMemberId: memberID, showBalance: show))
+        )
+        session.setShowBalance(response.showBalance)
     }
 
     private func updateFamilySettings(disabledTabs: Set<String>, startTab: String?, favoriteTabs: [String], showBalance: Bool? = nil) async throws {

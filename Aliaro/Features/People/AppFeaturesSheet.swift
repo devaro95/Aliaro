@@ -25,6 +25,11 @@ struct AppFeaturesSheet: View {
         members.first(where: { $0.isCurrentDevice })?.isCreator ?? false
     }
 
+    /// The balance can be shown/hidden by the creator or any admin.
+    private var canChangeBalance: Bool {
+        members.first(where: { $0.isCurrentDevice }).map { $0.isCreator || $0.isAdmin } ?? false
+    }
+
     /// Screens that can be picked as the group's start screen: Home or
     /// any visible feature — never "People" (that's where this setting
     /// lives) and never one that's currently hidden.
@@ -99,10 +104,10 @@ struct AppFeaturesSheet: View {
                             )) {
                                 Label("Balance between you", systemImage: "scalemass")
                                     .font(ALITypography.bodyLarge)
-                                    .foregroundStyle(isAdmin ? ALIColors.ink : ALIColors.mutedInk)
+                                    .foregroundStyle(canChangeBalance ? ALIColors.ink : ALIColors.mutedInk)
                             }
                             .tint(ALIColors.economiaAccent)
-                            .disabled(!isAdmin || isSaving)
+                            .disabled(!canChangeBalance || isSaving)
                         }
                     }
 
